@@ -1,0 +1,43 @@
+{
+  "name": "@pentops/jsonapi-jdef-ts-generator",
+  "version": "0.0.1",
+  "description": "Generate types from a jdef.json file served by your pentops registry.",
+  "main": "bin/index.js",
+  "bin": {
+    "jdef-ts-generator": "./bin/index.js"
+  },
+  "type": "module",
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "start": "pnpm run build && node bin/index.js",
+    "test": "vitest run",
+    "clean": "rm -rf dist",
+    "build": "pnpm run clean && rollup -c rollup.config.js",
+    "publish": "pnpm run build && pnpm publish",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "keywords": [],
+  "author": "Joshua Slate",
+  "license": "MIT",
+  "dependencies": {
+    "change-case": "^5.4.2",
+    "find-up": "^7.0.0",
+    "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "@pentops/jsonapi-request": "^0.0.1",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/node": "^20.11.13",
+    "prettier": "^3.2.4",
+    "rollup": "^4.9.6",
+    "ts-pattern": "^5.0.6",
+    "tslib": "^2.6.2",
+    "vitest": "^1.2.2"
+  },
+  "peerDependencies": {
+    "@pentops/jsonapi-request": "^0.0.1"
+  }
+}
