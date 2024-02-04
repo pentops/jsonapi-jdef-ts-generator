@@ -24,6 +24,7 @@ const REQUEST_SUFFIX = 'Request';
 const RESPONSE_SUFFIX = 'Response';
 const PATH_PARAMETERS_SUFFIX = 'PathParameters';
 const QUERY_PARAMETERS_SUFFIX = 'QueryParameters';
+const REQUEST_INIT_PARAMETER_NAME = 'requestInit';
 
 const optionalFieldMarker = factory.createToken(SyntaxKind.QuestionToken);
 
@@ -672,19 +673,17 @@ export class Generator {
           }
         }
 
-        const requestInitParamName = 'requestInit';
-
         makeRequestFnArguments.push(
           factory.createParameterDeclaration(
             undefined,
             undefined,
-            factory.createIdentifier(requestInitParamName),
+            factory.createIdentifier(REQUEST_INIT_PARAMETER_NAME),
             optionalFieldMarker,
             factory.createTypeReferenceNode('RequestInit'),
           ),
         );
 
-        requestInitFnArguments.push(factory.createIdentifier(requestInitParamName));
+        requestInitFnArguments.push(factory.createIdentifier(REQUEST_INIT_PARAMETER_NAME));
 
         nodeList.push(
           factory.createFunctionDeclaration(
