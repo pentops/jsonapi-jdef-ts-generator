@@ -20,6 +20,10 @@ const {
 } = ts;
 
 const REQUEST_LIBRARY_NAME = '@pentops/jsonapi-request';
+const REQUEST_SUFFIX = 'Request';
+const RESPONSE_SUFFIX = 'Response';
+const PATH_PARAMETERS_SUFFIX = 'PathParameters';
+const QUERY_PARAMETERS_SUFFIX = 'QueryParameters';
 
 const optionalFieldMarker = factory.createToken(SyntaxKind.QuestionToken);
 
@@ -322,13 +326,15 @@ export class Generator {
   private getMethodNames(method: Method) {
     const responseBodyName = this.getValidTypeName(
       method.responseBody as Schema,
-      `${method.fullGrpcName.replaceAll('/', '')}Response`,
-      `${method.grpcMethodName}Response`,
+      `${method.fullGrpcName.replaceAll('/', '')}${RESPONSE_SUFFIX}`,
+      `${method.grpcMethodName}${RESPONSE_SUFFIX}`,
     );
+
+    const requestBaseFirstPriorityBackup = responseBodyName?.endsWith(RESPONSE_SUFFIX) ? responseBodyName?.replace(RESPONSE_SUFFIX, REQUEST_SUFFIX) : `${method.fullGrpcName.replaceAll('/', '')}${REQUEST_SUFFIX}`;
     const requestBodyBaseName = this.getValidTypeName(
       method.requestBody as Schema,
-      `${method.fullGrpcName.replaceAll('/', '')}Request`,
-      `${method.grpcMethodName}Request`,
+      requestBaseFirstPriorityBackup,
+      `${method.grpcMethodName}${REQUEST_SUFFIX}`,
     );
 
     return match(this.config.types.requestType)
@@ -341,8 +347,8 @@ export class Generator {
       .with('split', () => ({
         responseBody: method.responseBody ? responseBodyName : '',
         requestBody: method.requestBody ? requestBodyBaseName : '',
-        pathParameters: method.pathParameters ? `${requestBodyBaseName}PathParameters` : '',
-        queryParameters: method.queryParameters ? `${requestBodyBaseName}QueryParameters` : '',
+        pathParameters: method.pathParameters ? `${requestBodyBaseName}${PATH_PARAMETERS_SUFFIX}` : '',
+        queryParameters: method.queryParameters ? `${requestBodyBaseName}${QUERY_PARAMETERS_SUFFIX}` : '',
       }))
       .exhaustive();
   }
@@ -350,8 +356,6 @@ export class Generator {
   private buildRequestTypes(method: Method): ts.Node[] {
     const nodes: ts.Node[] = [];
     const names = this.getMethodNames(method);
-
-    // TODO: generate request/response type names consistently with the other types
 
     switch (this.config.types.requestType) {
       case 'merged': {
