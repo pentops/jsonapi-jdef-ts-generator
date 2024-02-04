@@ -30,8 +30,8 @@
   "devDependencies": {
     "@pentops/jsonapi-request": "^0.0.1",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/node": "^20.11.13",
-    "prettier": "^3.2.4",
+    "@types/node": "^20.11.16",
+    "prettier": "^3.2.5",
     "rollup": "^4.9.6",
     "ts-pattern": "^5.0.6",
     "tslib": "^2.6.2",
