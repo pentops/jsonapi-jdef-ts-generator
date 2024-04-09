@@ -331,7 +331,9 @@ export class Generator {
       `${method.grpcMethodName}${RESPONSE_SUFFIX}`,
     );
 
-    const requestBaseFirstPriorityBackup = responseBodyName?.endsWith(RESPONSE_SUFFIX) ? responseBodyName?.replace(RESPONSE_SUFFIX, REQUEST_SUFFIX) : `${method.fullGrpcName.replaceAll('/', '')}${REQUEST_SUFFIX}`;
+    const requestBaseFirstPriorityBackup = responseBodyName?.endsWith(RESPONSE_SUFFIX)
+      ? responseBodyName?.replace(RESPONSE_SUFFIX, REQUEST_SUFFIX)
+      : `${method.fullGrpcName.replaceAll('/', '')}${REQUEST_SUFFIX}`;
     const requestBodyBaseName = this.getValidTypeName(
       method.requestBody as Schema,
       requestBaseFirstPriorityBackup,

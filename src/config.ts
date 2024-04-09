@@ -1,6 +1,6 @@
 import url from 'url';
 import { findUp } from 'find-up';
-import { camelCase } from 'change-case';
+import { camelCase, pascalCase } from 'change-case';
 import { Method } from './jdef-types';
 
 export interface HostedSource {
@@ -74,7 +74,7 @@ export const defaultConfig: Config = {
     nameWriter: (x) =>
       x
         .split('.')
-        .map((s) => s?.[0]?.toUpperCase() + s?.slice(1))
+        .map((s) => pascalCase(s))
         .join(''),
     requestType: 'merged',
   },
