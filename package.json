@@ -1,6 +1,6 @@
 {
   "name": "@pentops/jsonapi-jdef-ts-generator",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Generate types from a jdef.json file served by your pentops registry.",
   "main": "bin/index.js",
   "bin": {
@@ -38,6 +38,6 @@
     "vitest": "^1.4.0"
   },
   "peerDependencies": {
-    "@pentops/jsonapi-request": "^0.0.1"
+    "@pentops/jsonapi-request": "^0.0.3"
   }
 }
