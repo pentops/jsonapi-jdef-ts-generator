@@ -110,6 +110,7 @@ function isKeyword(rawName: string) {
 
 export class Generator {
   private config: Config;
+  private oneOfsToGenerateTypesFor: Set<string> = new Set();
 
   constructor(config: Config) {
     this.config = config;
@@ -211,6 +212,10 @@ export class Generator {
     ]);
   }
 
+  private isSchemaOneOf(schema: ObjectSchema) {
+    return schema['x-is-oneof'] === true;
+  }
+
   private buildObject(schema: ObjectSchema) {
     if (schema.additionalProperties && schema['x-key-property']) {
       return this.buildMapType({
@@ -220,7 +225,7 @@ export class Generator {
     }
 
     const members: (TypeElement | Identifier)[] = [];
-    const isOneOf = schema['x-is-oneof'] === true;
+    const isOneOf = this.isSchemaOneOf(schema);
     const entries = Object.entries(schema.properties || {});
 
     entries.forEach(([name, property], i) => {
@@ -275,15 +280,19 @@ export class Generator {
           .with({ 'additionalProperties': P.not(P.nullish), 'x-key-property': P.not(P.nullish) }, (m) =>
             this.buildMapType(m),
           )
-          .otherwise(() =>
-            factory.createInterfaceDeclaration(
+          .otherwise(() => {
+            if (this.isSchemaOneOf(s)) {
+              this.oneOfsToGenerateTypesFor.add(generatedName);
+            }
+
+            return factory.createInterfaceDeclaration(
               [factory.createModifier(SyntaxKind.ExportKeyword)],
               factory.createIdentifier(generatedName),
               [],
               [],
               (this.buildObject(s) as TypeLiteralNode)?.members,
-            ),
-          ),
+            );
+          }),
       )
       .with({ 'enum': P.array(P.string), 'x-enum': P.not(P.nullish) }, (s) => {
         return match(this.config.types.enumType)
@@ -440,6 +449,24 @@ export class Generator {
         nodeList.push(type, factory.createIdentifier('\n'));
       }
     }
+
+    // Create oneOf union types from oneOf type schemas
+    this.oneOfsToGenerateTypesFor.forEach((oneOfSchema) => {
+      const oneOfType = factory.createTypeAliasDeclaration(
+        [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+        `${oneOfSchema}OneOfValue`,
+        undefined,
+        ts.factory.createTypeOperatorNode(
+          ts.SyntaxKind.KeyOfKeyword,
+          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Exclude'), [
+            ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(oneOfSchema)),
+            factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
+          ]),
+        ),
+      );
+
+      nodeList.push(oneOfType, factory.createIdentifier('\n'));
+    });
 
     // Generate request and response types for each method
     for (const pkg of jdef.packages) {
