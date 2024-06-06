@@ -64,7 +64,7 @@ export interface ObjectRules {
 }
 
 export interface MapItem {
-  'additionalProperties': SchemaWithRef;
+  'additionalProperties': SchemaWithRef | true;
   'x-key-property': SchemaWithRef;
 }
 

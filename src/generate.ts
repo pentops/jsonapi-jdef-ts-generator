@@ -206,6 +206,10 @@ export class Generator {
   }
 
   private buildMapType(schema: MapItem) {
+    if (schema.additionalProperties === true) {
+      return factory.createTypeReferenceNode('any');
+    }
+
     return factory.createTypeReferenceNode('Record', [
       this.buildBaseType(schema['x-key-property']).node,
       this.buildBaseType(schema.additionalProperties).node,
