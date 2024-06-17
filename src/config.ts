@@ -5,12 +5,22 @@ import { Method } from './jdef-types';
 
 export interface HostedSource {
   // url is the url of the hosted jdef.json file
-  url?: string;
+  url: string;
   // auth is the authentication configuration for the hosted jdef.json file, if applicable
   auth?: {
     token?: string;
   };
 }
+
+export interface HostedSourceService {
+  service: HostedSource;
+}
+
+export interface LocalSourcePath {
+  path: string;
+}
+
+export type JdefJsonSource = HostedSourceService | LocalSourcePath;
 
 interface TypeOutput {
   // fileName is the name of the generated types file
@@ -58,10 +68,7 @@ export interface Config {
   types: TypeGenerationConfig;
   client: ClientGenerationConfig;
   // jdefJsonSource is the source of the jdef.json file. Only one of service or path can be specified.
-  jdefJsonSource: {
-    service?: HostedSource;
-    path?: string;
-  };
+  jdefJsonSource: JdefJsonSource | JdefJsonSource[];
 }
 
 export const defaultConfig: Config = {

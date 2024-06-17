@@ -206,6 +206,7 @@ export class Generator {
   }
 
   private buildMapType(schema: MapItem) {
+    // additionalProperties is set to true when the type is google.protobuf.Any
     if (schema.additionalProperties === true) {
       return factory.createTypeReferenceNode('any');
     }
@@ -221,6 +222,11 @@ export class Generator {
   }
 
   private buildObject(schema: ObjectSchema) {
+    // additionalProperties is set to true when the type is google.protobuf.Any
+    if (schema.additionalProperties === true) {
+      return factory.createTypeReferenceNode('any');
+    }
+
     if (schema.additionalProperties && schema['x-key-property']) {
       return this.buildMapType({
         'additionalProperties': schema.additionalProperties,

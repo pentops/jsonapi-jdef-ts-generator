@@ -14,7 +14,7 @@ export async function cli({ cwd, args }: Args) {
 
   const config = await loadConfig();
 
-  const jdef = await getSource(config.jdefJsonSource.path, config.jdefJsonSource.service);
+  const jdef = await getSource(config.jdefJsonSource);
 
   if (!jdef) {
     throw new Error('[jdef-ts-generator]: no valid jdef source found');
