@@ -26,14 +26,14 @@ devDependencies:
     specifier: ^20.14.2
     version: 20.14.2
   prettier:
-    specifier: ^3.3.1
-    version: 3.3.1
+    specifier: ^3.3.2
+    version: 3.3.2
   rollup:
     specifier: ^4.18.0
     version: 4.18.0
   ts-pattern:
-    specifier: ^5.1.2
-    version: 5.1.2
+    specifier: ^5.2.0
+    version: 5.2.0
   tslib:
     specifier: ^2.6.3
     version: 2.6.3
@@ -902,8 +902,8 @@ packages:
       source-map-js: 1.2.0
     dev: true
 
-  /prettier@3.3.1:
-    resolution: {integrity: sha512-7CAwy5dRsxs8PHXT3twixW9/OEll8MLE0VRPCJyl7CkS6VHGPSlsVaWTiASPTyGyYRyApxlaWTzwUxVNrhcwDg==}
+  /prettier@3.3.2:
+    resolution: {integrity: sha512-rAVeHYMcv8ATV5d508CFdn+8/pHPpXeIid1DdrPwXnaAdH7cqjVbpJaT5eq4yRAFU/lsbwYwSF/n5iNrdJHPQA==}
     engines: {node: '>=14'}
     hasBin: true
     dev: true
@@ -1049,8 +1049,8 @@ packages:
     engines: {node: '>=14.0.0'}
     dev: true
 
-  /ts-pattern@5.1.2:
-    resolution: {integrity: sha512-u+ElKUIWnqisjpRBhv6Y89yNq7Pmz6xL0v7pTSckrVZ0+5Vf32oh/3jmxWl80rAOGcnbBa7fCyeqNdP4yXzWWg==}
+  /ts-pattern@5.2.0:
+    resolution: {integrity: sha512-aGaSpOlDcns7ZoeG/OMftWyQG1KqPVhgplhJxNCvyIXqWrumM5uIoOSarw/hmmi/T1PnuQ/uD8NaFHvLpHicDg==}
     dev: true
 
   /tslib@2.6.3:
