@@ -30,19 +30,19 @@ export interface GeneratedImportPath {
   fileName?: string;
 }
 
-interface ManualImport {
+export interface ManualImport {
   namedImports: string[] | undefined;
   typeOnlyNamedImports?: string[];
   defaultImport?: string;
 }
 
-interface WritableFile {
+export interface WritableFile {
   content: string;
   directory: string;
   fileName: string;
 }
 
-class PluginFile {
+export class PluginFile {
   public config: PluginFileGeneratorConfig;
   private readonly generatingPluginName: string;
   private nodeList: Node[] = [];
