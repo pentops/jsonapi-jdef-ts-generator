@@ -54,5 +54,13 @@ export async function cli({ cwd, args }: Args) {
     }
   }
 
+  if (config.plugins) {
+    for (const plugin of config.plugins) {
+      plugin.prepare(cwd, jdef, generator);
+      await plugin.run();
+      plugin.postRun();
+    }
+  }
+
   console.info(`[jdef-ts-generator]: type generation complete in ${performance.now() - start}ms`);
 }

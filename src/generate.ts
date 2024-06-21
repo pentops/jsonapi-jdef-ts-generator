@@ -3,8 +3,8 @@ import { match, P } from 'ts-pattern';
 import { pascalCase } from 'change-case';
 import { API, EnumItem, MapItem, Method, ObjectSchema, Parameter, Schema, SchemaWithRef } from './jdef-types';
 import { Config } from './config';
-import path from 'path';
 import { buildMergedRequestInit, buildSplitRequestInit, makeRequest } from '@pentops/jsonapi-request';
+import { getImportPath } from './helpers';
 
 const {
   addSyntheticLeadingComment,
@@ -27,18 +27,6 @@ const QUERY_PARAMETERS_SUFFIX = 'QueryParameters';
 const REQUEST_INIT_PARAMETER_NAME = 'requestInit';
 
 const optionalFieldMarker = factory.createToken(SyntaxKind.QuestionToken);
-
-function getRelativePath(source: string, target: string) {
-  const targetArr = target.split('/');
-  const sourceArr = source.split('/');
-  // Remove filename from end of source & target, discard source
-  sourceArr.pop();
-  const targetFileName = targetArr.pop();
-
-  const relativePath = path.relative(sourceArr.join('/'), targetArr.join('/'));
-
-  return (relativePath ? `${relativePath}/${targetFileName}` : `./${targetFileName}`).replaceAll(path.sep, '/');
-}
 
 function isCharacterSafeForName(char: string) {
   return char.match(/\p{Letter}|[0-9]|\$|_/u);
@@ -108,9 +96,25 @@ function isKeyword(rawName: string) {
   ].includes(rawName);
 }
 
+export interface GeneratedSchema {
+  generatedName: string;
+  rawSchema: Schema;
+}
+
+export interface GeneratedClientFunction {
+  generatedName: string;
+  rawMethod: Method;
+  requestBodyType?: GeneratedSchema;
+  responseBodyType?: GeneratedSchema;
+  pathParametersType?: GeneratedSchema;
+  queryParametersType?: GeneratedSchema;
+}
+
 export class Generator {
-  private config: Config;
+  public config: Config;
   private oneOfsToGenerateTypesFor: Set<string> = new Set();
+  public generatedSchemas: Map<string, GeneratedSchema> = new Map();
+  public generatedClientFunctions: GeneratedClientFunction[] = [];
 
   constructor(config: Config) {
     this.config = config;
@@ -277,9 +281,7 @@ export class Generator {
     return factory.createTypeLiteralNode(members as readonly TypeElement[]);
   }
 
-  private generateSchema(keyName: string, schema: SchemaWithRef) {
-    const generatedName = this.getValidTypeName(schema as Schema, keyName);
-
+  private generateSchema(generatedName: string, schema: SchemaWithRef) {
     if (!generatedName) {
       return;
     }
@@ -404,6 +406,8 @@ export class Generator {
         const mergedType = this.generateSchema(names.requestBody, mergedSchema);
 
         if (mergedType) {
+          this.generatedSchemas.set(names.requestBody, { generatedName: names.requestBody, rawSchema: mergedSchema });
+
           nodes.push(mergedType);
         }
 
@@ -414,6 +418,11 @@ export class Generator {
           const requestBodyType = this.generateSchema(names.requestBody, method.requestBody);
 
           if (requestBodyType) {
+            this.generatedSchemas.set(names.requestBody, {
+              generatedName: names.requestBody,
+              rawSchema: method.requestBody as Schema,
+            });
+
             nodes.push(requestBodyType);
           }
         }
@@ -424,6 +433,11 @@ export class Generator {
           const pathParametersType = this.generateSchema(names.pathParameters, schema);
 
           if (pathParametersType) {
+            this.generatedSchemas.set(names.pathParameters, {
+              generatedName: names.pathParameters,
+              rawSchema: schema,
+            });
+
             nodes.push(pathParametersType);
           }
         }
@@ -431,9 +445,17 @@ export class Generator {
         if (method.queryParameters?.length) {
           const schema = this.parametersToSchema(method.queryParameters);
 
-          const queryParametersType = this.generateSchema(names.queryParameters, schema);
+          const queryParametersType = this.generateSchema(
+            this.getValidTypeName(schema as Schema, names.queryParameters),
+            schema,
+          );
 
           if (queryParametersType) {
+            this.generatedSchemas.set(names.queryParameters, {
+              generatedName: names.queryParameters,
+              rawSchema: schema,
+            });
+
             nodes.push(queryParametersType);
           }
         }
@@ -446,16 +468,17 @@ export class Generator {
   }
 
   private generateTypesFile(jdef: API) {
-    const nodeList: ts.Node[] = [
-      factory.createJSDocComment('DO NOT EDIT! Types generated from jdef.json'),
-      factory.createIdentifier('\n'),
-    ];
+    const nodeList: ts.Node[] = this.config.typeOutput.topOfFileComment
+      ? [factory.createJSDocComment(this.config.typeOutput.topOfFileComment), factory.createIdentifier('\n')]
+      : [];
 
     // Generate interfaces from schemas
     for (const [schemaName, schema] of Object.entries(jdef.schemas)) {
-      const type = this.generateSchema(schemaName, schema);
+      const typeName = this.getValidTypeName(schema, schemaName);
+      const type = this.generateSchema(typeName, schema);
 
       if (type) {
+        this.generatedSchemas.set(schemaName, { generatedName: typeName, rawSchema: schema });
         nodeList.push(type, factory.createIdentifier('\n'));
       }
     }
@@ -485,9 +508,15 @@ export class Generator {
 
         // Add the response type
         if (method.responseBody) {
-          const responseNode = this.generateSchema(names.responseBody, method.responseBody);
+          const typeName = this.getValidTypeName(method.responseBody as Schema, names.responseBody);
+          const responseNode = this.generateSchema(typeName, method.responseBody);
 
           if (responseNode) {
+            this.generatedSchemas.set(names.responseBody, {
+              generatedName: typeName,
+              rawSchema: method.responseBody as Schema,
+            });
+
             nodeList.push(responseNode, factory.createIdentifier('\n'));
           }
         }
@@ -517,30 +546,14 @@ export class Generator {
 
     const typeImportPath = match(this.config.typeOutput.importPath)
       .with(P.string, (p) => p)
-      .otherwise(() => {
-        let typesPath = path
-          .join(this.config.typeOutput.directory, this.config.typeOutput.fileName)
-          .replaceAll(path.sep, '/');
-        let clientPath = path
-          .join(this.config.clientOutput?.directory || './', this.config.clientOutput?.fileName || 'index.ts')
-          .replaceAll(path.sep, '/');
-
-        if (this.config.typeOutput.directory.startsWith('./') && !typesPath.startsWith('.')) {
-          typesPath = `./${typesPath}`;
-        }
-
-        if (this.config.clientOutput?.directory.startsWith('./') && !clientPath.startsWith('.')) {
-          clientPath = `./${clientPath}`;
-        }
-
-        const relativePath = getRelativePath(clientPath, typesPath).replaceAll('index', '').replace(/\.ts$/, '');
-
-        if (relativePath.endsWith('/')) {
-          return relativePath.slice(0, -1);
-        }
-
-        return relativePath;
-      });
+      .otherwise(() =>
+        getImportPath(
+          this.config.typeOutput.directory,
+          this.config.typeOutput.fileName,
+          this.config.clientOutput?.directory || './',
+          this.config.clientOutput?.fileName || 'index.ts',
+        ),
+      );
 
     const requestInitFn = match(this.config.types.requestType)
       .with('split', () => buildSplitRequestInit.name)
@@ -564,8 +577,6 @@ export class Generator {
     }
 
     const nodeList: ts.Node[] = [
-      factory.createJSDocComment('DO NOT EDIT! Client generated from jdef.json'),
-      factory.createIdentifier('\n'),
       factory.createImportDeclaration(
         undefined,
         factory.createImportClause(
@@ -577,14 +588,25 @@ export class Generator {
       ),
     ];
 
+    if (this.config.clientOutput.topOfFileComment) {
+      nodeList.unshift(
+        factory.createJSDocComment(this.config.clientOutput.topOfFileComment),
+        factory.createIdentifier('\n'),
+      );
+    }
+
     if (imports.size) {
       nodeList.push(
         factory.createImportDeclaration(
           undefined,
           factory.createImportClause(
             true,
-            factory.createIdentifier(`{ ${Array.from(imports).join(', ')} }`),
             undefined,
+            factory.createNamedImports(
+              Array.from(imports).map((name) =>
+                factory.createImportSpecifier(false, undefined, factory.createIdentifier(name)),
+              ),
+            ),
           ),
           factory.createStringLiteral(typeImportPath, true),
         ),
@@ -724,11 +746,13 @@ export class Generator {
 
         requestInitFnArguments.push(factory.createIdentifier(REQUEST_INIT_PARAMETER_NAME));
 
+        const methodName = this.config.client.methodNameWriter(method);
+
         nodeList.push(
           factory.createFunctionDeclaration(
             [factory.createModifier(SyntaxKind.ExportKeyword), factory.createModifier(SyntaxKind.AsyncKeyword)],
             undefined,
-            factory.createIdentifier(this.config.client.methodNameWriter(method)),
+            factory.createIdentifier(methodName),
             undefined,
             makeRequestFnArguments,
             factory.createTypeReferenceNode(
@@ -758,6 +782,15 @@ export class Generator {
           ),
           factory.createIdentifier('\n'),
         );
+
+        this.generatedClientFunctions.push({
+          generatedName: methodName,
+          rawMethod: method,
+          requestBodyType: names.requestBody ? this.generatedSchemas.get(names.requestBody) : undefined,
+          responseBodyType: names.responseBody ? this.generatedSchemas.get(names.responseBody) : undefined,
+          pathParametersType: names.pathParameters ? this.generatedSchemas.get(names.pathParameters) : undefined,
+          queryParametersType: names.queryParameters ? this.generatedSchemas.get(names.queryParameters) : undefined,
+        });
       }
     }
 

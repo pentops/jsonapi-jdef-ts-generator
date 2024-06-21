@@ -42,6 +42,37 @@ async function getHostedSource(hostedSource: HostedSource) {
   return json as API;
 }
 
+function mergeSources(sources: API[]): API {
+  return sources.reduce<API>(
+    (acc, source) => {
+      const { schemas, packages } = source;
+
+      Object.entries(schemas).forEach(([key, value]) => {
+        if (!acc.schemas[key]) {
+          acc.schemas[key] = value;
+        }
+      });
+
+      packages.forEach((pkg) => {
+        const existingPackageIndex = acc.packages.findIndex((p) => p.name === pkg.name);
+
+        if (existingPackageIndex === -1) {
+          acc.packages.push(pkg);
+        } else {
+          pkg.methods.forEach((method) => {
+            if (!acc.packages[existingPackageIndex].methods.some((m) => m.fullGrpcName === method.fullGrpcName)) {
+              acc.packages[existingPackageIndex].methods.push(method);
+            }
+          });
+        }
+      });
+
+      return acc;
+    },
+    { schemas: {}, packages: [] },
+  );
+}
+
 export async function getSource(src: JdefJsonSource | JdefJsonSource[]): Promise<API> {
   if (!src) {
     throw new Error('[jdef-ts-generator]: no jdef.json source specified');
@@ -50,17 +81,7 @@ export async function getSource(src: JdefJsonSource | JdefJsonSource[]): Promise
   if (Array.isArray(src)) {
     const sources = await Promise.all(src.map((source) => getSource(source)));
 
-    // TODO: make this more robust, allow for source prefixing, deduplication, etc.
-    return sources.reduce<API>(
-      (acc, source) => ({
-        schemas: {
-          ...acc.schemas,
-          ...source.schemas,
-        },
-        packages: [...acc.packages, ...source.packages],
-      }),
-      { schemas: {}, packages: [] },
-    );
+    return mergeSources(sources);
   }
 
   const srcContent = await match(src)
