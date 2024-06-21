@@ -119,6 +119,10 @@ function mergeConfig(userSpecified: Partial<Config>): Config {
     config.client = { ...config.client, ...userSpecified.client };
   }
 
+  if (userSpecified.plugins) {
+    config.plugins = userSpecified.plugins;
+  }
+
   // JdefJsonSource is required, and only one can be specified
   if (userSpecified.jdefJsonSource) {
     config.jdefJsonSource = userSpecified.jdefJsonSource;
