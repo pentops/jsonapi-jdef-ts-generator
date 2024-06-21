@@ -25,12 +25,12 @@
   "dependencies": {
     "change-case": "^5.4.4",
     "find-up": "^7.0.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.2"
   },
   "devDependencies": {
     "@pentops/jsonapi-request": "^0.0.3",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/node": "^20.14.2",
+    "@types/node": "^20.14.7",
     "prettier": "^3.3.2",
     "rollup": "^4.18.0",
     "ts-pattern": "^5.2.0",
