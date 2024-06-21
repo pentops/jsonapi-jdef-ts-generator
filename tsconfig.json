@@ -4,6 +4,7 @@
     "moduleResolution": "Node",
     "target": "ESNext",
     "outDir": "dist",
+    "declaration": true,
     "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
