@@ -25,30 +25,48 @@ export async function cli({ cwd, args }: Args) {
   const generator = new Generator(config);
 
   const { clientFile, typesFile } = generator.generate(jdef);
+  const builtFilesByDirectory = new Map<string, Set<string>>();
 
-  // Clear output path
-  fs.rmSync(path.join(cwd, config.typeOutput.directory), { recursive: true, force: true });
+  function addFileToDirectory(directory: string, fileName: string) {
+    if (!builtFilesByDirectory.has(directory)) {
+      builtFilesByDirectory.set(directory, new Set());
+    }
+
+    builtFilesByDirectory.get(directory)?.add(fileName);
+  }
+
+  // Clear types output path
+  const typeOutputPath = path.join(cwd, config.typeOutput.directory, config.typeOutput.fileName);
+  const typeOutputDir = path.dirname(typeOutputPath);
+  fs.rmSync(typeOutputDir, { recursive: true, force: true });
 
   // Write generated file
-  const typeOutputPath = path.join(cwd, config.typeOutput.directory, config.typeOutput.fileName);
-  fs.mkdirSync(path.dirname(typeOutputPath), { recursive: true });
+  fs.mkdirSync(typeOutputDir, { recursive: true });
   fs.writeFileSync(typeOutputPath, typesFile);
+
+  addFileToDirectory(typeOutputDir, typeOutputPath);
 
   console.info('[jdef-ts-generator]: interfaces and enums generated and saved to disk');
 
   if (config.clientOutput) {
-    // Clear output path
-    fs.rmSync(path.join(cwd, config.clientOutput.directory), { recursive: true, force: true });
-
     if (clientFile) {
-      // Write generated file
       const clientOutputPath = path.join(
         cwd,
         config.clientOutput.directory,
         config.clientOutput.fileName || 'client.ts',
       );
-      fs.mkdirSync(path.dirname(clientOutputPath), { recursive: true });
+      const clientOutputDir = path.dirname(clientOutputPath);
+
+      // Clear output directory and recreate if it's not already been written to
+      if (!builtFilesByDirectory.has(clientOutputDir)) {
+        fs.rmSync(clientOutputDir, { recursive: true, force: true });
+        fs.mkdirSync(clientOutputDir, { recursive: true });
+      }
+
+      // Write generated file
       fs.writeFileSync(clientOutputPath, clientFile);
+
+      addFileToDirectory(clientOutputDir, clientOutputPath);
 
       console.info('[jdef-ts-generator]: api client generated and saved to disk');
     }
@@ -58,7 +76,30 @@ export async function cli({ cwd, args }: Args) {
     for (const plugin of config.plugins) {
       plugin.prepare(cwd, jdef, generator);
       await plugin.run();
-      plugin.postRun();
+      const output = plugin.postRun();
+
+      for (const writtenFile of output.writtenFiles) {
+        addFileToDirectory(path.dirname(writtenFile.writtenTo), writtenFile.writtenTo);
+      }
+    }
+  }
+
+  if (config.generateIndexFiles) {
+    for (const [directory, files] of builtFilesByDirectory.entries()) {
+      const indexPath = path.join(directory, 'index.ts');
+      const indexContent = [...files].reduce((indexFile, file) => {
+        const baseName = path.basename(file, '.ts');
+
+        if (baseName !== 'index') {
+          return `${indexFile}export * from './${baseName}';\n`;
+        }
+
+        return baseName;
+      }, '');
+
+      if (indexContent.trim().length > 0) {
+        fs.writeFileSync(indexPath, indexContent);
+      }
     }
   }
 

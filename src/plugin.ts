@@ -40,6 +40,7 @@ export interface WritableFile {
   content: string;
   directory: string;
   fileName: string;
+  writtenTo: string;
 }
 
 export class PluginFile {
@@ -246,6 +247,7 @@ export class PluginFile {
       content: fileContent,
       directory: this.config.directory,
       fileName: this.config.fileName,
+      writtenTo: '', // set when written
     };
   }
 }
@@ -325,7 +327,9 @@ export class PluginBase {
     );
   }
 
-  public postRun() {
+  public postRun(): { writtenFiles: WritableFile[] } {
+    const output: { writtenFiles: WritableFile[] } = { writtenFiles: [] };
+
     for (const file of this.files) {
       if (!this.cwd) {
         throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
@@ -342,6 +346,8 @@ export class PluginBase {
         // Write generated file
         fs.mkdirSync(path.dirname(generatedFilePath), { recursive: true });
         fs.writeFileSync(generatedFilePath, writableFile.content);
+        writableFile.writtenTo = generatedFilePath;
+        output.writtenFiles.push(writableFile);
 
         console.info(`[jdef-ts-generator]: plugin ${this.name} generated file ${generatedFilePath}`);
       }
@@ -350,5 +356,7 @@ export class PluginBase {
     if (this.startedAt) {
       console.info(`[jdef-ts-generator]: plugin ${this.name} completed in ${performance.now() - this.startedAt}ms`);
     }
+
+    return output;
   }
 }
