@@ -24,6 +24,8 @@ import { constantCase } from 'change-case';
 import { API, APIMethod, APIObjectProperty, APISchemaWithRef } from './api-types';
 import { HTTPMethod } from './shared-types';
 
+const JSON_SCHEMA_REFERENCE_PREFIX = '#/schemas/';
+
 export function jdefParameterToSource(parameter: JDEFParameter): ParsedObjectProperty | undefined {
   const converted = jdefSchemaToSource(parameter?.schema);
 
@@ -64,7 +66,7 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
       { $ref: P.string },
       (r) =>
         ({
-          $ref: r.$ref.replace('#/definitions/', ''),
+          $ref: r.$ref.replace('#/definitions/', JSON_SCHEMA_REFERENCE_PREFIX),
         }) as ParsedRef,
     )
     .with(
@@ -406,7 +408,10 @@ export function apiSchemaToSource(schema: APISchemaWithRef, fullGrpcName?: strin
           },
         }) as ParsedString,
     )
-    .with({ '!type': 'ref' }, (r) => ({ $ref: `${r.ref.package}/${r.ref.schema}` }) as ParsedRef)
+    .with(
+      { '!type': 'ref' },
+      (r) => ({ $ref: `${JSON_SCHEMA_REFERENCE_PREFIX}${r.ref.package}.${r.ref.schema}` }) as ParsedRef,
+    )
     .with(
       { '!type': 'oneof' },
       (o) =>
