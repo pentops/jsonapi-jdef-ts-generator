@@ -1,10 +1,30 @@
 import typescript from '@rollup/plugin-typescript';
 
-export default {
-  input: 'src/index.ts',
-  output: {
-    dir: 'dist',
-    format: 'es',
+const plugins = [typescript()];
+
+export default [
+  {
+    input: 'src/index.ts',
+    output: {
+      dir: 'dist',
+      format: 'es',
+    },
+    plugins,
   },
-  plugins: [typescript()],
-};
+  {
+    input: 'src/types.ts',
+    output: {
+      dir: 'dist',
+      format: 'es',
+    },
+    plugins,
+  },
+  {
+    input: 'src/parse-sources.ts',
+    output: {
+      dir: 'dist',
+      format: 'es',
+    },
+    plugins,
+  },
+];
