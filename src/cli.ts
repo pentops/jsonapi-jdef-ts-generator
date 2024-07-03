@@ -14,17 +14,17 @@ export async function cli({ cwd, args }: Args) {
 
   const config = await loadConfig();
 
-  const jdef = await getSource(config.jdefJsonSource);
+  const api = await getSource(config.jsonSource);
 
-  if (!jdef) {
-    throw new Error('[jdef-ts-generator]: no valid jdef source found');
+  if (!api) {
+    throw new Error('[jdef-ts-generator]: no valid source found');
   }
 
-  console.info('[jdef-ts-generator]: loaded jdef source, beginning type generation');
+  console.info('[jdef-ts-generator]: loaded source, beginning type generation');
 
   const generator = new Generator(config);
 
-  const { clientFile, typesFile } = generator.generate(jdef);
+  const { clientFile, typesFile } = generator.generate(api);
   const builtFilesByDirectory = new Map<string, Set<string>>();
 
   function addFileToDirectory(directory: string, fileName: string) {
@@ -74,7 +74,7 @@ export async function cli({ cwd, args }: Args) {
 
   if (config.plugins) {
     for (const plugin of config.plugins) {
-      plugin.prepare(cwd, jdef, generator);
+      plugin.prepare(cwd, api, generator);
       await plugin.run();
       const output = plugin.postRun();
 
@@ -94,7 +94,7 @@ export async function cli({ cwd, args }: Args) {
           return `${indexFile}export * from './${baseName}';\n`;
         }
 
-        return baseName;
+        return indexFile;
       }, '');
 
       if (indexContent.trim().length > 0) {

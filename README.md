@@ -43,7 +43,7 @@ export default {
         .join(''),
     requestType: 'merged',
   },
-  jdefJsonSource: {
+  jsonSource: {
     path: 'jdef.json',
   },
 };
@@ -51,11 +51,11 @@ export default {
 
 #### Source Configuration
 
-You can specify the source of the jdef.json file using the `jdefJsonSource` property.
+You can specify the source of the jdef.json or api.json file using the `jsonSource` property.
 
-- The `path` property should be the path to a local `jdef.json` file.
-- The `service` property should be set for a remote `jdef.json` file. It should be an object with the following properties:
-  - `url`: The URL of the remote `jdef.json` file.
+- The `path` property should be the path to a local `jdef.json` or `api.json` file.
+- The `service` property should be set for a remote `jdef.json` or `api.json` file. It should be an object with the following properties:
+  - `url`: The URL of the remote `jdef.json` or `api.json` file.
   - `auth`: An optional object containing a `token` if required.
 
 See the [configuration definitions](./src/config.ts) for more information.

@@ -1,168 +1,157 @@
-export type HTTPMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
+import {
+  ArrayRules,
+  EnumValueDescription,
+  HTTPMethod,
+  IntegerRules,
+  NumberRules,
+  ObjectRules,
+  StringRules,
+} from './shared-types';
 
-export interface EnumValueDescription {
-  description?: string;
-  name: string;
-  number?: number;
-}
-
-export interface EnumItem {
+export interface JDEFEnumItem {
   'enum': string[];
   'x-enum'?: EnumValueDescription[];
 }
 
-export interface StringRules {
-  pattern: string;
-  // format: uint64
-  minLength: string;
-  // format: uint64
-  maxLength: string;
-}
-
-export interface StringItem extends StringRules, Partial<EnumItem> {
+export interface JDEFStringItem extends StringRules, Partial<JDEFEnumItem> {
   format: string;
-  rules?: StringRules;
 }
 
-interface NumberRules {
-  exclusiveMinimum: boolean;
-  exclusiveMaximum: boolean;
-  // format: double
-  minimum: string;
-  // format: double
-  maximum: string;
-  // format: double
-  multipleOf: string;
-}
-
-export interface NumberItem extends NumberRules {
+export interface JDEFNumberItem extends NumberRules {
   format?: string;
 }
 
-export interface IntegerRules {
-  exclusiveMinimum: boolean;
-  exclusiveMaximum: boolean;
-  // format: int64
-  minimum: string;
-  // format: int64
-  maximum: string;
-  // format: int64
-  multipleOf: string;
-}
-
-export interface IntegerItem extends IntegerRules {
+export interface JDEFIntegerItem extends IntegerRules {
   format?: string;
 }
 
-export interface BooleanItem {}
+export interface JDEFBooleanItem {}
 
-export interface ObjectRules {
-  // format: uint64
-  minProperties?: string;
-  // format: uint64
-  maxProperties?: string;
+export interface JDEFMapItem {
+  'additionalProperties': JDEFSchemaWithRef | true;
+  'x-key-property': JDEFSchemaWithRef;
 }
 
-export interface MapItem {
-  'additionalProperties': SchemaWithRef | true;
-  'x-key-property': SchemaWithRef;
+export interface JDEFBaseObjectProperty {
+  'description'?: string;
+  'example'?: string;
+  'required': boolean;
+  'readOnly'?: boolean;
+  'writeOnly'?: boolean;
+  'x-proto-optional'?: boolean;
 }
 
-export interface ObjectItem extends ObjectRules, Partial<MapItem> {
+export interface JDEFObjectItem extends ObjectRules, Partial<JDEFMapItem> {
   'x-is-oneof'?: boolean;
-  'properties'?: Record<string, SchemaWithRef>;
+  'properties'?: Record<string, JDEFObjectProperty>;
   'required'?: string[];
 }
 
-export interface ArrayRules {
-  // format: uint64
-  minItems: string;
-  // format: uint64
-  maxItems: string;
-  uniqueItems: boolean;
+export interface JDEFArrayItem extends ArrayRules {
+  items: JDEFSchemaWithRef;
 }
 
-export interface ArrayItem extends ArrayRules {
-  items: SchemaWithRef;
-}
+export type JDEFSchemaType = 'string' | 'integer' | 'number' | 'boolean' | 'array' | 'object';
 
-export type SchemaType = 'string' | 'integer' | 'number' | 'boolean' | 'array' | 'object';
-
-export interface Ref {
+export interface JDEFRef {
   $ref: string;
 }
 
-export interface BaseSchema {
-  'description'?: string;
-  'example'?: any;
-  'type': SchemaType;
-  'x-proto-name'?: string;
-  'x-proto-number'?: number;
+export interface JDEFBaseSchema {
+  description?: string;
+  example?: any;
+  type: JDEFSchemaType;
 }
 
-export interface StringSchema extends BaseSchema, StringItem {
+export interface JDEFStringSchema extends JDEFBaseSchema, JDEFStringItem {
   type: 'string';
 }
 
-export interface NumberSchema extends BaseSchema, NumberItem {
+export interface JDEFNumberSchema extends JDEFBaseSchema, JDEFNumberItem {
   type: 'number';
 }
 
-export interface IntegerSchema extends BaseSchema, IntegerItem {
+export interface JDEFIntegerSchema extends JDEFBaseSchema, JDEFIntegerItem {
   type: 'integer';
 }
 
-export interface BooleanSchema extends BaseSchema, BooleanItem {
+export interface JDEFBooleanSchema extends JDEFBaseSchema, JDEFBooleanItem {
   type: 'boolean';
 }
 
-export interface ObjectSchema extends BaseSchema, ObjectItem {
+export interface JDEFObjectSchema extends JDEFBaseSchema, JDEFObjectItem {
   'type': 'object';
-  'x-proto-full-name'?: string;
+  'x-name'?: string;
 }
 
-export interface ArraySchema extends BaseSchema, ArrayItem {
+export interface JDEFArraySchema extends JDEFBaseSchema, JDEFArrayItem {
   type: 'array';
 }
 
-export type Schema = StringSchema | NumberSchema | IntegerSchema | BooleanSchema | ObjectSchema | ArraySchema;
+export type JDEFSchema =
+  | JDEFStringSchema
+  | JDEFNumberSchema
+  | JDEFIntegerSchema
+  | JDEFBooleanSchema
+  | JDEFObjectSchema
+  | JDEFArraySchema;
 
-export type SchemaWithRef = Schema | Ref;
+export type JDEFSchemaWithRef = JDEFSchema | JDEFRef;
 
-export interface Entity {
-  eventSchema?: SchemaWithRef;
-  stateSchema?: SchemaWithRef;
+export type JDEFObjectProperty =
+  | (JDEFBaseObjectProperty & JDEFObjectSchema)
+  | (JDEFBaseObjectProperty & JDEFRef)
+  | (JDEFBaseObjectProperty & JDEFArraySchema)
+  | (JDEFBaseObjectProperty & JDEFStringSchema)
+  | (JDEFBaseObjectProperty & JDEFNumberSchema)
+  | (JDEFBaseObjectProperty & JDEFIntegerSchema)
+  | (JDEFBaseObjectProperty & JDEFBooleanSchema);
+
+export interface JDEFEntity {
+  eventSchema?: JDEFSchemaWithRef;
+  stateSchema?: JDEFSchemaWithRef;
 }
 
-export interface Parameter {
+export interface JDEFParameter {
   name: string;
   description?: string;
+  example?: string;
   required: boolean;
-  schema?: SchemaWithRef;
+  readOnly?: boolean;
+  schema: JDEFSchemaWithRef;
+  writeOnly?: boolean;
 }
 
-export interface Method {
+export interface JDEFMethod {
   grpcServiceName: string;
   grpcMethodName: string;
   fullGrpcName: string;
   httpMethod: HTTPMethod;
   httpPath: string;
-  responseBody: SchemaWithRef;
-  requestBody?: SchemaWithRef;
-  pathParameters?: Parameter[];
-  queryParameters?: Parameter[];
+  responseBody: JDEFSchemaWithRef;
+  requestBody?: JDEFSchemaWithRef;
+  pathParameters?: JDEFParameter[];
+  queryParameters?: JDEFParameter[];
 }
 
-export interface Package {
+export interface JDEFPackage {
   label: string;
   name: string;
   hidden: boolean;
   introduction?: string;
-  methods: Method[];
-  entities?: Entity[];
+  methods: JDEFMethod[];
+  entities?: JDEFEntity[];
 }
 
-export interface API {
-  packages: Package[];
-  schemas: Record<string, Schema>;
+export interface JDEFMetadata {
+  built_at: {
+    nanos: number;
+    seconds: number;
+  };
+}
+
+export interface JDEF {
+  metadata: JDEFMetadata;
+  packages: JDEFPackage[];
+  definitions: Record<string, JDEFSchema>;
 }

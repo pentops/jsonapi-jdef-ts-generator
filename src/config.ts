@@ -1,16 +1,19 @@
 import url from 'url';
 import { findUp } from 'find-up';
 import { camelCase, pascalCase } from 'change-case';
-import { Method } from './jdef-types';
 import { PluginBase } from './plugin';
+import { ParsedMethod } from './parsed-types';
+
+export type SourceType = 'jdef' | 'api';
 
 export interface HostedSource {
-  // url is the url of the hosted jdef.json file
+  // url is the url of the hosted jdef.json or api.json file
   url: string;
-  // auth is the authentication configuration for the hosted jdef.json file, if applicable
+  // auth is the authentication configuration for the hosted jdef.json or api.json file, if applicable
   auth?: {
     token?: string;
   };
+  type?: SourceType;
 }
 
 export interface HostedSourceService {
@@ -19,9 +22,10 @@ export interface HostedSourceService {
 
 export interface LocalSourcePath {
   path: string;
+  type?: SourceType;
 }
 
-export type JdefJsonSource = HostedSourceService | LocalSourcePath;
+export type JSONSource = HostedSourceService | LocalSourcePath;
 
 interface TypeOutput {
   // fileName is the name of the generated types file
@@ -66,7 +70,7 @@ interface TypeGenerationConfig {
 
 interface ClientGenerationConfig {
   // methodNameWriter is a function that takes a jdef method and returns the name of the generated method. Can be used to change the naming/casing conventions of the generated functions.
-  methodNameWriter: (method: Method) => string;
+  methodNameWriter: (method: ParsedMethod) => string;
 }
 
 export interface Config {
@@ -79,14 +83,14 @@ export interface Config {
   // plugins is an array of functions, which will be called after types and client functions have been generated, in order to enable additional codegen
   plugins?: PluginBase[];
   // jdefJsonSource is the source of the jdef.json file. Only one of service or path can be specified.
-  jdefJsonSource: JdefJsonSource | JdefJsonSource[];
+  jsonSource: JSONSource | JSONSource[];
 }
 
 export const defaultConfig: Config = {
   generateIndexFiles: true,
   typeOutput: defaultTypeOutput,
   client: {
-    methodNameWriter: (method: Method) => camelCase(method.fullGrpcName),
+    methodNameWriter: (method: ParsedMethod) => camelCase(method.fullGrpcName),
   },
   types: {
     enumType: 'enum',
@@ -97,7 +101,7 @@ export const defaultConfig: Config = {
         .join(''),
     requestType: 'merged',
   },
-  jdefJsonSource: {
+  jsonSource: {
     path: 'jdef.json',
   },
   plugins: [],
@@ -126,9 +130,9 @@ function mergeConfig(userSpecified: Partial<Config>): Config {
     config.plugins = userSpecified.plugins;
   }
 
-  // JdefJsonSource is required, and only one can be specified
-  if (userSpecified.jdefJsonSource) {
-    config.jdefJsonSource = userSpecified.jdefJsonSource;
+  // JSONSource is required
+  if (userSpecified.jsonSource) {
+    config.jsonSource = userSpecified.jsonSource;
   }
 
   return config;

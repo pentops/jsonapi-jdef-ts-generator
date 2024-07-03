@@ -1,18 +1,43 @@
 import fs from 'fs/promises';
 import { match, P } from 'ts-pattern';
-import { HostedSource, JdefJsonSource } from './config';
-import { API } from './jdef-types';
+import { HostedSource, JSONSource, SourceType } from './config';
+import { JDEF } from './jdef-types';
+import { API } from './api-types';
+import { ParsedSource } from './parsed-types';
+import { parseApiSource, parseJdefSource } from './parse-sources';
 
-async function getLocalSource(filePath: string) {
+function guessSourceType(path: string, explicitType: SourceType | undefined) {
+  if (explicitType) {
+    return explicitType;
+  }
+
+  if (path.endsWith('api.json')) {
+    return 'api';
+  }
+
+  if (path.endsWith('jdef.json')) {
+    return 'jdef';
+  }
+
+  throw new Error(
+    `[jdef-ts-generator]: unable to determine source type from path: ${path}, please explicitly configure the source type (jdef or api)`,
+  );
+}
+
+async function getLocalSource(filePath: string, explicitType: SourceType | undefined) {
+  const sourceType = guessSourceType(filePath, explicitType);
   const fileContent = await fs.readFile(filePath, 'utf8');
 
   if (fileContent) {
     try {
       const fileContentAsObject = JSON.parse(fileContent);
 
-      return fileContentAsObject as API;
+      return match(sourceType)
+        .with('api', () => parseApiSource(fileContentAsObject as API))
+        .with('jdef', () => parseJdefSource(fileContentAsObject as JDEF))
+        .otherwise(() => undefined);
     } catch (e) {
-      throw new Error(`[jdef-ts-generator]: error encountered while parsing custom jdef.json file: ${e}`);
+      throw new Error(`[jdef-ts-generator]: error encountered while parsing custom ${sourceType}.json file: ${e}`);
     }
   }
 
@@ -23,6 +48,8 @@ async function getHostedSource(hostedSource: HostedSource) {
   if (!hostedSource.url) {
     throw new Error(`[jdef-ts-generator]: no url provided for hosted jdef.json source`);
   }
+
+  const sourceType = guessSourceType(hostedSource.url, hostedSource.type);
 
   const headers = new Headers({
     'Content-Type': 'application/json',
@@ -39,13 +66,16 @@ async function getHostedSource(hostedSource: HostedSource) {
 
   const json = await result.json();
 
-  return json as API;
+  return match(sourceType)
+    .with('api', () => parseApiSource(json as API))
+    .with('jdef', () => parseJdefSource(json as JDEF))
+    .otherwise(() => undefined);
 }
 
-function mergeSources(sources: API[]): API {
-  return sources.reduce<API>(
+function mergeSources(sources: ParsedSource[]): ParsedSource {
+  return sources.reduce<ParsedSource>(
     (acc, source) => {
-      const { schemas, packages } = source;
+      const { schemas, packages, metadata } = source;
 
       Object.entries(schemas).forEach(([key, value]) => {
         if (!acc.schemas[key]) {
@@ -59,21 +89,39 @@ function mergeSources(sources: API[]): API {
         if (existingPackageIndex === -1) {
           acc.packages.push(pkg);
         } else {
-          pkg.methods.forEach((method) => {
-            if (!acc.packages[existingPackageIndex].methods.some((m) => m.fullGrpcName === method.fullGrpcName)) {
-              acc.packages[existingPackageIndex].methods.push(method);
+          pkg.services.forEach((service) => {
+            const existingServiceIndex = acc.packages[existingPackageIndex].services.findIndex(
+              (s) => s.name === service.name,
+            );
+
+            if (existingServiceIndex === -1) {
+              acc.packages[existingPackageIndex].services.push(service);
+            } else {
+              service.methods.forEach((method) => {
+                if (
+                  !acc.packages[existingPackageIndex].services[existingServiceIndex].methods.some(
+                    (m) => m.fullGrpcName === method.fullGrpcName,
+                  )
+                ) {
+                  acc.packages[existingPackageIndex].services[existingServiceIndex].methods.push(method);
+                }
+              });
             }
           });
         }
       });
 
+      if (acc.metadata.builtAt && metadata.builtAt && metadata.builtAt > acc.metadata.builtAt) {
+        acc.metadata.builtAt = metadata.builtAt;
+      }
+
       return acc;
     },
-    { schemas: {}, packages: [] },
+    { metadata: { builtAt: sources[0]?.metadata?.builtAt }, schemas: {}, packages: [] },
   );
 }
 
-export async function getSource(src: JdefJsonSource | JdefJsonSource[]): Promise<API> {
+export async function getSource(src: JSONSource | JSONSource[]): Promise<ParsedSource> {
   if (!src) {
     throw new Error('[jdef-ts-generator]: no jdef.json source specified');
   }
@@ -86,12 +134,12 @@ export async function getSource(src: JdefJsonSource | JdefJsonSource[]): Promise
 
   const srcContent = await match(src)
     .with({ service: P.not(P.nullish) }, async ({ service }) => getHostedSource(service))
-    .with({ path: P.not(P.nullish) }, async ({ path }) => getLocalSource(path))
+    .with({ path: P.not(P.nullish) }, async ({ path, type }) => getLocalSource(path, type))
     .otherwise(() => undefined);
 
   if (!srcContent) {
     throw new Error(
-      `[jdef-ts-generator]: invalid jdef source specified. Specify a hosted registry or a local filesystem path: ${src}`,
+      `[jdef-ts-generator]: invalid source specified. Specify a hosted registry or a local filesystem path: ${src}`,
     );
   }
 

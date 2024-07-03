@@ -1,4 +1,3 @@
-import { API } from './jdef-types';
 import { Config } from './config';
 import ts, { type Node } from 'typescript';
 import { getImportPath } from './helpers';
@@ -6,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { GeneratedClientFunction, GeneratedSchema, Generator } from './generate';
 import { P, match } from 'ts-pattern';
+import { ParsedSource } from './parsed-types';
 
 const { createPrinter, createSourceFile, factory, ScriptKind, ScriptTarget, ListFormat, NewLineKind } = ts;
 
@@ -259,7 +259,7 @@ interface PluginConfig {
 export class PluginBase {
   name: string = 'UndefinedPlugin';
   private pluginConfig: PluginConfig;
-  protected api: API | undefined;
+  protected api: ParsedSource | undefined;
   protected config: Config | undefined;
   protected cwd: string | undefined;
   protected files: PluginFile[] = [];
@@ -271,7 +271,7 @@ export class PluginBase {
     this.pluginConfig = pluginConfig;
   }
 
-  public prepare(cwd: string, api: API, generator: Generator) {
+  public prepare(cwd: string, api: ParsedSource, generator: Generator) {
     this.startedAt = performance.now();
 
     console.info(`[jdef-ts-generator]: plugin ${this.name} started`);
