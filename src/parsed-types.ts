@@ -18,12 +18,14 @@ export interface ParsedEnum {
     name: string;
     options: EnumValueDescription[];
     prefix: string;
+    example?: any;
   };
 }
 
 export interface ParsedBoolean {
   boolean: {
     const?: boolean;
+    example?: any;
   };
 }
 
@@ -31,6 +33,7 @@ export interface ParsedInteger {
   integer: {
     format?: string;
     rules: IntegerRules;
+    example?: any;
   };
 }
 
@@ -38,6 +41,7 @@ export interface ParsedFloat {
   float: {
     format?: string;
     rules: NumberRules;
+    example?: any;
   };
 }
 
@@ -45,6 +49,7 @@ export interface ParsedString {
   string: {
     format: string;
     rules: StringRules;
+    example?: any;
   };
 }
 
@@ -53,19 +58,22 @@ export interface ParsedRef {
 }
 
 export interface ParsedAny {
-  any: {};
+  any: {
+    example?: any;
+  };
 }
 
 export interface ParsedMap {
   map: {
     itemSchema: ParsedSchemaWithRef;
     keySchema: ParsedSchemaWithRef;
+    example?: any;
   };
 }
 
 export interface ParsedObjectProperty {
   description?: string;
-  example?: string;
+  example?: any;
   name: string;
   readOnly?: boolean;
   required?: boolean;
@@ -80,6 +88,7 @@ export interface ParsedObject {
     name: string;
     properties: Record<string, ParsedObjectProperty>;
     rules: ObjectRules;
+    example?: any;
   };
 }
 
@@ -89,6 +98,7 @@ export interface ParsedOneOf {
     fullGrpcName: string;
     name: string;
     properties: Record<string, ParsedObjectProperty>;
+    example?: any;
   };
 }
 
@@ -96,6 +106,7 @@ export interface ParsedArray {
   array: {
     itemSchema: ParsedSchemaWithRef;
     rules: ArrayRules;
+    example: any;
   };
 }
 

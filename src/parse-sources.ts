@@ -24,7 +24,7 @@ import { constantCase } from 'change-case';
 import { API, APIMethod, APIObjectProperty, APISchemaWithRef } from './api-types';
 import { HTTPMethod } from './shared-types';
 
-function jdefParameterToSource(parameter: JDEFParameter): ParsedObjectProperty | undefined {
+export function jdefParameterToSource(parameter: JDEFParameter): ParsedObjectProperty | undefined {
   const converted = jdefSchemaToSource(parameter?.schema);
 
   if (!converted) {
@@ -32,17 +32,12 @@ function jdefParameterToSource(parameter: JDEFParameter): ParsedObjectProperty |
   }
 
   return {
-    description: parameter.description,
-    example: parameter.example,
-    name: parameter.name,
-    readOnly: parameter.readOnly,
-    required: parameter.required,
+    ...parameter,
     schema: converted,
-    writeOnly: parameter.writeOnly,
   };
 }
 
-function jdefObjectPropertyToSource(
+export function jdefObjectPropertyToSource(
   property: JDEFObjectProperty,
   name: string,
   parentObjectName: string | undefined,
@@ -54,16 +49,13 @@ function jdefObjectPropertyToSource(
   }
 
   return {
-    description: property.description,
     name,
-    readOnly: property.readOnly,
-    required: property.required,
     schema: converted,
-    writeOnly: property.writeOnly,
+    ...property,
   };
 }
 
-function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): ParsedSchemaWithRef | undefined {
+export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): ParsedSchemaWithRef | undefined {
   const typeName = schemaName?.split('.').pop() || schemaName || '';
   const fullName = schemaName || '';
 
@@ -77,10 +69,11 @@ function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): Par
     )
     .with(
       { type: 'boolean' },
-      () =>
+      (b) =>
         ({
           boolean: {
             const: false,
+            example: b.example,
           },
         }) as ParsedBoolean,
     )
@@ -92,6 +85,7 @@ function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): Par
             fullGrpcName: fullName,
             name: typeName,
             prefix: schemaName ? `${constantCase(schemaName)}_` : undefined,
+            example: e.example,
             options: e.enum.map((option) => {
               const matchedMetadata = e['x-enum']?.find((metadata) => metadata.name === option);
 
@@ -109,6 +103,7 @@ function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): Par
       (s) =>
         ({
           string: {
+            example: s.example,
             format: s.format,
             rules: {
               minLength: s.minLength,
@@ -122,6 +117,7 @@ function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): Par
       if (n.format?.startsWith('int')) {
         return {
           integer: {
+            example: n.example,
             format: n.format,
             rules: {
               minimum: n.minimum,
@@ -136,6 +132,7 @@ function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): Par
 
       return {
         float: {
+          example: n.example,
           format: n.format,
           rules: {
             minimum: n.minimum,
@@ -152,6 +149,7 @@ function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): Par
       (i) =>
         ({
           integer: {
+            example: i.example,
             format: i.format,
             rules: {
               minimum: i.minimum,
@@ -165,12 +163,13 @@ function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): Par
     )
     .with({ type: 'object' }, (o) => {
       if (o.additionalProperties === true) {
-        return { any: {} } as ParsedAny;
+        return { any: { example: o.example } } as ParsedAny;
       }
 
       if (o.additionalProperties) {
         return {
           map: {
+            example: o.example,
             itemSchema: jdefSchemaToSource(o.additionalProperties),
             keySchema: o['x-key-property'] ? jdefSchemaToSource(o['x-key-property']) : undefined,
           },
@@ -180,6 +179,7 @@ function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): Par
       if (o['x-is-oneof']) {
         return {
           oneOf: {
+            example: o.example,
             fullGrpcName: fullName,
             description: o.description,
             name: o['x-name'] || typeName,
@@ -205,6 +205,7 @@ function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): Par
 
       return {
         object: {
+          example: o.example,
           fullGrpcName: fullName,
           description: o.description,
           name: o['x-name'] || typeName,
@@ -235,6 +236,7 @@ function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): Par
       (a) =>
         ({
           array: {
+            example: a.example,
             itemSchema: jdefSchemaToSource(a.items),
             rules: {
               minItems: a.minItems,
@@ -334,7 +336,7 @@ export function parseJdefSource(source: JDEF): ParsedSource {
   return parsed;
 }
 
-function apiObjectPropertyToSource(property: APIObjectProperty): ParsedObjectProperty | undefined {
+export function apiObjectPropertyToSource(property: APIObjectProperty): ParsedObjectProperty | undefined {
   const converted = apiSchemaToSource(property.schema);
 
   if (!converted) {
@@ -342,16 +344,12 @@ function apiObjectPropertyToSource(property: APIObjectProperty): ParsedObjectPro
   }
 
   return {
-    description: property.description,
-    name: property.name,
-    readOnly: property.readOnly,
-    required: property.required,
+    ...property,
     schema: converted,
-    writeOnly: property.writeOnly,
   };
 }
 
-function apiSchemaToSource(schema: APISchemaWithRef, fullGrpcName?: string): ParsedSchemaWithRef | undefined {
+export function apiSchemaToSource(schema: APISchemaWithRef, fullGrpcName?: string): ParsedSchemaWithRef | undefined {
   return match(schema)
     .with(
       { '!type': 'enum' },
@@ -485,7 +483,7 @@ function apiSchemaToSource(schema: APISchemaWithRef, fullGrpcName?: string): Par
       } as ParsedArray;
     })
     .otherwise(() => {
-      // console.warn(`[jdef-ts-generator]: unsupported schema type while parsing api source: ${schema}`);
+      console.warn(`[jdef-ts-generator]: unsupported schema type while parsing api source: ${schema}`);
       return undefined;
     });
 }
