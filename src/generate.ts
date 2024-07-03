@@ -14,6 +14,7 @@ import {
   ParsedSchemaWithRef,
   ParsedSource,
 } from './parsed-types';
+import { JSON_SCHEMA_REFERENCE_PREFIX } from './parse-sources';
 
 const {
   addSyntheticLeadingComment,
@@ -215,7 +216,11 @@ export class Generator {
           comment: s.float.format ? `format: ${s.float.format}` : undefined,
         }))
         .with({ $ref: P.not(P.nullish) }, (s) => ({
-          node: factory.createTypeReferenceNode(this.getValidTypeName({ object: { name: s.$ref } } as ParsedSchema)),
+          node: factory.createTypeReferenceNode(
+            this.getValidTypeName({
+              object: { name: s.$ref.replace(JSON_SCHEMA_REFERENCE_PREFIX, '') },
+            } as ParsedSchema),
+          ),
         }))
         .with({ object: P.not(P.nullish) }, (s) => ({ node: this.buildObject(s) }))
         .with({ map: P.not(P.nullish) }, (s) => ({ node: this.buildMapType(s) }))

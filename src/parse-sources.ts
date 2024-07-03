@@ -1,5 +1,5 @@
 import { match, P } from 'ts-pattern';
-import { JDEF, JDEFObjectProperty, JDEFParameter, JDEFSchemaWithRef } from './jdef-types';
+import { JDEF, JDEFMethod, JDEFObjectProperty, JDEFParameter, JDEFSchemaWithRef } from './jdef-types';
 import {
   ParsedAny,
   ParsedArray,
@@ -24,7 +24,7 @@ import { constantCase } from 'change-case';
 import { API, APIMethod, APIObjectProperty, APISchemaWithRef } from './api-types';
 import { HTTPMethod } from './shared-types';
 
-const JSON_SCHEMA_REFERENCE_PREFIX = '#/schemas/';
+export const JSON_SCHEMA_REFERENCE_PREFIX = '#/schemas/';
 
 export function jdefParameterToSource(parameter: JDEFParameter): ParsedObjectProperty | undefined {
   const converted = jdefSchemaToSource(parameter?.schema);
@@ -254,6 +254,14 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
     });
 }
 
+function getJdefMethodRequestResponseFullGrpcName(method: JDEFMethod, requestOrResponse: JDEFSchemaWithRef): string {
+  const grpcNameBase = method.fullGrpcName.split('/').slice(0, -1).join('/');
+
+  return match(requestOrResponse)
+    .with({ 'x-name': P.not(P.nullish) }, (o) => `${grpcNameBase}/${o['x-name']}`)
+    .otherwise(() => '');
+}
+
 export function parseJdefSource(source: JDEF): ParsedSource {
   const parsed: ParsedSource = {
     metadata: {
@@ -292,8 +300,15 @@ export function parseJdefSource(source: JDEF): ParsedSource {
         fullGrpcName: method.fullGrpcName,
         httpMethod: method.httpMethod,
         httpPath: method.httpPath,
-        responseBody: jdefSchemaToSource(method.responseBody),
-        requestBody: method.requestBody ? jdefSchemaToSource(method.requestBody) : undefined,
+        responseBody: method.responseBody
+          ? jdefSchemaToSource(
+              method.responseBody,
+              getJdefMethodRequestResponseFullGrpcName(method, method.responseBody),
+            )
+          : undefined,
+        requestBody: method.requestBody
+          ? jdefSchemaToSource(method.requestBody, getJdefMethodRequestResponseFullGrpcName(method, method.requestBody))
+          : undefined,
         pathParameters: Object.entries(method.pathParameters || {}).reduce<ParsedObjectProperty[]>(
           (acc, [propertyName, property]) => {
             const converted = jdefParameterToSource({ ...property, name: property.name || propertyName });
