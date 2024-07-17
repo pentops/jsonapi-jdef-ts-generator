@@ -178,6 +178,23 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
         } as ParsedMap;
       }
 
+      function buildParsedProperties(properties: Record<string, JDEFObjectProperty> | undefined) {
+        return Object.entries(properties || {}).reduce<Map<string, ParsedObjectProperty>>(
+          (acc, [propertyName, property]) => {
+            const converted = jdefObjectPropertyToSource(property, propertyName, fullName);
+
+            if (!converted) {
+              return acc;
+            }
+
+            acc.set(converted.name, converted);
+
+            return acc;
+          },
+          new Map(),
+        );
+      }
+
       if (o['x-is-oneof']) {
         return {
           oneOf: {
@@ -185,22 +202,7 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
             fullGrpcName: fullName,
             description: o.description,
             name: o['x-name'] || typeName,
-            properties: Object.entries(o.properties || {}).reduce<Record<string, ParsedObjectProperty>>(
-              (acc, [propertyName, property]) => {
-                const converted = jdefObjectPropertyToSource(property, propertyName, fullName);
-
-                if (!converted) {
-                  console.log(property);
-                  return acc;
-                }
-
-                return {
-                  ...acc,
-                  [converted.name]: converted,
-                };
-              },
-              {},
-            ),
+            properties: buildParsedProperties(o.properties),
           },
         } as ParsedOneOf;
       }
@@ -211,21 +213,7 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
           fullGrpcName: fullName,
           description: o.description,
           name: o['x-name'] || typeName,
-          properties: Object.entries(o.properties || {}).reduce<Record<string, ParsedObjectProperty>>(
-            (acc, [propertyName, property]) => {
-              const converted = jdefObjectPropertyToSource(property, propertyName, fullName);
-
-              if (!converted) {
-                return acc;
-              }
-
-              return {
-                ...acc,
-                [converted.name]: converted,
-              };
-            },
-            {},
-          ),
+          properties: buildParsedProperties(o.properties),
           rules: {
             minProperties: o.minProperties,
             maxProperties: o.maxProperties,
@@ -268,14 +256,14 @@ export function parseJdefSource(source: JDEF): ParsedSource {
       builtAt: new Date(source.metadata.built_at.seconds * 1000 + source.metadata.built_at.nanos / 1_000_000),
     },
     packages: [],
-    schemas: {},
+    schemas: new Map(),
   };
 
   for (const schemaName in source.definitions) {
     const parsedSchema = jdefSchemaToSource(source.definitions[schemaName], schemaName);
 
     if (parsedSchema) {
-      parsed.schemas[schemaName] = parsedSchema as ParsedSchema;
+      parsed.schemas.set(schemaName, parsedSchema as ParsedSchema);
     }
   }
 
@@ -295,6 +283,18 @@ export function parseJdefSource(source: JDEF): ParsedSource {
         methodsByService[method.grpcServiceName] = [];
       }
 
+      function mapParameters(parameters: JDEFParameter[] | undefined) {
+        return parameters?.reduce<ParsedObjectProperty[]>((acc, parameter) => {
+          const converted = jdefParameterToSource(parameter);
+
+          if (!converted) {
+            return acc;
+          }
+
+          return [...acc, converted];
+        }, []);
+      }
+
       methodsByService[method.grpcServiceName].push({
         name: method.grpcMethodName,
         fullGrpcName: method.fullGrpcName,
@@ -309,30 +309,8 @@ export function parseJdefSource(source: JDEF): ParsedSource {
         requestBody: method.requestBody
           ? jdefSchemaToSource(method.requestBody, getJdefMethodRequestResponseFullGrpcName(method, method.requestBody))
           : undefined,
-        pathParameters: Object.entries(method.pathParameters || {}).reduce<ParsedObjectProperty[]>(
-          (acc, [propertyName, property]) => {
-            const converted = jdefParameterToSource({ ...property, name: property.name || propertyName });
-
-            if (!converted) {
-              return acc;
-            }
-
-            return [...acc, converted];
-          },
-          [],
-        ),
-        queryParameters: Object.entries(method.queryParameters || {}).reduce<ParsedObjectProperty[]>(
-          (acc, [propertyName, property]) => {
-            const converted = jdefParameterToSource({ ...property, name: property.name || propertyName });
-
-            if (!converted) {
-              return acc;
-            }
-
-            return [...acc, converted];
-          },
-          [],
-        ),
+        pathParameters: mapParameters(method.pathParameters),
+        queryParameters: mapParameters(method.queryParameters),
       });
     }
 
@@ -367,6 +345,18 @@ export function apiObjectPropertyToSource(property: APIObjectProperty): ParsedOb
 }
 
 export function apiSchemaToSource(schema: APISchemaWithRef, fullGrpcName?: string): ParsedSchemaWithRef | undefined {
+  function mapObjectProperties(properties: APIObjectProperty[] | undefined) {
+    return (properties || []).reduce<Map<string, ParsedObjectProperty>>((acc, curr) => {
+      const converted = apiObjectPropertyToSource(curr);
+
+      if (converted) {
+        acc.set(converted.name, converted);
+      }
+
+      return acc;
+    }, new Map());
+  }
+
   return match(schema)
     .with(
       { '!type': 'enum' },
@@ -434,18 +424,7 @@ export function apiSchemaToSource(schema: APISchemaWithRef, fullGrpcName?: strin
           oneOf: {
             fullGrpcName,
             name: o.oneof.name,
-            properties: (o.oneof.properties || []).reduce<Record<string, ParsedObjectProperty>>((acc, curr) => {
-              const converted = apiObjectPropertyToSource(curr);
-
-              if (!converted) {
-                return acc;
-              }
-
-              return {
-                ...acc,
-                [converted.name]: converted,
-              };
-            }, {}),
+            properties: mapObjectProperties(o.oneof.properties),
             rules: {},
           },
         }) as ParsedOneOf,
@@ -457,18 +436,7 @@ export function apiSchemaToSource(schema: APISchemaWithRef, fullGrpcName?: strin
           object: {
             fullGrpcName,
             name: o.object.name,
-            properties: (o.object.properties || []).reduce<Record<string, ParsedObjectProperty>>((acc, curr) => {
-              const converted = apiObjectPropertyToSource(curr);
-
-              if (!converted) {
-                return acc;
-              }
-
-              return {
-                ...acc,
-                [converted.name]: converted,
-              };
-            }, {}),
+            properties: mapObjectProperties(o.object.properties),
             rules: {},
           },
         }) as ParsedObject,
@@ -524,7 +492,7 @@ export function parseApiSource(source: API): ParsedSource {
       builtAt: new Date(source.metadata.builtAt),
     },
     packages: [],
-    schemas: {},
+    schemas: new Map(),
   };
 
   for (const pkg of source.packages || []) {
@@ -533,7 +501,7 @@ export function parseApiSource(source: API): ParsedSource {
         const parsedSchema = apiSchemaToSource(pkg.schemas[schemaName], schemaName);
 
         if (parsedSchema) {
-          parsed.schemas[schemaName] = parsedSchema as ParsedSchema;
+          parsed.schemas.set(schemaName, parsedSchema as ParsedSchema);
         }
       }
     }
@@ -566,26 +534,21 @@ export function parseApiSource(source: API): ParsedSource {
         if (req && Object.hasOwn(req, 'object')) {
           const reqObject = req as ParsedObject;
 
-          for (const propertyName in reqObject.object.properties) {
-            const property = reqObject.object.properties[propertyName];
-
+          // TODO: refactor this with j5 changes that handle splitting here
+          for (const [propertyName, property] of reqObject.object.properties) {
             if (pathParameterNames?.includes(propertyName)) {
               pathParameters.push(property);
-              delete reqObject.object.properties[propertyName];
+              reqObject.object.properties.delete(propertyName);
             } else if (method.httpMethod === 'GET') {
               queryParameters.push(property);
-              delete reqObject.object.properties[propertyName];
+              reqObject.object.properties.delete(propertyName);
             }
           }
         }
 
         const hasRequestBody = match(req)
-          .with({ object: P.not(P.nullish) }, (o) =>
-            Boolean(o.object.properties && Object.keys(o.object.properties).length > 0),
-          )
-          .with({ oneOf: P.not(P.nullish) }, (o) =>
-            Boolean(o.oneOf.properties && Object.keys(o.oneOf.properties).length > 0),
-          )
+          .with({ object: P.not(P.nullish) }, (o) => Boolean(o.object.properties.size > 0))
+          .with({ oneOf: P.not(P.nullish) }, (o) => Boolean(o.oneOf.properties.size > 0))
           .otherwise(() => false);
 
         parsedService.methods.push({

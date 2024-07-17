@@ -77,11 +77,11 @@ function mergeSources(sources: ParsedSource[]): ParsedSource {
     (acc, source) => {
       const { schemas, packages, metadata } = source;
 
-      Object.entries(schemas).forEach(([key, value]) => {
-        if (!acc.schemas[key]) {
-          acc.schemas[key] = value;
+      for (const [schemaName, value] of schemas) {
+        if (!acc.schemas.has(schemaName)) {
+          acc.schemas.set(schemaName, value);
         }
-      });
+      }
 
       packages.forEach((pkg) => {
         const existingPackageIndex = acc.packages.findIndex((p) => p.name === pkg.name);
@@ -117,7 +117,7 @@ function mergeSources(sources: ParsedSource[]): ParsedSource {
 
       return acc;
     },
-    { metadata: { builtAt: sources[0]?.metadata?.builtAt }, schemas: {}, packages: [] },
+    { metadata: { builtAt: sources[0]?.metadata?.builtAt }, schemas: new Map(), packages: [] },
   );
 }
 

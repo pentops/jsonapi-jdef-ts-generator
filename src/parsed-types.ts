@@ -86,7 +86,7 @@ export interface ParsedObject {
     description?: string;
     fullGrpcName: string;
     name: string;
-    properties: Record<string, ParsedObjectProperty>;
+    properties: Map<string, ParsedObjectProperty>;
     rules: ObjectRules;
     example?: any;
   };
@@ -97,7 +97,7 @@ export interface ParsedOneOf {
     description?: string;
     fullGrpcName: string;
     name: string;
-    properties: Record<string, ParsedObjectProperty>;
+    properties: Map<string, ParsedObjectProperty>;
     example?: any;
   };
 }
@@ -151,5 +151,5 @@ export interface ParsedPackage {
 export interface ParsedSource {
   metadata: ParsedMetadata;
   packages: ParsedPackage[];
-  schemas: Record<string, ParsedSchema>;
+  schemas: Map<string, ParsedSchema>;
 }

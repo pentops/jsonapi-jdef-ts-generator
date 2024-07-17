@@ -403,7 +403,7 @@ export class Generator {
           object: {
             fullGrpcName: '',
             name: '',
-            properties: {},
+            properties: new Map(),
             rules: {},
             ...(method.requestBody as ParsedObject | undefined)?.object,
           },
@@ -465,13 +465,11 @@ export class Generator {
               fullGrpcName: '',
               name: names.pathParameters,
               rules: {},
-              properties: method.pathParameters.reduce(
-                (acc, curr) => ({
-                  ...acc,
-                  [curr.name]: curr,
-                }),
-                {},
-              ),
+              properties: method.pathParameters.reduce((acc, curr) => {
+                acc.set(curr.name, curr);
+
+                return acc;
+              }, new Map()),
             },
           };
 
@@ -493,13 +491,11 @@ export class Generator {
               fullGrpcName: '',
               name: names.queryParameters,
               rules: {},
-              properties: method.queryParameters.reduce(
-                (acc, curr) => ({
-                  ...acc,
-                  [curr.name]: curr,
-                }),
-                {},
-              ),
+              properties: method.queryParameters.reduce((acc, curr) => {
+                acc.set(curr.name, curr);
+
+                return acc;
+              }, new Map()),
             },
           };
 
