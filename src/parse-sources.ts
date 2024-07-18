@@ -251,10 +251,16 @@ function getJdefMethodRequestResponseFullGrpcName(method: JDEFMethod, requestOrR
 }
 
 export function parseJdefSource(source: JDEF): ParsedSource {
+  const metadata: ParsedSource['metadata'] = {
+    builtAt: null,
+  };
+
+  if (source.metadata.built_at) {
+    metadata.builtAt = new Date(source.metadata.built_at.seconds * 1000 + source.metadata.built_at.nanos / 1_000_000);
+  }
+
   const parsed: ParsedSource = {
-    metadata: {
-      builtAt: new Date(source.metadata.built_at.seconds * 1000 + source.metadata.built_at.nanos / 1_000_000),
-    },
+    metadata,
     packages: [],
     schemas: new Map(),
   };

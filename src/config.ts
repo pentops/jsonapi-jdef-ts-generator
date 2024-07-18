@@ -113,6 +113,10 @@ export const defaultConfig: Config = {
 function mergeConfig(userSpecified: Partial<Config>): Config {
   const config: Config = { ...defaultConfig };
 
+  if (userSpecified.dryRun) {
+    config.dryRun = userSpecified.dryRun;
+  }
+
   if (userSpecified.typeOutput) {
     config.typeOutput = { ...config.typeOutput, ...userSpecified.typeOutput };
   }

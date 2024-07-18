@@ -9,7 +9,7 @@ import {
 } from './shared-types';
 
 export interface ParsedMetadata {
-  builtAt: Date;
+  builtAt: Date | null;
 }
 
 export interface ParsedEnum {
