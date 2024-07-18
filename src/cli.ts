@@ -38,15 +38,20 @@ export async function cli({ cwd, args }: Args) {
   // Clear types output path
   const typeOutputPath = path.join(cwd, config.typeOutput.directory, config.typeOutput.fileName);
   const typeOutputDir = path.dirname(typeOutputPath);
-  fs.rmSync(typeOutputDir, { recursive: true, force: true });
 
-  // Write generated file
-  fs.mkdirSync(typeOutputDir, { recursive: true });
-  fs.writeFileSync(typeOutputPath, typesFile);
+  if (!config.dryRun) {
+    fs.rmSync(typeOutputDir, { recursive: true, force: true });
+
+    // Write generated file
+    fs.mkdirSync(typeOutputDir, { recursive: true });
+    fs.writeFileSync(typeOutputPath, typesFile);
+
+    console.info('[jdef-ts-generator]: interfaces and enums generated and saved to disk');
+  } else {
+    console.info(`[jdef-ts-generator]: dry run enabled, file ${typeOutputPath} not written. Contents:\n${typesFile}`);
+  }
 
   addFileToDirectory(typeOutputDir, typeOutputPath);
-
-  console.info('[jdef-ts-generator]: interfaces and enums generated and saved to disk');
 
   if (config.clientOutput) {
     if (clientFile) {
@@ -58,17 +63,23 @@ export async function cli({ cwd, args }: Args) {
       const clientOutputDir = path.dirname(clientOutputPath);
 
       // Clear output directory and recreate if it's not already been written to
-      if (!builtFilesByDirectory.has(clientOutputDir)) {
+      if (!config.dryRun && !builtFilesByDirectory.has(clientOutputDir)) {
         fs.rmSync(clientOutputDir, { recursive: true, force: true });
         fs.mkdirSync(clientOutputDir, { recursive: true });
       }
 
-      // Write generated file
-      fs.writeFileSync(clientOutputPath, clientFile);
+      if (!config.dryRun) {
+        // Write generated file
+        fs.writeFileSync(clientOutputPath, clientFile);
+
+        console.info('[jdef-ts-generator]: api client generated and saved to disk');
+      } else {
+        console.info(
+          `[jdef-ts-generator]: dry run enabled, file ${clientOutputPath} not written. Contents:\n${clientFile}`,
+        );
+      }
 
       addFileToDirectory(clientOutputDir, clientOutputPath);
-
-      console.info('[jdef-ts-generator]: api client generated and saved to disk');
     }
   }
 
@@ -98,7 +109,9 @@ export async function cli({ cwd, args }: Args) {
       }, '');
 
       if (indexContent.trim().length > 0) {
-        fs.writeFileSync(indexPath, indexContent);
+        if (!config.dryRun) {
+          fs.writeFileSync(indexPath, indexContent);
+        }
       }
     }
   }

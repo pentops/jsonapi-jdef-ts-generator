@@ -309,7 +309,7 @@ export class PluginBase {
     return this.files.find((file) =>
       typeof file.config.schemaFilter === 'function'
         ? file.config.schemaFilter(schema)
-        : file.config.schemaFilter ?? true,
+        : (file.config.schemaFilter ?? true),
     );
   }
 
@@ -317,7 +317,7 @@ export class PluginBase {
     return this.files.find((file) =>
       typeof file.config.clientFunctionFilter === 'function'
         ? file.config.clientFunctionFilter(clientFunction)
-        : file.config.clientFunctionFilter ?? true,
+        : (file.config.clientFunctionFilter ?? true),
     );
   }
 
@@ -337,19 +337,28 @@ export class PluginBase {
 
       const generatedFilePath = path.join(this.cwd, file.config.directory, file.config.fileName);
 
-      // Remove old file
-      fs.rmSync(generatedFilePath, { recursive: true, force: true });
+      if (!this.config?.dryRun) {
+        // Remove old file
+        fs.rmSync(generatedFilePath, { recursive: true, force: true });
+      }
 
       const writableFile = file.write();
 
       if (writableFile) {
-        // Write generated file
-        fs.mkdirSync(path.dirname(generatedFilePath), { recursive: true });
-        fs.writeFileSync(generatedFilePath, writableFile.content);
+        if (!this.config?.dryRun) {
+          // Write generated file
+          fs.mkdirSync(path.dirname(generatedFilePath), { recursive: true });
+          fs.writeFileSync(generatedFilePath, writableFile.content);
+
+          console.info(`[jdef-ts-generator]: plugin ${this.name} generated file ${generatedFilePath}`);
+        } else {
+          console.info(
+            `[jdef-ts-generator]: dry run enabled, file from plugin ${this.name} (${generatedFilePath}) not written. Contents:\n${writableFile.content}`,
+          );
+        }
+
         writableFile.writtenTo = generatedFilePath;
         output.writtenFiles.push(writableFile);
-
-        console.info(`[jdef-ts-generator]: plugin ${this.name} generated file ${generatedFilePath}`);
       }
     }
 

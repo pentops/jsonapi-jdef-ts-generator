@@ -74,6 +74,8 @@ interface ClientGenerationConfig {
 }
 
 export interface Config {
+  // If dryRun is set to true, the generator will not write any files to disk. Output will be logged. Default is false.
+  dryRun?: boolean;
   // generateIndexFiles set to false will prevent the generator from generating index files in the output directories. Default is true. If true, an index.ts file will be generated in the output directories that exports all generated types/functions. This behavior is disabled if one of the files is already an index file.
   generateIndexFiles?: boolean;
   typeOutput: TypeOutput;
@@ -87,6 +89,7 @@ export interface Config {
 }
 
 export const defaultConfig: Config = {
+  dryRun: false,
   generateIndexFiles: true,
   typeOutput: defaultTypeOutput,
   client: {

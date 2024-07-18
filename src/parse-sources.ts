@@ -276,11 +276,11 @@ export function parseJdefSource(source: JDEF): ParsedSource {
       services: [],
     };
 
-    const methodsByService: Record<string, ParsedMethod[]> = {};
+    const methodsByService: Map<string, ParsedMethod[]> = new Map();
 
     for (const method of pkg.methods) {
-      if (!methodsByService[method.grpcServiceName]) {
-        methodsByService[method.grpcServiceName] = [];
+      if (!methodsByService.has(method.grpcServiceName)) {
+        methodsByService.set(method.grpcServiceName, []);
       }
 
       function mapParameters(parameters: JDEFParameter[] | undefined) {
@@ -295,7 +295,7 @@ export function parseJdefSource(source: JDEF): ParsedSource {
         }, []);
       }
 
-      methodsByService[method.grpcServiceName].push({
+      methodsByService.get(method.grpcServiceName)?.push({
         name: method.grpcMethodName,
         fullGrpcName: method.fullGrpcName,
         httpMethod: method.httpMethod,
@@ -315,10 +315,10 @@ export function parseJdefSource(source: JDEF): ParsedSource {
     }
 
     for (const serviceName in methodsByService) {
-      if (methodsByService[serviceName].length) {
+      if (methodsByService.get(serviceName)?.length) {
         parsedPackage.services.push({
           name: serviceName,
-          methods: methodsByService[serviceName],
+          methods: methodsByService.get(serviceName)!,
         });
       }
     }
