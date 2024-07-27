@@ -25,18 +25,18 @@
   "dependencies": {
     "change-case": "^5.4.4",
     "find-up": "^7.0.0",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.4"
   },
   "devDependencies": {
     "@pentops/jsonapi-request": "^0.0.3",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/node": "^20.14.11",
+    "@types/node": "^20.14.12",
     "prettier": "^3.3.3",
-    "rollup": "^4.18.1",
+    "rollup": "^4.19.1",
     "ts-pattern": "^5.2.0",
     "tslib": "^2.6.3",
-    "vitest": "^2.0.3"
+    "vitest": "^2.0.4"
   },
   "peerDependencies": {
     "@pentops/jsonapi-request": "^0.0.3"
