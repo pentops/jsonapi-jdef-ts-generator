@@ -510,6 +510,7 @@ export function apiSchemaToSource(
                   entity: obj.entity?.entity || matchingStateEntity?.name,
                   part: obj.entity?.part || EntityPart.Unspecified,
                   primaryKeys: matchingStateEntity?.primaryKey,
+                  events: matchingStateEntity?.events,
                 } as ParsedEntity)
               : undefined;
 

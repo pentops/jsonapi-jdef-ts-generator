@@ -6,6 +6,7 @@ import {
   IntegerRules,
   NumberRules,
   ObjectRules,
+  StateEntityEvent,
   StringRules,
 } from './shared-types';
 
@@ -84,6 +85,7 @@ export interface ParsedObjectProperty<TSchemaWithRef extends ParsedSchemaWithRef
 
 export interface ParsedEntity extends EntityObjectSchema {
   primaryKeys?: string[];
+  events?: StateEntityEvent[];
 }
 
 export interface ParsedObject<TSchemaWithRef extends ParsedSchemaWithRef = ParsedSchemaWithRef> {

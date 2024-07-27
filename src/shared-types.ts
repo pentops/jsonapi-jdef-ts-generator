@@ -66,3 +66,9 @@ export interface EntityObjectSchema {
   entity: string;
   part: EntityPart;
 }
+
+export interface StateEntityEvent {
+  name: string;
+  fullName: string;
+  description?: string;
+}

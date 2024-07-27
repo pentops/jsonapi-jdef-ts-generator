@@ -6,6 +6,7 @@ import {
   IntegerRules,
   NumberRules,
   ObjectRules,
+  StateEntityEvent,
   StringRules,
 } from './shared-types';
 
@@ -240,12 +241,6 @@ export interface APIService {
   methods?: APIMethod[];
 }
 
-export interface APIStateEntityEvent {
-  name: string;
-  fullName: string;
-  description?: string;
-}
-
 export interface APIStateEntity {
   name: string;
   fullName: string;
@@ -254,7 +249,7 @@ export interface APIStateEntity {
   primaryKey: string[]; // array in the case of a composite key
   queryService?: APIService;
   commandServices?: APIService[];
-  events?: APIStateEntityEvent[];
+  events?: StateEntityEvent[];
 }
 
 export type APIRootSchema = APIObjectSchema | APIOneOfSchema | APIEnumSchema;
