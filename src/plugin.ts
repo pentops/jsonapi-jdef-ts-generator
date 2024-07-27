@@ -1,11 +1,12 @@
 import { Config } from './config';
 import ts, { type Node } from 'typescript';
-import { getImportPath } from './helpers';
+import { createImportDeclaration, getImportPath } from './helpers';
 import fs from 'fs';
 import path from 'path';
-import { GeneratedClientFunction, GeneratedSchema, Generator } from './generate';
+import { Generator } from './generate';
 import { P, match } from 'ts-pattern';
-import { ParsedSource } from './parsed-types';
+import type { ParsedSource } from './parsed-types';
+import type { GeneratedClientFunction, GeneratedSchema } from './generated-types';
 
 const { createPrinter, createSourceFile, factory, ScriptKind, ScriptTarget, ListFormat, NewLineKind } = ts;
 
@@ -92,37 +93,6 @@ export class PluginFile {
     }
   }
 
-  private createImportDeclaration(
-    importPath: string,
-    namedImports: string[] | undefined,
-    typeOnlyNamedImports?: string[],
-    defaultImport?: string,
-  ) {
-    const isFullyTypeOnly = Boolean(
-      namedImports?.length && namedImports.every((namedImport) => typeOnlyNamedImports?.includes(namedImport)),
-    );
-
-    return factory.createImportDeclaration(
-      undefined,
-      factory.createImportClause(
-        isFullyTypeOnly,
-        defaultImport ? factory.createIdentifier(defaultImport) : undefined,
-        namedImports?.length
-          ? factory.createNamedImports(
-              namedImports.map((namedImport) =>
-                factory.createImportSpecifier(
-                  Boolean(isFullyTypeOnly ? false : typeOnlyNamedImports?.includes(namedImport)),
-                  undefined,
-                  factory.createIdentifier(namedImport),
-                ),
-              ),
-            )
-          : undefined,
-      ),
-      factory.createStringLiteral(importPath, true),
-    );
-  }
-
   public addManualImport(
     importPath: string,
     namedImports: string[] | undefined,
@@ -177,7 +147,7 @@ export class PluginFile {
       }
 
       const typeImports = Array.from(this.typeImports);
-      importNodes.push(this.createImportDeclaration(importPath, typeImports, typeImports));
+      importNodes.push(createImportDeclaration(importPath, typeImports, typeImports));
     }
 
     if (this.clientImports.size) {
@@ -194,12 +164,12 @@ export class PluginFile {
         );
       }
 
-      importNodes.push(this.createImportDeclaration(importPath, Array.from(this.clientImports)));
+      importNodes.push(createImportDeclaration(importPath, Array.from(this.clientImports)));
     }
 
     if (this.manualImports.size) {
       for (const [importPath, { namedImports, typeOnlyNamedImports, defaultImport }] of this.manualImports) {
-        importNodes.push(this.createImportDeclaration(importPath, namedImports, typeOnlyNamedImports, defaultImport));
+        importNodes.push(createImportDeclaration(importPath, namedImports, typeOnlyNamedImports, defaultImport));
       }
     }
 

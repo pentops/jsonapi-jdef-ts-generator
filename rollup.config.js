@@ -1,6 +1,7 @@
 import typescript from '@rollup/plugin-typescript';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 
-const plugins = [typescript()];
+const plugins = [typescript(), nodeResolve({ resolveOnly: ['change-case', 'ts-pattern'] })];
 
 export default [
   {

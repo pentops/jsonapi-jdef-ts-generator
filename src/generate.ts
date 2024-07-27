@@ -1,19 +1,31 @@
-import ts, { type Expression, Identifier, type TypeElement, type TypeLiteralNode, type TypeNode } from 'typescript';
+import ts, { type Expression, Identifier, type TypeElement, type TypeNode } from 'typescript';
 import { match, P } from 'ts-pattern';
 import { pascalCase } from 'change-case';
-import { Config } from './config';
+import type { Config, GenericOverride, GenericOverrideMap, GenericOverrideWithValue } from './config';
 import { buildMergedRequestInit, buildSplitRequestInit, makeRequest } from '@pentops/jsonapi-request';
-import { getImportPath } from './helpers';
 import {
+  buildGenericReferenceNode,
+  createImportDeclaration,
+  getAllGenericsForChildren,
+  getImportPath,
+} from './helpers';
+import type {
   ParsedEnum,
-  ParsedMap,
   ParsedMethod,
   ParsedObject,
+  ParsedObjectProperty,
   ParsedOneOf,
+  ParsedRef,
   ParsedSchema,
   ParsedSchemaWithRef,
   ParsedSource,
 } from './parsed-types';
+import {
+  BuiltMethodSchema,
+  GeneratedClientFunction,
+  GeneratedSchema,
+  GeneratedSchemaWithNode,
+} from './generated-types';
 import { JSON_SCHEMA_REFERENCE_PREFIX } from './parse-sources';
 
 const {
@@ -29,6 +41,11 @@ const {
   SyntaxKind,
 } = ts;
 
+interface BaseTypeOutput {
+  node: TypeNode;
+  comment?: string;
+}
+
 const REQUEST_LIBRARY_NAME = '@pentops/jsonapi-request';
 const REQUEST_SUFFIX = 'Request';
 const RESPONSE_SUFFIX = 'Response';
@@ -43,91 +60,24 @@ function isCharacterSafeForName(char: string) {
 }
 
 function isKeyword(rawName: string) {
-  return [
-    'abstract',
-    'as',
-    'break',
-    'case',
-    'catch',
-    'class',
-    'const',
-    'continue',
-    'debugger',
-    'declare',
-    'default',
-    'delete',
-    'do',
-    'else',
-    'enum',
-    'export',
-    'extends',
-    'false',
-    'finally',
-    'for',
-    'from',
-    'function',
-    'get',
-    'if',
-    'implements',
-    'import',
-    'in',
-    'instanceof',
-    'interface',
-    'let',
-    'module',
-    'namespace',
-    'new',
-    'null',
-    'package',
-    'private',
-    'protected',
-    'public',
-    'readonly',
-    'require',
-    'global',
-    'return',
-    'set',
-    'static',
-    'super',
-    'switch',
-    'symbol',
-    'this',
-    'throw',
-    'true',
-    'try',
-    'type',
-    'typeof',
-    'undefined',
-    'var',
-    'void',
-    'while',
-    'with',
-    'yield',
-  ].includes(rawName);
-}
-
-export interface GeneratedSchema {
-  generatedName: string;
-  rawSchema: ParsedSchema;
-}
-
-export interface GeneratedClientFunction {
-  generatedName: string;
-  rawMethod: ParsedMethod;
-  requestBodyType?: GeneratedSchema;
-  responseBodyType?: GeneratedSchema;
-  pathParametersType?: GeneratedSchema;
-  queryParametersType?: GeneratedSchema;
+  try {
+    new Function('var ' + rawName + ';');
+    return false;
+  } catch {
+    return true;
+  }
 }
 
 export class Generator {
   public config: Config;
-  private oneOfsToGenerateTypesFor: Set<string> = new Set();
+  public builtMethodSchemas: Map<string, BuiltMethodSchema> = new Map();
   public generatedSchemas: Map<string, GeneratedSchema> = new Map();
   public generatedClientFunctions: GeneratedClientFunction[] = [];
+  public schemaGenerics: Map<string, GenericOverrideMap>;
 
   constructor(config: Config) {
     this.config = config;
+    this.schemaGenerics = config.types.genericOverrides || new Map();
   }
 
   private isKeyNameValid(rawName: string) {
@@ -146,8 +96,27 @@ export class Generator {
     return true;
   }
 
-  private getValidTypeName(schema: ParsedSchema, ...backupValues: string[]) {
-    let value = (schema as ParsedObject)?.object?.fullGrpcName || (schema as ParsedObject)?.object?.name || '';
+  private cleanRefName(ref: ParsedRef) {
+    return ref.$ref.replace(JSON_SCHEMA_REFERENCE_PREFIX, '');
+  }
+
+  private getSchemaName(schema: ParsedSchemaWithRef | undefined, schemas: Map<string, ParsedSchema>): string {
+    return match(schema)
+      .with({ object: P.not(P.nullish) }, (s) => s.object.name)
+      .with({ enum: P.not(P.nullish) }, (s) => s.enum.name)
+      .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.name)
+      .with({ $ref: P.not(P.nullish) }, (s) => this.getSchemaName(schemas.get(this.cleanRefName(s)), schemas))
+      .with({ array: P.not(P.nullish) }, (s) => this.getSchemaName(s.array.itemSchema, schemas))
+      .otherwise(() => '');
+  }
+
+  private getValidTypeName(schema: ParsedSchemaWithRef, ...backupValues: string[]) {
+    let value = match(schema)
+      .with({ object: P.not(P.nullish) }, (s) => s.object.fullGrpcName || s.object.name || '')
+      .with({ enum: P.not(P.nullish) }, (s) => s.enum.fullGrpcName || s.enum.name || '')
+      .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.fullGrpcName || s.oneOf.name || '')
+      .with({ $ref: P.not(P.nullish) }, (s) => this.cleanRefName(s))
+      .otherwise(() => '');
 
     while (!value && backupValues.length) {
       value = backupValues.shift() || '';
@@ -181,18 +150,117 @@ export class Generator {
     return this.isKeyNameValid(rawName) ? rawName : `'${rawName}'`;
   }
 
+  private getFullGRPCName(schema: ParsedSchemaWithRef | undefined): string {
+    return match(schema)
+      .with({ object: P.not(P.nullish) }, (s) => s.object.fullGrpcName)
+      .with({ enum: P.not(P.nullish) }, (s) => s.enum.fullGrpcName)
+      .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.fullGrpcName)
+      .with({ array: P.not(P.nullish) }, (s) => this.getFullGRPCName(s.array.itemSchema))
+      .with({ $ref: P.not(P.nullish) }, (s) => this.cleanRefName(s))
+      .otherwise(() => '');
+  }
+
+  private getObjectProperties(
+    schema: ParsedSchemaWithRef | undefined,
+    schemas: Map<string, ParsedSchema>,
+  ): Map<string, ParsedObjectProperty> | undefined {
+    return match(schema)
+      .with({ object: P.not(P.nullish) }, (s) => s.object.properties)
+      .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.properties)
+      .with({ $ref: P.not(P.nullish) }, (s) => this.getObjectProperties(schemas.get(this.cleanRefName(s)), schemas))
+      .with({ array: P.not(P.nullish) }, (s) => this.getObjectProperties(s.array.itemSchema, schemas))
+      .with({ map: P.not(P.nullish) }, (s) => {
+        const itemMap = this.getObjectProperties(s.map.itemSchema, schemas);
+        const keyMap = this.getObjectProperties(s.map.keySchema, schemas);
+
+        if (itemMap || keyMap) {
+          return new Map([...(itemMap || new Map()), ...(keyMap || new Map())]);
+        }
+
+        return undefined;
+      })
+      .otherwise(() => undefined);
+  }
+
+  private buildGenericNodeFromDefinition(definition: GenericOverride) {
+    return factory.createTypeParameterDeclaration(
+      undefined,
+      definition.name,
+      definition.extends
+        ? typeof definition.extends === 'object'
+          ? definition.extends
+          : buildGenericReferenceNode(definition.extends)
+        : undefined,
+      definition.default
+        ? typeof definition.default === 'object'
+          ? definition.default
+          : buildGenericReferenceNode(definition.default)
+        : undefined,
+    );
+  }
+
   private buildUnionEnum(schema: ParsedEnum) {
     return factory.createUnionTypeNode(
       schema.enum.options.map((value) => factory.createLiteralTypeNode(factory.createStringLiteral(value.name, true))),
     );
   }
 
-  private buildBaseType(schema: ParsedSchemaWithRef): { node: TypeNode; comment?: string } {
+  private buildRefNode(schema: ParsedRef, genericValues?: GenericOverrideWithValue[]): BaseTypeOutput {
+    const schemaGenerics = this.schemaGenerics.get(this.getFullGRPCName(schema));
+    const refGenerics = getAllGenericsForChildren(schemaGenerics);
+    const typeArguments: ts.TypeNode[] = [];
+
+    let allTypesArgumentsAreDefault = true;
+
+    const lastValueIndex = refGenerics.findLastIndex((generic) =>
+      genericValues?.find((g) => g.name === generic.name && g.value),
+    );
+
+    const iterateToIndex = lastValueIndex === -1 ? refGenerics.length - 1 : lastValueIndex;
+
+    for (let i = 0; i <= iterateToIndex; i += 1) {
+      const generic = refGenerics[i];
+      const matchingValue = genericValues?.find((g) => g.name === generic.name);
+
+      if (matchingValue?.value) {
+        typeArguments.push(matchingValue.value);
+
+        if (matchingValue?.value !== generic.default) {
+          allTypesArgumentsAreDefault = false;
+        }
+      } else if (matchingValue?.value === null) {
+        const nodeType = generic.default || generic.extends || 'any';
+        typeArguments.push(buildGenericReferenceNode(nodeType));
+
+        if (nodeType !== generic.default) {
+          allTypesArgumentsAreDefault = false;
+        }
+      } else {
+        typeArguments.push(factory.createTypeReferenceNode(generic.name));
+        allTypesArgumentsAreDefault = false;
+      }
+    }
+
+    return {
+      node: factory.createTypeReferenceNode(
+        this.getValidTypeName(schema),
+        allTypesArgumentsAreDefault ? undefined : typeArguments,
+      ),
+    };
+  }
+
+  private buildBaseType(schema: ParsedSchemaWithRef, genericValues?: GenericOverrideWithValue[]): BaseTypeOutput {
+    const fullGrpcName = this.getFullGRPCName(schema);
+
     return (
       match(schema)
-        .with({ boolean: P.not(P.nullish) }, () => ({ node: factory.createTypeReferenceNode('boolean') }))
+        .with({ boolean: P.not(P.nullish) }, () => ({ node: factory.createKeywordTypeNode(SyntaxKind.BooleanKeyword) }))
         // all nested enums are union types
         .with({ enum: P.not(P.nullish) }, (s) => ({ node: this.buildUnionEnum(s) }))
+        .with({ key: P.not(P.nullish) }, (s) => ({
+          node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+          comment: s.key.format ? `format: ${s.key.format}` : undefined,
+        }))
         .with({ string: P.not(P.nullish) }, (s) => ({
           node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
           comment:
@@ -206,59 +274,120 @@ export class Generator {
         .with({ integer: P.not(P.nullish) }, (s) => ({
           node: s.integer.format?.endsWith('64')
             ? factory.createKeywordTypeNode(SyntaxKind.StringKeyword)
-            : factory.createTypeReferenceNode('number'),
+            : factory.createKeywordTypeNode(SyntaxKind.NumberKeyword),
           comment: s.integer.format ? `format: ${s.integer.format}` : undefined,
         }))
         .with({ float: P.not(P.nullish) }, (s) => ({
           node: s.float.format?.endsWith('64')
             ? factory.createKeywordTypeNode(SyntaxKind.StringKeyword)
-            : factory.createTypeReferenceNode('number'),
+            : factory.createKeywordTypeNode(SyntaxKind.NumberKeyword),
           comment: s.float.format ? `format: ${s.float.format}` : undefined,
         }))
-        .with({ $ref: P.not(P.nullish) }, (s) => ({
-          node: factory.createTypeReferenceNode(
-            this.getValidTypeName({
-              object: { name: s.$ref.replace(JSON_SCHEMA_REFERENCE_PREFIX, '') },
-            } as ParsedSchema),
-          ),
+        .with({ $ref: P.not(P.nullish) }, (s) => this.buildRefNode(s, genericValues))
+        .with({ object: P.not(P.nullish) }, (s) => {
+          const schemaGenerics = this.schemaGenerics.get(fullGrpcName);
+
+          return { node: this.buildObject(s, schemaGenerics, genericValues) };
+        })
+        // TODO: generic handling in maps
+        .with({ map: P.not(P.nullish) }, (s) => ({
+          node: this.buildMapType(s.map.keySchema, s.map.itemSchema, genericValues),
         }))
-        .with({ object: P.not(P.nullish) }, (s) => ({ node: this.buildObject(s) }))
-        .with({ map: P.not(P.nullish) }, (s) => ({ node: this.buildMapType(s) }))
-        .with({ oneOf: P.not(P.nullish) }, (s) => ({ node: this.buildOneOf(s) }))
+        .with({ oneOf: P.not(P.nullish) }, (s) => {
+          const schemaGenerics = this.schemaGenerics.get(fullGrpcName);
+
+          return { node: this.buildOneOf(s, schemaGenerics, genericValues) };
+        })
         .with({ array: P.not(P.nullish) }, (s) => {
-          const { node, comment } = this.buildBaseType(s.array.itemSchema);
+          const { node, comment } = this.buildBaseType(
+            s.array.itemSchema,
+            genericValues,
+            // match(s.array.itemSchema)
+            //   .with({ $ref: P.not(P.nullish) }, () => genericValues)
+            //   .otherwise(() => undefined),
+          );
 
           return { node: factory.createArrayTypeNode(node), comment };
         })
-        .with({ any: P.not(P.nullish) }, () => ({ node: factory.createTypeReferenceNode('any') }))
-        .otherwise(() => ({ node: factory.createTypeReferenceNode('any') }))
+        .with({ bytes: P.not(P.nullish) }, () => ({
+          node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+          comment: 'bytes',
+        }))
+        .with({ any: P.not(P.nullish) }, () => ({ node: factory.createKeywordTypeNode(SyntaxKind.AnyKeyword) }))
+        .otherwise(() => {
+          console.log('Unknown schema type', schema);
+          return { node: factory.createKeywordTypeNode(SyntaxKind.AnyKeyword) };
+        })
     );
   }
 
-  private buildMapType(schema: ParsedMap) {
+  private buildMapType(
+    keySchema: ParsedSchemaWithRef,
+    itemSchema: ParsedSchemaWithRef,
+    genericValues?: GenericOverrideWithValue[],
+  ) {
     return factory.createTypeReferenceNode('Record', [
-      this.buildBaseType(schema.map.keySchema).node,
-      this.buildBaseType(schema.map.itemSchema).node,
+      this.buildBaseType(keySchema, genericValues).node,
+      this.buildBaseType(itemSchema, genericValues).node,
     ]);
   }
 
-  private buildOneOf(schema: ParsedOneOf) {
-    const members: (TypeElement | Identifier)[] = [];
-    const entries = Object.entries(schema.oneOf.properties || {});
+  private buildBaseObjectMember(
+    name: string,
+    property: ParsedObjectProperty,
+    parentGenerics: GenericOverrideMap | undefined,
+    genericValues: GenericOverrideWithValue[] | undefined,
+  ) {
+    const genericOverrideForProperty = parentGenerics?.get(name);
+    const { node, comment } = this.buildBaseType(
+      property.schema,
+      match(property.schema)
+        .with(
+          P.union(
+            { $ref: P.not(P.nullish) },
+            { array: { itemSchema: { $ref: P.not(P.nullish) } } },
+            { map: { itemSchema: { $ref: P.not(P.nullish) } } },
+            { map: { keySchema: { $ref: P.not(P.nullish) } } },
+          ),
+          () => genericValues,
+        )
+        .otherwise(() => undefined),
+    );
 
-    entries.forEach(([name, property], i) => {
-      const { node, comment } = this.buildBaseType(property.schema);
+    const validKeyName = this.getValidKeyName(name);
 
-      let member = factory.createPropertySignature(
-        undefined,
-        this.getValidKeyName(name),
-        property.required ? undefined : optionalFieldMarker,
-        node,
+    if (validKeyName !== name) {
+      console.warn(
+        `[jdef-ts-generator]: invalid JavaScript object key name for property ${name}, using ${validKeyName} instead. This may cause issues with generated code.`,
       );
+    }
 
-      if (comment) {
-        member = addSyntheticLeadingComment(member, SyntaxKind.SingleLineCommentTrivia, ` ${comment}`, true);
-      }
+    let nodeTypeGenericOverride: TypeNode | undefined;
+    // If the property has a generic override, and it's not a map, use the generic override as the type
+    if (genericOverrideForProperty && !(genericOverrideForProperty instanceof Map)) {
+      nodeTypeGenericOverride = factory.createTypeReferenceNode(genericOverrideForProperty.name);
+    }
+
+    let member = factory.createPropertySignature(
+      undefined,
+      validKeyName,
+      property.required ? undefined : optionalFieldMarker,
+      nodeTypeGenericOverride || node,
+    );
+
+    if (comment) {
+      member = addSyntheticLeadingComment(member, SyntaxKind.SingleLineCommentTrivia, ` ${comment}`, true);
+    }
+
+    return member;
+  }
+
+  private buildOneOf(schema: ParsedOneOf, generics?: GenericOverrideMap, genericValues?: GenericOverrideWithValue[]) {
+    const members: (TypeElement | Identifier)[] = [];
+
+    let i = 0;
+    for (const [name, property] of schema.oneOf.properties) {
+      let member = this.buildBaseObjectMember(name, property, generics, genericValues);
 
       // Add a comment before the first member for oneOfs
       if (i === 0) {
@@ -267,7 +396,7 @@ export class Generator {
 
       members.push(member);
 
-      if (i === entries.length - 1) {
+      if (i === schema.oneOf.properties.size - 1) {
         // A little hack to make a comment actually trail the last member of a oneOf
         members.push(
           addSyntheticTrailingComment(
@@ -278,243 +407,436 @@ export class Generator {
           ),
         );
       }
-    });
+
+      i += 1;
+    }
 
     return factory.createTypeLiteralNode(members as readonly TypeElement[]);
   }
 
-  private buildObject(schema: ParsedObject) {
+  private buildObject(schema: ParsedObject, generics?: GenericOverrideMap, genericValues?: GenericOverrideWithValue[]) {
     const members: (TypeElement | Identifier)[] = [];
-    const entries = Object.entries(schema.object.properties || {});
 
-    entries.forEach(([name, property]) => {
-      const { node, comment } = this.buildBaseType(property.schema);
-
-      let member = factory.createPropertySignature(
-        undefined,
-        this.getValidKeyName(name),
-        property.required ? undefined : optionalFieldMarker,
-        node,
-      );
-
-      if (comment) {
-        member = addSyntheticLeadingComment(member, SyntaxKind.SingleLineCommentTrivia, ` ${comment}`, true);
-      }
-
-      members.push(member);
-    });
+    for (const [name, property] of schema.object.properties) {
+      members.push(this.buildBaseObjectMember(name, property, generics, genericValues));
+    }
 
     return factory.createTypeLiteralNode(members as readonly TypeElement[]);
   }
 
-  private generateSchema(generatedName: string, schema: ParsedSchemaWithRef) {
+  private buildSchemaTypeParameterDeclarations(
+    generics: GenericOverrideWithValue[] | undefined,
+  ): ts.TypeParameterDeclaration[] | undefined {
+    if (!generics?.length) {
+      return undefined;
+    }
+
+    const declarations: ts.TypeParameterDeclaration[] = [];
+
+    for (let i = generics.length - 1; i >= 0; i -= 1) {
+      if (generics[i].value === undefined) {
+        declarations.unshift(this.buildGenericNodeFromDefinition(generics[i]));
+      }
+    }
+
+    return declarations;
+  }
+
+  private generateEnum(name: string, schema: ParsedEnum, enumType: 'enum' | 'union') {
+    switch (enumType) {
+      case 'enum':
+        return factory.createEnumDeclaration(
+          [factory.createModifier(SyntaxKind.ExportKeyword)],
+          factory.createIdentifier(name),
+          schema.enum.options.map((value) =>
+            factory.createEnumMember(
+              factory.createIdentifier(this.getValidKeyName(pascalCase(value.name))),
+              factory.createStringLiteral(value.name, true),
+            ),
+          ),
+        );
+      case 'union': {
+        return factory.createTypeAliasDeclaration(
+          [factory.createModifier(SyntaxKind.ExportKeyword)],
+          factory.createIdentifier(name),
+          [],
+          this.buildUnionEnum(schema),
+        );
+      }
+    }
+  }
+
+  private generateOneOfUnionType(generatedName: string, oneOfGeneratedName: string) {
+    return factory.createTypeAliasDeclaration(
+      [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+      generatedName,
+      undefined,
+      ts.factory.createTypeOperatorNode(
+        ts.SyntaxKind.KeyOfKeyword,
+        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Exclude'), [
+          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(oneOfGeneratedName)),
+          factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
+        ]),
+      ),
+    );
+  }
+
+  private generateSchema(
+    generatedName: string,
+    schema: ParsedSchema,
+    parentMethod?: BuiltMethodSchema,
+  ): GeneratedSchemaWithNode[] | undefined {
     if (!generatedName) {
       return;
     }
 
-    return match(schema)
-      .with({ object: P.not(P.nullish) }, (s) =>
-        factory.createInterfaceDeclaration(
-          [factory.createModifier(SyntaxKind.ExportKeyword)],
-          factory.createIdentifier(generatedName),
-          [],
-          [],
-          (this.buildObject(s) as TypeLiteralNode)?.members,
-        ),
-      )
-      .with({ map: P.not(P.nullish) }, (s) => this.buildMapType(s))
-      .with({ oneOf: P.not(P.nullish) }, (s) => {
-        this.oneOfsToGenerateTypesFor.add(generatedName);
+    const fullGrpcName = this.getFullGRPCName(schema);
 
-        return factory.createInterfaceDeclaration(
-          [factory.createModifier(SyntaxKind.ExportKeyword)],
-          factory.createIdentifier(generatedName),
-          [],
-          [],
-          this.buildOneOf(s)?.members,
-        );
-      })
-      .with({ enum: P.not(P.nullish) }, (s) =>
-        match(this.config.types.enumType)
-          .with('union', () =>
-            factory.createTypeAliasDeclaration(
+    const schemaGenerics = this.schemaGenerics.get(fullGrpcName);
+    const allGenericsWithValues: GenericOverrideWithValue[] | undefined = this.config.types.genericValueDeterminer
+      ? this.config.types.genericValueDeterminer(
+          schema as ParsedObject | ParsedOneOf,
+          (s) => this.schemaGenerics.get(this.getFullGRPCName(s)),
+          parentMethod,
+        )
+      : getAllGenericsForChildren(schemaGenerics);
+
+    return match(schema)
+      .returnType<GeneratedSchemaWithNode[] | undefined>()
+      .with({ object: P.not(P.nullish) }, (s) => {
+        return [
+          {
+            generatedName,
+            rawSchema: s,
+            fullGrpcName,
+            node: factory.createInterfaceDeclaration(
               [factory.createModifier(SyntaxKind.ExportKeyword)],
               factory.createIdentifier(generatedName),
+              this.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
               [],
-              this.buildUnionEnum(s),
+              this.buildObject(s, schemaGenerics, allGenericsWithValues)?.members,
             ),
-          )
-          .with('enum', () =>
-            factory.createEnumDeclaration(
+          },
+        ];
+      })
+      .with({ oneOf: P.not(P.nullish) }, (s) => {
+        const oneOfUnionGeneratedName = `${generatedName}OneOfValue`;
+
+        return [
+          {
+            generatedName,
+            rawSchema: s,
+            fullGrpcName,
+            node: factory.createInterfaceDeclaration(
               [factory.createModifier(SyntaxKind.ExportKeyword)],
               factory.createIdentifier(generatedName),
-              s.enum.options.map((value) =>
-                factory.createEnumMember(
-                  factory.createIdentifier(this.getValidKeyName(pascalCase(value.name))),
-                  factory.createStringLiteral(value.name, true),
-                ),
-              ),
+              this.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
+              [],
+              this.buildOneOf(s, schemaGenerics, allGenericsWithValues)?.members,
             ),
-          )
-          .exhaustive(),
-      )
-      .otherwise(() => this.buildBaseType(schema).node);
+          },
+          {
+            generatedName: oneOfUnionGeneratedName,
+            node: this.generateOneOfUnionType(oneOfUnionGeneratedName, generatedName),
+          },
+        ];
+      })
+      .with({ enum: P.not(P.nullish) }, (s) => [
+        {
+          generatedName,
+          fullGrpcName,
+          rawSchema: s,
+          node: this.generateEnum(generatedName, s, this.config.types.enumType),
+        },
+      ])
+      .otherwise(() => {
+        const builtNode = this.buildBaseType(schema).node;
+
+        if (!builtNode) {
+          return undefined;
+        }
+
+        return [
+          {
+            generatedName,
+            fullGrpcName,
+            rawSchema: schema,
+            node: builtNode,
+          },
+        ];
+      });
   }
 
-  private getMethodNames(method: ParsedMethod) {
-    const responseBodyName = this.getValidTypeName(
-      method.responseBody as ParsedSchema,
-      `${method.fullGrpcName.replaceAll('/', '')}${RESPONSE_SUFFIX}`,
-      `${method.name}${RESPONSE_SUFFIX}`,
-    );
+  private prepareMethodTypes(method: ParsedMethod, schemas: Map<string, ParsedSchema>) {
+    const methodGrpcNameBase = method.fullGrpcName.replaceAll('/', '');
+
+    const responseBodyName =
+      this.getSchemaName(method.responseBody as ParsedSchema, schemas) || `${method.name}${RESPONSE_SUFFIX}`;
 
     const requestBaseFirstPriorityBackup = responseBodyName?.endsWith(RESPONSE_SUFFIX)
       ? responseBodyName?.replace(RESPONSE_SUFFIX, REQUEST_SUFFIX)
-      : `${method.fullGrpcName.replaceAll('/', '')}${REQUEST_SUFFIX}`;
-    const requestBodyBaseName = this.getValidTypeName(
+      : '';
+    const requestBaseName = this.getValidTypeName(
       method.requestBody as ParsedSchema,
       requestBaseFirstPriorityBackup,
       `${method.name}${REQUEST_SUFFIX}`,
     );
 
-    return match(this.config.types.requestType)
-      .with('merged', () => ({
-        responseBody: method.responseBody ? responseBodyName : '',
-        requestBody: method.requestBody || method.queryParameters || method.pathParameters ? requestBodyBaseName : '',
-        pathParameters: '',
-        queryParameters: '',
-      }))
-      .with('split', () => ({
-        responseBody: method.responseBody ? responseBodyName : '',
-        requestBody: method.requestBody ? requestBodyBaseName : '',
-        pathParameters: method.pathParameters?.length ? `${requestBodyBaseName}${PATH_PARAMETERS_SUFFIX}` : '',
-        queryParameters: method.queryParameters?.length ? `${requestBodyBaseName}${QUERY_PARAMETERS_SUFFIX}` : '',
-      }))
-      .exhaustive();
-  }
+    const responseBody = match(method.responseBody)
+      .returnType<ParsedObject | undefined>()
+      .with({ object: P.not(P.nullish) }, (s) => {
+        const defaultName = responseBodyName || s.object.name;
 
-  private buildRequestTypes(method: ParsedMethod): ts.Node[] {
-    const nodes: ts.Node[] = [];
-    const names = this.getMethodNames(method);
+        return {
+          ...s,
+          object: {
+            ...s.object,
+            fullGrpcName: s.object.fullGrpcName || `${methodGrpcNameBase}${defaultName ? `.${defaultName}` : ''}`,
+            name: defaultName,
+          },
+        };
+      })
+      .with({ $ref: P.not(P.nullish) }, (s) =>
+        match(schemas.get(this.cleanRefName(s)))
+          .with({ object: P.not(P.nullish) }, (so) => {
+            const defaultName = responseBodyName || so.object.name;
+
+            return {
+              ...so,
+              object: {
+                ...so.object,
+                fullGrpcName: so.object.fullGrpcName || `${methodGrpcNameBase}${defaultName ? `.${defaultName}` : ''}`,
+                name: defaultName,
+              },
+            };
+          })
+          .otherwise(() => undefined),
+      )
+      .otherwise(() => undefined);
+
+    const builtMethod =
+      this.builtMethodSchemas.get(method.fullGrpcName) || ({ rawMethod: method } as BuiltMethodSchema);
+
+    if (responseBody) {
+      builtMethod.responseBodySchema = { generatedName: this.getValidTypeName(responseBody), rawSchema: responseBody };
+    }
+
+    const requestBody = match(method.requestBody)
+      .returnType<ParsedObject | undefined>()
+      .with({ object: P.not(P.nullish) }, (s) => s)
+      .with({ $ref: P.not(P.nullish) }, (s) =>
+        match(schemas.get(this.cleanRefName(s)))
+          .with({ object: P.not(P.nullish) }, (so) => so)
+          .otherwise(() => undefined),
+      )
+      .otherwise(() => undefined);
 
     switch (this.config.types.requestType) {
       case 'merged': {
+        const defaultName = requestBaseName || REQUEST_SUFFIX;
+
         const mergedSchema: ParsedObject = {
           object: {
-            fullGrpcName: '',
-            name: '',
+            name: method.requestBody || method.queryParameters || method.pathParameters ? defaultName : '',
             properties: new Map(),
             rules: {},
-            ...(method.requestBody as ParsedObject | undefined)?.object,
+            ...requestBody,
+            fullGrpcName: requestBody?.object?.fullGrpcName || `${methodGrpcNameBase}.${defaultName}` || '',
           },
         };
 
         if (method.pathParameters?.length) {
-          mergedSchema.object.properties = {
-            ...mergedSchema.object.properties,
-            ...method.pathParameters.reduce(
-              (acc, curr) => ({
-                ...acc,
-                [curr.name]: curr,
-              }),
-              {},
-            ),
-          };
+          method.pathParameters.forEach((param) => {
+            mergedSchema.object.properties.set(param.name, param);
+          });
         }
 
         if (method.queryParameters?.length) {
-          mergedSchema.object.properties = {
-            ...mergedSchema.object.properties,
-            ...method.queryParameters.reduce(
-              (acc, curr) => ({
-                ...acc,
-                [curr.name]: curr,
-              }),
-              {},
-            ),
-          };
+          method.queryParameters.forEach((param) => {
+            mergedSchema.object.properties.set(param.name, param);
+          });
         }
 
-        const mergedType = this.generateSchema(names.requestBody, mergedSchema);
-
-        if (mergedType) {
-          this.generatedSchemas.set(names.requestBody, { generatedName: names.requestBody, rawSchema: mergedSchema });
-
-          nodes.push(mergedType);
+        if (mergedSchema.object.properties.size) {
+          builtMethod.mergedRequestSchema = {
+            generatedName: this.getValidTypeName(mergedSchema, requestBaseName),
+            rawSchema: mergedSchema,
+          };
         }
 
         break;
       }
       case 'split': {
-        if (method.requestBody) {
-          const requestBodyType = this.generateSchema(names.requestBody, method.requestBody);
-
-          if (requestBodyType) {
-            this.generatedSchemas.set(names.requestBody, {
-              generatedName: names.requestBody,
-              rawSchema: method.requestBody as ParsedObject,
-            });
-
-            nodes.push(requestBodyType);
-          }
+        if (requestBody?.object?.properties?.size) {
+          builtMethod.requestBodySchema = {
+            generatedName: this.getValidTypeName(requestBody, requestBaseName),
+            rawSchema: requestBody,
+          };
         }
 
         if (method.pathParameters?.length) {
-          const schema: ParsedObject = {
+          const baseTypeName = `${requestBaseName}${PATH_PARAMETERS_SUFFIX}`;
+
+          const pathParameterSchema: ParsedObject = {
             object: {
-              fullGrpcName: '',
-              name: names.pathParameters,
+              fullGrpcName: `${methodGrpcNameBase}.${baseTypeName}`,
+              name: baseTypeName,
               rules: {},
               properties: method.pathParameters.reduce((acc, curr) => {
                 acc.set(curr.name, curr);
-
                 return acc;
               }, new Map()),
             },
           };
 
-          const pathParametersType = this.generateSchema(names.pathParameters, schema);
-
-          if (pathParametersType) {
-            this.generatedSchemas.set(names.pathParameters, {
-              generatedName: names.pathParameters,
-              rawSchema: schema,
-            });
-
-            nodes.push(pathParametersType);
-          }
+          builtMethod.pathParametersSchema = {
+            generatedName: this.getValidTypeName(pathParameterSchema, baseTypeName),
+            rawSchema: pathParameterSchema,
+          };
         }
 
         if (method.queryParameters?.length) {
-          const schema: ParsedObject = {
+          const baseTypeName = `${requestBaseName}${QUERY_PARAMETERS_SUFFIX}`;
+          const queryParameterSchema: ParsedObject = {
             object: {
-              fullGrpcName: '',
-              name: names.queryParameters,
+              fullGrpcName: `${methodGrpcNameBase}.${baseTypeName}`,
+              name: baseTypeName,
               rules: {},
               properties: method.queryParameters.reduce((acc, curr) => {
                 acc.set(curr.name, curr);
-
                 return acc;
               }, new Map()),
             },
           };
 
-          const queryParametersType = this.generateSchema(
-            this.getValidTypeName(schema as ParsedSchema, names.queryParameters),
-            schema,
-          );
-
-          if (queryParametersType) {
-            this.generatedSchemas.set(names.queryParameters, {
-              generatedName: names.queryParameters,
-              rawSchema: schema,
-            });
-
-            nodes.push(queryParametersType);
-          }
+          builtMethod.queryParametersSchema = {
+            generatedName: this.getSchemaName(queryParameterSchema, schemas),
+            rawSchema: queryParameterSchema,
+          };
         }
 
         break;
+      }
+    }
+
+    if (method.listOptions) {
+      builtMethod.list = new Map();
+
+      const createGenericEnum = (name: string, values: string[]): GeneratedSchema<ParsedEnum> => {
+        const mockGrpcName = `${method.fullGrpcName.replaceAll('/', '')}${name}Fields`;
+        const schema: ParsedEnum = {
+          enum: {
+            fullGrpcName: mockGrpcName,
+            name: this.config.types.nameWriter(mockGrpcName),
+            prefix: '',
+            options: values.map((value) => ({ name: value })),
+          },
+        };
+
+        return { generatedName: schema.enum.name, rawSchema: schema };
+      };
+
+      if (method.listOptions.filterableFields?.length) {
+        builtMethod.list.set(
+          'filterableFields',
+          createGenericEnum(
+            'Filterable',
+            method.listOptions.filterableFields.map((field) => field.name),
+          ),
+        );
+      }
+
+      if (method.listOptions.searchableFields?.length) {
+        builtMethod.list.set('searchableFields', createGenericEnum('Searchable', method.listOptions.searchableFields));
+      }
+
+      if (method.listOptions.sortableFields?.length) {
+        builtMethod.list.set(
+          'sortableFields',
+          createGenericEnum(
+            'Sortable',
+            method.listOptions.sortableFields.map((field) => field.name),
+          ),
+        );
+      }
+    }
+
+    this.builtMethodSchemas.set(method.fullGrpcName, builtMethod);
+
+    return builtMethod;
+  }
+
+  private buildType(
+    schema: ParsedSchema,
+    schemas: Map<string, ParsedSchema>,
+    parentMethod?: BuiltMethodSchema,
+  ): ts.Node[] | undefined {
+    const nodes: ts.Node[] = [];
+
+    if (schema) {
+      const schemaName = this.getSchemaName(schema, schemas);
+      const typeName = this.getValidTypeName(schema, schemaName);
+      const typeNodes = this.generateSchema(typeName, schema, parentMethod);
+
+      typeNodes?.forEach((node) => {
+        this.generatedSchemas.set(node.fullGrpcName || node.generatedName || schemaName, {
+          generatedName: node.generatedName || schemaName,
+          rawSchema: node.rawSchema || schema,
+        });
+
+        nodes.push(node.node);
+      });
+    }
+
+    return nodes;
+  }
+
+  private buildMethodTypes(builtMethod: BuiltMethodSchema, schemas: Map<string, ParsedSchema>): ts.Node[] {
+    const nodes: ts.Node[] = [];
+
+    if (!builtMethod) {
+      return nodes;
+    }
+
+    // Add listify generic values
+    if (builtMethod.list) {
+      for (const [_, listSchema] of builtMethod.list) {
+        const typeNodes = this.buildType(listSchema.rawSchema, schemas, builtMethod);
+
+        if (typeNodes) {
+          nodes.push(...typeNodes);
+        }
+      }
+    }
+
+    const methodSchemas = [
+      builtMethod.responseBodySchema?.rawSchema,
+      builtMethod.mergedRequestSchema?.rawSchema,
+      builtMethod.requestBodySchema?.rawSchema,
+      builtMethod.pathParametersSchema?.rawSchema,
+      builtMethod.queryParametersSchema?.rawSchema,
+    ].filter(Boolean) as ParsedSchema[];
+
+    for (const methodSchema of methodSchemas) {
+      const typeNodes = this.buildType(methodSchema, schemas, builtMethod);
+
+      if (typeNodes) {
+        nodes.push(...typeNodes);
+      }
+    }
+
+    return nodes;
+  }
+
+  private prepareSchemaTypes(source: ParsedSource): ts.Node[] {
+    const nodes: ts.Node[] = [];
+    for (const [_, schema] of source.schemas) {
+      this.populateGenerics(schema, source.schemas);
+
+      const typeNodes = this.buildType(schema, source.schemas);
+
+      if (typeNodes) {
+        nodes.push(...typeNodes);
       }
     }
 
@@ -522,67 +844,23 @@ export class Generator {
   }
 
   private generateTypesFile(source: ParsedSource) {
+    const schemaNodes = this.prepareSchemaTypes(source);
+    this.prepareMethods(source);
+
     const nodeList: ts.Node[] = this.config.typeOutput.topOfFileComment
       ? [factory.createJSDocComment(this.config.typeOutput.topOfFileComment), factory.createIdentifier('\n')]
       : [];
 
-    // Generate interfaces from schemas
-    for (const [schemaName, schema] of Object.entries(source.schemas)) {
-      const typeName = this.getValidTypeName(schema, schemaName);
-      const type = this.generateSchema(typeName, schema);
-
-      if (type) {
-        this.generatedSchemas.set(schemaName, { generatedName: typeName, rawSchema: schema });
-        nodeList.push(type, factory.createIdentifier('\n'));
-      }
+    for (const schemaNode of schemaNodes) {
+      nodeList.push(schemaNode, factory.createIdentifier('\n'));
     }
 
-    // Create oneOf union types from oneOf type schemas
-    this.oneOfsToGenerateTypesFor.forEach((oneOfSchema) => {
-      const oneOfType = factory.createTypeAliasDeclaration(
-        [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
-        `${oneOfSchema}OneOfValue`,
-        undefined,
-        ts.factory.createTypeOperatorNode(
-          ts.SyntaxKind.KeyOfKeyword,
-          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Exclude'), [
-            ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(oneOfSchema)),
-            factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
-          ]),
-        ),
-      );
-
-      nodeList.push(oneOfType, factory.createIdentifier('\n'));
-    });
-
     // Generate request and response types for each method
-    for (const pkg of source.packages) {
-      for (const service of pkg.services) {
-        for (const method of service.methods) {
-          const names = this.getMethodNames(method);
+    for (const [_, method] of this.builtMethodSchemas) {
+      const methodNodes = this.buildMethodTypes(method, source.schemas);
 
-          // Add the response type
-          if (method.responseBody) {
-            const typeName = this.getValidTypeName(method.responseBody as ParsedSchema, names.responseBody);
-            const responseNode = this.generateSchema(typeName, method.responseBody);
-
-            if (responseNode) {
-              this.generatedSchemas.set(names.responseBody, {
-                generatedName: typeName,
-                rawSchema: method.responseBody as ParsedSchema,
-              });
-
-              nodeList.push(responseNode, factory.createIdentifier('\n'));
-            }
-          }
-
-          // Add the request type(s) (depending on merged or split configuration)
-          const requestNodes = this.buildRequestTypes(method);
-
-          for (const node of requestNodes) {
-            nodeList.push(node, factory.createIdentifier('\n'));
-          }
-        }
+      for (const node of methodNodes) {
+        nodeList.push(node, factory.createIdentifier('\n'));
       }
     }
 
@@ -595,7 +873,7 @@ export class Generator {
     );
   }
 
-  private generateClient(source: ParsedSource) {
+  private generateClient() {
     if (!this.config.clientOutput) {
       return;
     }
@@ -620,31 +898,21 @@ export class Generator {
 
     const imports = new Set<string>();
 
-    for (const pkg of source.packages) {
-      for (const service of pkg.services) {
-        for (const method of service.methods) {
-          const names = this.getMethodNames(method);
-
-          for (const name of Object.values(names)) {
-            if (name) {
-              imports.add(name);
-            }
-          }
+    for (const [_, method] of this.builtMethodSchemas) {
+      [
+        method.responseBodySchema,
+        method.mergedRequestSchema,
+        method.requestBodySchema,
+        method.pathParametersSchema,
+        method.queryParametersSchema,
+      ].forEach((schema) => {
+        if (schema?.generatedName) {
+          imports.add(schema.generatedName);
         }
-      }
+      });
     }
 
-    const nodeList: ts.Node[] = [
-      factory.createImportDeclaration(
-        undefined,
-        factory.createImportClause(
-          false,
-          factory.createIdentifier(`{ ${requestInitFn}, ${makeRequestFn} }`),
-          undefined,
-        ),
-        factory.createStringLiteral(REQUEST_LIBRARY_NAME, true),
-      ),
-    ];
+    const nodeList: ts.Node[] = [createImportDeclaration(REQUEST_LIBRARY_NAME, [requestInitFn, makeRequestFn])];
 
     if (this.config.clientOutput.topOfFileComment) {
       nodeList.unshift(
@@ -654,204 +922,192 @@ export class Generator {
     }
 
     if (imports.size) {
-      nodeList.push(
-        factory.createImportDeclaration(
-          undefined,
-          factory.createImportClause(
-            true,
-            undefined,
-            factory.createNamedImports(
-              Array.from(imports).map((name) =>
-                factory.createImportSpecifier(false, undefined, factory.createIdentifier(name)),
-              ),
-            ),
-          ),
-          factory.createStringLiteral(typeImportPath, true),
-        ),
-      );
+      const importsAsArray = Array.from(imports);
+
+      nodeList.push(createImportDeclaration(typeImportPath, importsAsArray, importsAsArray));
     }
 
     // Add a newline after the imports
     nodeList.push(factory.createIdentifier('\n'));
 
-    for (const pkg of source.packages) {
-      for (const service of pkg.services) {
-        for (const method of service.methods) {
-          const names = this.getMethodNames(method);
+    for (const [_, method] of this.builtMethodSchemas) {
+      const makeRequestFnTypeNames = [
+        method.responseBodySchema?.generatedName,
+        method.mergedRequestSchema?.generatedName || method.requestBodySchema?.generatedName,
+      ];
 
-          const makeRequestFnTypeNames = [names.responseBody, names.requestBody];
-
-          for (let i = makeRequestFnTypeNames.length - 1; i >= 0; i--) {
-            if (!makeRequestFnTypeNames[i]) {
-              makeRequestFnTypeNames.splice(i, 1);
-            } else {
-              break;
-            }
-          }
-
-          const makeRequestFnArguments = [
-            factory.createParameterDeclaration(
-              undefined,
-              undefined,
-              factory.createIdentifier('baseUrl'),
-              undefined,
-              factory.createUnionTypeNode([
-                factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
-                factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
-              ]),
-            ),
-          ];
-
-          const requestInitFnArguments: Expression[] = [
-            factory.createStringLiteral(method.httpMethod.toUpperCase(), true),
-            factory.createLogicalOr(factory.createIdentifier('baseUrl'), factory.createStringLiteral('', true)),
-            factory.createStringLiteral(method.httpPath, true),
-          ];
-
-          switch (this.config.types.requestType) {
-            case 'merged': {
-              const requestParamName = 'request';
-
-              if (names.requestBody) {
-                makeRequestFnArguments.push(
-                  factory.createParameterDeclaration(
-                    undefined,
-                    undefined,
-                    factory.createIdentifier(requestParamName),
-                    optionalFieldMarker,
-                    factory.createTypeReferenceNode(names.requestBody),
-                  ),
-                );
-              }
-
-              requestInitFnArguments.push(
-                names.requestBody ? factory.createIdentifier(requestParamName) : factory.createIdentifier('undefined'),
-              );
-
-              break;
-            }
-            case 'split': {
-              const pathParametersParamName = 'pathParameters';
-              const queryParametersParamName = 'queryParameters';
-              const requestBodyParamName = 'requestBody';
-
-              if (names.pathParameters) {
-                makeRequestFnArguments.push(
-                  factory.createParameterDeclaration(
-                    undefined,
-                    undefined,
-                    factory.createIdentifier(pathParametersParamName),
-                    optionalFieldMarker,
-                    factory.createTypeReferenceNode(names.pathParameters),
-                  ),
-                );
-              }
-
-              requestInitFnArguments.push(
-                names.pathParameters
-                  ? factory.createIdentifier(pathParametersParamName)
-                  : factory.createIdentifier('undefined'),
-              );
-
-              if (names.queryParameters) {
-                makeRequestFnArguments.push(
-                  factory.createParameterDeclaration(
-                    undefined,
-                    undefined,
-                    factory.createIdentifier(queryParametersParamName),
-                    optionalFieldMarker,
-                    factory.createTypeReferenceNode(names.queryParameters),
-                  ),
-                );
-              }
-
-              requestInitFnArguments.push(
-                names.queryParameters
-                  ? factory.createIdentifier(queryParametersParamName)
-                  : factory.createIdentifier('undefined'),
-              );
-
-              if (names.requestBody) {
-                makeRequestFnArguments.push(
-                  factory.createParameterDeclaration(
-                    undefined,
-                    undefined,
-                    factory.createIdentifier(requestBodyParamName),
-                    optionalFieldMarker,
-                    factory.createTypeReferenceNode(names.requestBody),
-                  ),
-                );
-              }
-
-              requestInitFnArguments.push(
-                names.requestBody
-                  ? factory.createIdentifier(requestBodyParamName)
-                  : factory.createIdentifier('undefined'),
-              );
-
-              break;
-            }
-          }
-
-          makeRequestFnArguments.push(
-            factory.createParameterDeclaration(
-              undefined,
-              undefined,
-              factory.createIdentifier(REQUEST_INIT_PARAMETER_NAME),
-              optionalFieldMarker,
-              factory.createTypeReferenceNode('RequestInit'),
-            ),
-          );
-
-          requestInitFnArguments.push(factory.createIdentifier(REQUEST_INIT_PARAMETER_NAME));
-
-          const methodName = this.config.client.methodNameWriter(method);
-
-          nodeList.push(
-            factory.createFunctionDeclaration(
-              [factory.createModifier(SyntaxKind.ExportKeyword), factory.createModifier(SyntaxKind.AsyncKeyword)],
-              undefined,
-              factory.createIdentifier(methodName),
-              undefined,
-              makeRequestFnArguments,
-              factory.createTypeReferenceNode(
-                names.responseBody ? `Promise<${names.responseBody} | undefined>` : 'Promise<undefined>',
-              ),
-              factory.createBlock([
-                factory.createReturnStatement(
-                  factory.createCallExpression(
-                    factory.createIdentifier(makeRequestFn),
-                    makeRequestFnTypeNames.map((name) =>
-                      name
-                        ? factory.createTypeReferenceNode(name)
-                        : factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
-                    ),
-                    [
-                      factory.createSpreadElement(
-                        factory.createCallExpression(
-                          factory.createIdentifier(requestInitFn),
-                          undefined,
-                          requestInitFnArguments,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ]),
-            ),
-            factory.createIdentifier('\n'),
-          );
-
-          this.generatedClientFunctions.push({
-            generatedName: methodName,
-            rawMethod: method,
-            requestBodyType: names.requestBody ? this.generatedSchemas.get(names.requestBody) : undefined,
-            responseBodyType: names.responseBody ? this.generatedSchemas.get(names.responseBody) : undefined,
-            pathParametersType: names.pathParameters ? this.generatedSchemas.get(names.pathParameters) : undefined,
-            queryParametersType: names.queryParameters ? this.generatedSchemas.get(names.queryParameters) : undefined,
-          });
+      for (let i = makeRequestFnTypeNames.length - 1; i >= 0; i--) {
+        if (!makeRequestFnTypeNames[i]) {
+          makeRequestFnTypeNames.splice(i, 1);
+        } else {
+          break;
         }
       }
+
+      const makeRequestFnArguments = [
+        factory.createParameterDeclaration(
+          undefined,
+          undefined,
+          factory.createIdentifier('baseUrl'),
+          undefined,
+          factory.createUnionTypeNode([
+            factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+            factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
+          ]),
+        ),
+      ];
+
+      const requestInitFnArguments: Expression[] = [
+        factory.createStringLiteral(method.rawMethod.httpMethod.toUpperCase(), true),
+        factory.createLogicalOr(factory.createIdentifier('baseUrl'), factory.createStringLiteral('', true)),
+        factory.createStringLiteral(method.rawMethod.httpPath, true),
+      ];
+
+      switch (this.config.types.requestType) {
+        case 'merged': {
+          const requestParamName = 'request';
+
+          if (method.mergedRequestSchema?.generatedName) {
+            makeRequestFnArguments.push(
+              factory.createParameterDeclaration(
+                undefined,
+                undefined,
+                factory.createIdentifier(requestParamName),
+                optionalFieldMarker,
+                factory.createTypeReferenceNode(method.mergedRequestSchema.generatedName),
+              ),
+            );
+          }
+
+          requestInitFnArguments.push(
+            method.mergedRequestSchema?.generatedName
+              ? factory.createIdentifier(requestParamName)
+              : factory.createIdentifier('undefined'),
+          );
+
+          break;
+        }
+        case 'split': {
+          const pathParametersParamName = 'pathParameters';
+          const queryParametersParamName = 'queryParameters';
+          const requestBodyParamName = 'requestBody';
+
+          if (method.pathParametersSchema?.generatedName) {
+            makeRequestFnArguments.push(
+              factory.createParameterDeclaration(
+                undefined,
+                undefined,
+                factory.createIdentifier(pathParametersParamName),
+                optionalFieldMarker,
+                factory.createTypeReferenceNode(method.pathParametersSchema.generatedName),
+              ),
+            );
+          }
+
+          requestInitFnArguments.push(
+            method.pathParametersSchema?.generatedName
+              ? factory.createIdentifier(pathParametersParamName)
+              : factory.createIdentifier('undefined'),
+          );
+
+          if (method.queryParametersSchema?.generatedName) {
+            makeRequestFnArguments.push(
+              factory.createParameterDeclaration(
+                undefined,
+                undefined,
+                factory.createIdentifier(queryParametersParamName),
+                optionalFieldMarker,
+                factory.createTypeReferenceNode(method.queryParametersSchema.generatedName),
+              ),
+            );
+          }
+
+          requestInitFnArguments.push(
+            method.queryParametersSchema?.generatedName
+              ? factory.createIdentifier(queryParametersParamName)
+              : factory.createIdentifier('undefined'),
+          );
+
+          if (method.requestBodySchema?.generatedName) {
+            makeRequestFnArguments.push(
+              factory.createParameterDeclaration(
+                undefined,
+                undefined,
+                factory.createIdentifier(requestBodyParamName),
+                optionalFieldMarker,
+                factory.createTypeReferenceNode(method.requestBodySchema.generatedName),
+              ),
+            );
+          }
+
+          requestInitFnArguments.push(
+            method.requestBodySchema?.generatedName
+              ? factory.createIdentifier(requestBodyParamName)
+              : factory.createIdentifier('undefined'),
+          );
+
+          break;
+        }
+
+        default:
+          return;
+      }
+
+      makeRequestFnArguments.push(
+        factory.createParameterDeclaration(
+          undefined,
+          undefined,
+          factory.createIdentifier(REQUEST_INIT_PARAMETER_NAME),
+          optionalFieldMarker,
+          factory.createTypeReferenceNode('RequestInit'),
+        ),
+      );
+
+      requestInitFnArguments.push(factory.createIdentifier(REQUEST_INIT_PARAMETER_NAME));
+
+      const methodName = this.config.client.methodNameWriter(method.rawMethod);
+
+      nodeList.push(
+        factory.createFunctionDeclaration(
+          [factory.createModifier(SyntaxKind.ExportKeyword), factory.createModifier(SyntaxKind.AsyncKeyword)],
+          undefined,
+          factory.createIdentifier(methodName),
+          undefined,
+          makeRequestFnArguments,
+          factory.createTypeReferenceNode(
+            method.responseBodySchema?.generatedName
+              ? `Promise<${method.responseBodySchema.generatedName} | undefined>`
+              : 'Promise<undefined>',
+          ),
+          factory.createBlock([
+            factory.createReturnStatement(
+              factory.createCallExpression(
+                factory.createIdentifier(makeRequestFn),
+                makeRequestFnTypeNames.map((name) =>
+                  name
+                    ? factory.createTypeReferenceNode(name)
+                    : factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
+                ),
+                [
+                  factory.createSpreadElement(
+                    factory.createCallExpression(
+                      factory.createIdentifier(requestInitFn),
+                      undefined,
+                      requestInitFnArguments,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ]),
+        ),
+        factory.createIdentifier('\n'),
+      );
+
+      this.generatedClientFunctions.push({
+        generatedName: methodName,
+        method,
+      });
     }
 
     const printer = createPrinter({ newLine: NewLineKind.LineFeed });
@@ -863,9 +1119,66 @@ export class Generator {
     );
   }
 
+  private populateGenerics(
+    schema: ParsedSchemaWithRef,
+    schemas: Map<string, ParsedSchema>,
+    visited = new Set<string>(),
+  ) {
+    const schemaName = this.getFullGRPCName(schema);
+
+    const schemaOverrides = this.schemaGenerics.get(schemaName) || new Map<string, Map<string, GenericOverrideMap>>();
+    const properties = this.getObjectProperties(schema, schemas);
+
+    for (const [propertyName, property] of properties || []) {
+      const propertySchemaName = this.getFullGRPCName(property.schema);
+
+      if (propertySchemaName && !visited.has(propertySchemaName)) {
+        const propertyGenerics =
+          this.schemaGenerics.get(propertySchemaName) ||
+          this.populateGenerics(property.schema, schemas, new Set([...visited, propertySchemaName]));
+
+        if (propertyGenerics?.size) {
+          if (!this.schemaGenerics.has(propertySchemaName)) {
+            this.schemaGenerics.set(propertySchemaName, propertyGenerics);
+          }
+
+          schemaOverrides.set(propertyName, propertyGenerics);
+        }
+      }
+    }
+
+    if (schemaOverrides.size) {
+      this.schemaGenerics.set(schemaName, schemaOverrides);
+    }
+
+    return schemaOverrides;
+  }
+
+  private prepareMethods(source: ParsedSource) {
+    for (const pkg of source.packages) {
+      for (const service of pkg.services) {
+        for (const method of service.methods) {
+          const builtMethod = this.prepareMethodTypes(method, source.schemas);
+
+          const schemas = [
+            builtMethod.responseBodySchema?.rawSchema,
+            builtMethod.mergedRequestSchema?.rawSchema,
+            builtMethod.requestBodySchema?.rawSchema,
+            builtMethod.pathParametersSchema?.rawSchema,
+            builtMethod.queryParametersSchema?.rawSchema,
+          ].filter(Boolean) as ParsedSchemaWithRef[];
+
+          for (const schema of schemas) {
+            this.populateGenerics(schema, source.schemas);
+          }
+        }
+      }
+    }
+  }
+
   public generate(source: ParsedSource) {
     const typesFile = this.generateTypesFile(source);
-    const clientFile = this.generateClient(source);
+    const clientFile = this.generateClient();
 
     return {
       typesFile,

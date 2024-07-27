@@ -4,11 +4,15 @@ import {
   ParsedAny,
   ParsedArray,
   ParsedBoolean,
+  ParsedBytes,
+  ParsedEntity,
   ParsedEnum,
   ParsedFloat,
   ParsedInteger,
+  ParsedKey,
   ParsedMap,
   ParsedMethod,
+  ParsedMethodListOptions,
   ParsedObject,
   ParsedObjectProperty,
   ParsedOneOf,
@@ -19,10 +23,22 @@ import {
   ParsedService,
   ParsedSource,
   ParsedString,
+  SortDirection,
 } from './parsed-types';
 import { constantCase } from 'change-case';
-import { API, APIMethod, APIObjectProperty, APISchemaWithRef } from './api-types';
-import { HTTPMethod } from './shared-types';
+import {
+  API,
+  APIMethod,
+  APIObjectProperty,
+  APIObjectSchema,
+  APIRefValue,
+  APIRequestListOptions,
+  APIRootSchema,
+  APISchema,
+  APIService,
+  APIStateEntity,
+} from './api-types';
+import { EntityPart, HTTPMethod } from './shared-types';
 
 export const JSON_SCHEMA_REFERENCE_PREFIX = '#/schemas/';
 
@@ -237,7 +253,7 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
         }) as ParsedArray,
     )
     .otherwise(() => {
-      // console.warn(`[jdef-ts-generator]: unsupported schema type while parsing jdef source: ${schema}`);
+      console.warn(`[jdef-ts-generator]: unsupported schema type while parsing jdef source: ${schema}`);
       return undefined;
     });
 }
@@ -337,8 +353,11 @@ export function parseJdefSource(source: JDEF): ParsedSource {
   return parsed;
 }
 
-export function apiObjectPropertyToSource(property: APIObjectProperty): ParsedObjectProperty | undefined {
-  const converted = apiSchemaToSource(property.schema);
+export function apiObjectPropertyToSource(
+  property: APIObjectProperty,
+  stateEntities: APIStateEntity[],
+): ParsedObjectProperty | undefined {
+  const converted = apiSchemaToSource(property.schema, stateEntities);
 
   if (!converted) {
     return undefined;
@@ -350,10 +369,18 @@ export function apiObjectPropertyToSource(property: APIObjectProperty): ParsedOb
   };
 }
 
-export function apiSchemaToSource(schema: APISchemaWithRef, fullGrpcName?: string): ParsedSchemaWithRef | undefined {
+function buildApiSchemaRef(ref: APIRefValue): ParsedRef {
+  return { $ref: `${JSON_SCHEMA_REFERENCE_PREFIX}${ref.package}.${ref.schema}` };
+}
+
+export function apiSchemaToSource(
+  schema: APISchema,
+  stateEntities: APIStateEntity[],
+  fullGrpcName?: string,
+): ParsedSchemaWithRef | undefined {
   function mapObjectProperties(properties: APIObjectProperty[] | undefined) {
     return (properties || []).reduce<Map<string, ParsedObjectProperty>>((acc, curr) => {
-      const converted = apiObjectPropertyToSource(curr);
+      const converted = apiObjectPropertyToSource(curr, stateEntities);
 
       if (converted) {
         acc.set(converted.name, converted);
@@ -364,21 +391,26 @@ export function apiSchemaToSource(schema: APISchemaWithRef, fullGrpcName?: strin
   }
 
   return match(schema)
-    .with(
-      { '!type': 'enum' },
-      (e) =>
-        ({
-          enum: {
-            fullGrpcName,
-            name: e.enum.name,
-            prefix: e.enum.prefix,
-            options: e.enum.options.map((option) => ({
-              name: option.name,
-              description: option.description,
-              number: option.number,
-            })),
-          },
-        }) as ParsedEnum,
+    .with({ '!type': 'enum' }, (e) =>
+      match(e.enum)
+        .with({ ref: P.not(P.nullish) }, (enumWithRef) => buildApiSchemaRef(enumWithRef.ref))
+        .with(
+          P.not(P.nullish),
+          (eWithEnum) =>
+            ({
+              enum: {
+                fullGrpcName,
+                name: eWithEnum.name,
+                prefix: eWithEnum.prefix,
+                options: eWithEnum.options.map((option) => ({
+                  name: option.name,
+                  description: option.description,
+                  number: option.number,
+                })),
+              },
+            }) as ParsedEnum,
+        )
+        .otherwise(() => undefined),
     )
     .with(
       { '!type': 'boolean' },
@@ -420,50 +452,103 @@ export function apiSchemaToSource(schema: APISchemaWithRef, fullGrpcName?: strin
         }) as ParsedString,
     )
     .with(
-      { '!type': 'ref' },
-      (r) => ({ $ref: `${JSON_SCHEMA_REFERENCE_PREFIX}${r.ref.package}.${r.ref.schema}` }) as ParsedRef,
+      { '!type': 'date' },
+      (s) =>
+        ({
+          string: {
+            format: 'date',
+            rules: s.date.rules || {},
+          },
+        }) as ParsedString,
     )
     .with(
-      { '!type': 'oneof' },
-      (o) =>
+      { '!type': 'timestamp' },
+      (s) =>
         ({
-          oneOf: {
-            fullGrpcName,
-            name: o.oneof.name,
-            properties: mapObjectProperties(o.oneof.properties),
-            rules: {},
+          string: {
+            format: 'date-time',
+            rules: s.timestamp.rules || {},
           },
-        }) as ParsedOneOf,
+        }) as ParsedString,
     )
     .with(
-      { '!type': 'object' },
-      (o) =>
+      { '!type': 'decimal' },
+      (s) =>
         ({
-          object: {
-            fullGrpcName,
-            name: o.object.name,
-            properties: mapObjectProperties(o.object.properties),
-            rules: {},
+          string: {
+            format: 'decimal',
+            rules: s.decimal.rules || {},
           },
-        }) as ParsedObject,
+        }) as ParsedString,
+    )
+    .with({ '!type': 'oneof' }, (o) =>
+      match(o.oneof)
+        .with({ ref: P.not(P.nullish) }, (oneOfWithRef) => buildApiSchemaRef(oneOfWithRef.ref))
+        .with(
+          P.not(P.nullish),
+          (oneOf) =>
+            ({
+              oneOf: {
+                fullGrpcName,
+                description: oneOf.description,
+                name: oneOf.name,
+                properties: mapObjectProperties(oneOf.properties),
+                rules: oneOf.rules,
+              },
+            }) as ParsedOneOf,
+        )
+        .otherwise(() => undefined),
+    )
+    .with({ '!type': 'object' }, (o) =>
+      match(o.object)
+        .with({ ref: P.not(P.nullish) }, (objectWithRef) => buildApiSchemaRef(objectWithRef.ref))
+        .with(P.not(P.nullish), (obj) => {
+          const matchingStateEntity = stateEntities.find((entity) => entity.schemaName === fullGrpcName);
+          const entity: ParsedEntity | undefined =
+            obj.entity || matchingStateEntity
+              ? ({
+                  entity: obj.entity?.entity || matchingStateEntity?.name,
+                  part: obj.entity?.part || EntityPart.Unspecified,
+                  primaryKeys: matchingStateEntity?.primaryKey,
+                } as ParsedEntity)
+              : undefined;
+
+          return {
+            object: {
+              fullGrpcName,
+              name: obj.name,
+              description: obj.description,
+              additionalProperties: obj.additionalProperties,
+              properties: mapObjectProperties(obj.properties),
+              rules: obj.rules,
+              entity,
+            },
+          } as ParsedObject;
+        })
+        .otherwise(() => undefined),
     )
     .with({ '!type': 'any' }, () => ({ any: {} }) as ParsedAny)
     .with({ '!type': 'map' }, (m) => {
-      const converted = apiSchemaToSource(m.map.itemSchema);
+      const convertedItemSchema = apiSchemaToSource(m.map.itemSchema, stateEntities);
 
-      if (!converted) {
+      if (!convertedItemSchema) {
         return undefined;
       }
 
+      const convertedKeySchema = apiSchemaToSource(m.map.keySchema, stateEntities) || {
+        '!type': 'string',
+        'string': {},
+      };
+
       return {
         map: {
-          itemSchema: converted,
-          keySchema: apiSchemaToSource({ '!type': 'string', 'string': {} }) as ParsedString,
+          itemSchema: convertedItemSchema,
+          keySchema: convertedKeySchema,
         },
       } as ParsedMap;
     })
     .with({ '!type': 'array' }, (a) => {
-      const converted = apiSchemaToSource(a.array.items);
+      const converted = apiSchemaToSource(a.array.items, stateEntities);
 
       if (!converted) {
         return undefined;
@@ -476,13 +561,26 @@ export function apiSchemaToSource(schema: APISchemaWithRef, fullGrpcName?: strin
         },
       } as ParsedArray;
     })
+    .with({ '!type': 'bytes' }, () => ({ bytes: {} }) as ParsedBytes)
+    .with(
+      { '!type': 'key' },
+      (k) =>
+        ({
+          key: {
+            format: k.key.format,
+            primary: Boolean(k.key.primary),
+            entity: k.key.entity,
+            rules: k.key.rules,
+          },
+        }) as ParsedKey,
+    )
     .otherwise(() => {
       console.warn(`[jdef-ts-generator]: unsupported schema type while parsing api source: ${schema}`);
       return undefined;
     });
 }
 
-function getApiMethodRequestResponseFullGrpcName(method: APIMethod, requestOrResponse: APISchemaWithRef): string {
+function getApiMethodRequestResponseFullGrpcName(method: APIMethod, requestOrResponse: APIRootSchema): string {
   const grpcNameBase = method.fullGrpcName.split('/').slice(0, -1).join('/');
 
   return match(requestOrResponse)
@@ -490,6 +588,22 @@ function getApiMethodRequestResponseFullGrpcName(method: APIMethod, requestOrRes
     .with({ oneof: { name: P.string } }, (o) => `${grpcNameBase}/${o.oneof.name}`)
     .with({ enum: { name: P.string } }, (o) => `${grpcNameBase}/${o.enum.name}`)
     .otherwise(() => '');
+}
+
+function mapApiParameters(parameters: APIObjectProperty[] | undefined, stateEntities: APIStateEntity[]) {
+  if (!parameters?.length) {
+    return undefined;
+  }
+
+  return parameters.reduce<ParsedObjectProperty[]>((acc, parameter) => {
+    const converted = apiObjectPropertyToSource(parameter, stateEntities);
+
+    if (!converted) {
+      return acc;
+    }
+
+    return [...acc, converted];
+  }, []);
 }
 
 export function parseApiSource(source: API): ParsedSource {
@@ -501,76 +615,101 @@ export function parseApiSource(source: API): ParsedSource {
     schemas: new Map(),
   };
 
+  const stateEntities = source.packages?.flatMap((pkg) => pkg.stateEntities || []);
+
+  // First, parse all root-level schemas
   for (const pkg of source.packages || []) {
     for (const schemaName in pkg.schemas || {}) {
       if (pkg.schemas) {
-        const parsedSchema = apiSchemaToSource(pkg.schemas[schemaName], schemaName);
+        const fullGrpcName = `${pkg.name}.${schemaName}`;
+        const parsedSchema = apiSchemaToSource(pkg.schemas[schemaName], stateEntities, fullGrpcName);
 
         if (parsedSchema) {
-          parsed.schemas.set(schemaName, parsedSchema as ParsedSchema);
+          parsed.schemas.set(fullGrpcName, parsedSchema as ParsedSchema);
         }
       }
     }
+  }
 
+  for (const pkg of source.packages || []) {
     const parsedPackage: ParsedPackage = {
       name: pkg.name,
       label: pkg.label,
-      introduction: pkg.introduction,
+      introduction: pkg.prose,
       hidden: pkg.hidden,
       services: [],
     };
 
-    for (const service of pkg.services || []) {
+    function mapListOptions(listOptions: APIRequestListOptions | undefined): ParsedMethodListOptions | undefined {
+      if (!listOptions) {
+        return undefined;
+      }
+
+      const options: ParsedMethodListOptions = {};
+
+      if (listOptions.filterableFields) {
+        options.filterableFields = listOptions.filterableFields.map((field) => {
+          return {
+            name: field.name,
+            defaultValues: field.defaultFilters,
+          };
+        });
+      }
+
+      if (listOptions.searchableFields) {
+        options.searchableFields = listOptions.searchableFields.map((field) => field.name);
+      }
+
+      if (listOptions.sortableFields) {
+        options.sortableFields = listOptions.sortableFields.map((field) => ({
+          name: field.name,
+          defaultSort: match(field.defaultSort)
+            .returnType<SortDirection | undefined>()
+            .with('ASC', () => 'asc')
+            .with('DESC', () => 'desc')
+            .otherwise(() => undefined),
+        }));
+      }
+
+      return options;
+    }
+
+    function mapService(service: APIService) {
       const parsedService: ParsedService = {
         name: service.name,
         methods: [],
       };
 
       for (const method of service.methods || []) {
-        const pathParameterNames = method.httpPath
-          ?.split('/')
-          .filter((part) => part.startsWith(':'))
-          .map((part) => part.slice(1));
-        const req = method.requestBody
-          ? apiSchemaToSource(method.requestBody, getApiMethodRequestResponseFullGrpcName(method, method.requestBody))
+        const responseBodyAsObjectSchema = method.responseBody
+          ? ({ '!type': 'object', 'object': method.responseBody } as APIObjectSchema)
           : undefined;
-        const pathParameters: ParsedObjectProperty[] = [];
-        const queryParameters: ParsedObjectProperty[] = [];
-
-        if (req && Object.hasOwn(req, 'object')) {
-          const reqObject = req as ParsedObject;
-
-          // TODO: refactor this with j5 changes that handle splitting here
-          for (const [propertyName, property] of reqObject.object.properties) {
-            if (pathParameterNames?.includes(propertyName)) {
-              pathParameters.push(property);
-              reqObject.object.properties.delete(propertyName);
-            } else if (method.httpMethod === 'GET') {
-              queryParameters.push(property);
-              reqObject.object.properties.delete(propertyName);
-            }
-          }
-        }
-
-        const hasRequestBody = match(req)
-          .with({ object: P.not(P.nullish) }, (o) => Boolean(o.object.properties.size > 0))
-          .with({ oneOf: P.not(P.nullish) }, (o) => Boolean(o.oneOf.properties.size > 0))
-          .otherwise(() => false);
+        const requestBodyAsObjectSchema = method.request?.body
+          ? ({ '!type': 'object', 'object': method.request.body } as APIObjectSchema)
+          : undefined;
 
         parsedService.methods.push({
           name: method.name,
           fullGrpcName: method.fullGrpcName,
           httpMethod: method.httpMethod.toLowerCase() as HTTPMethod,
           httpPath: method.httpPath,
-          responseBody: method.responseBody
+          responseBody: responseBodyAsObjectSchema
             ? apiSchemaToSource(
-                method.responseBody,
-                getApiMethodRequestResponseFullGrpcName(method, method.responseBody),
+                responseBodyAsObjectSchema,
+                stateEntities,
+                getApiMethodRequestResponseFullGrpcName(method, responseBodyAsObjectSchema),
               )
             : undefined,
-          requestBody: hasRequestBody ? req : undefined,
-          pathParameters: pathParameters.length ? pathParameters : undefined,
-          queryParameters: queryParameters.length ? queryParameters : undefined,
+          requestBody: requestBodyAsObjectSchema
+            ? apiSchemaToSource(
+                requestBodyAsObjectSchema,
+                stateEntities,
+                getApiMethodRequestResponseFullGrpcName(method, requestBodyAsObjectSchema),
+              )
+            : undefined,
+          pathParameters: mapApiParameters(method.request?.pathParameters, stateEntities),
+          queryParameters: mapApiParameters(method.request?.queryParameters, stateEntities),
+          listOptions: mapListOptions(method.request?.list),
         });
       }
 
@@ -578,6 +717,16 @@ export function parseApiSource(source: API): ParsedSource {
         parsedPackage.services.push(parsedService);
       }
     }
+
+    pkg.stateEntities?.forEach((entity) => {
+      if (entity.queryService) {
+        mapService(entity.queryService);
+      }
+
+      entity.commandServices?.forEach(mapService);
+    });
+
+    pkg.services?.forEach(mapService);
 
     if (parsedPackage.services.length) {
       parsed.packages.push(parsedPackage);

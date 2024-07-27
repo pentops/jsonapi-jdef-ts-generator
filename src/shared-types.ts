@@ -54,3 +54,15 @@ export interface EnumValueDescription {
   name: string;
   number?: number;
 }
+
+export enum EntityPart {
+  Unspecified = 'UNSPECIFIED',
+  Keys = 'KEYS',
+  State = 'STATE',
+  Event = 'EVENT',
+}
+
+export interface EntityObjectSchema {
+  entity: string;
+  part: EntityPart;
+}
