@@ -617,6 +617,14 @@ export class Generator {
     const builtMethod =
       this.builtMethodSchemas.get(method.fullGrpcName) || ({ rawMethod: method } as BuiltMethodSchema);
 
+    const relatedEntity = method.relatedEntity?.schemaFullGrpcName
+      ? this.generatedSchemas.get(method.relatedEntity.schemaFullGrpcName)
+      : undefined;
+
+    if (relatedEntity) {
+      builtMethod.relatedEntity = relatedEntity as GeneratedSchema<ParsedObject | ParsedOneOf>;
+    }
+
     if (responseBody) {
       builtMethod.responseBodySchema = { generatedName: this.getValidTypeName(responseBody), rawSchema: responseBody };
     }

@@ -376,6 +376,7 @@ function mapApiStateEntity(entity: APIStateEntity | undefined, part?: EntityPart
 
   return {
     stateEntityFullName: entity.fullName,
+    schemaFullGrpcName: entity.schemaName,
     entity: entity.name,
     part: part || EntityPart.Unspecified,
     primaryKeys: entity.primaryKey,
@@ -527,6 +528,7 @@ export function apiSchemaToSource(
               ? ({
                   stateEntityFullName: matchingStateEntity?.fullName,
                   name: matchingStateEntity?.name || obj.entity?.entity || '',
+                  schemaFullGrpcName: fullGrpcName,
                   ...mapApiStateEntity(matchingStateEntity, obj.entity?.part || EntityPart.Unspecified),
                 } as ParsedEntity)
               : undefined;
