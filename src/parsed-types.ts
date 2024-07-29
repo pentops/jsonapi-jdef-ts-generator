@@ -84,7 +84,7 @@ export interface ParsedObjectProperty<TSchemaWithRef extends ParsedSchemaWithRef
 }
 
 export interface ParsedEntity extends EntityObjectSchema {
-  stateEntityName?: string;
+  stateEntityFullName?: string;
   primaryKeys?: string[];
   events?: StateEntityEvent[];
   queryMethods?: string[];
