@@ -507,6 +507,7 @@ export function apiSchemaToSource(
           const entity: ParsedEntity | undefined =
             obj.entity || matchingStateEntity
               ? ({
+                  stateEntity: matchingStateEntity?.name,
                   entity: obj.entity?.entity || matchingStateEntity?.name,
                   part: obj.entity?.part || EntityPart.Unspecified,
                   primaryKeys: matchingStateEntity?.primaryKey,
