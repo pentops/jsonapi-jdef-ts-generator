@@ -511,6 +511,10 @@ export function apiSchemaToSource(
                   part: obj.entity?.part || EntityPart.Unspecified,
                   primaryKeys: matchingStateEntity?.primaryKey,
                   events: matchingStateEntity?.events,
+                  queryMethods: matchingStateEntity?.queryService?.methods?.map((method) => method.fullGrpcName),
+                  commandMethods: matchingStateEntity?.commandServices?.flatMap(
+                    (service) => service.methods?.map((method) => method.fullGrpcName) || [],
+                  ),
                 } as ParsedEntity)
               : undefined;
 
