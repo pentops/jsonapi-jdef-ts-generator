@@ -369,6 +369,24 @@ export function apiObjectPropertyToSource(
   };
 }
 
+function mapApiStateEntity(entity: APIStateEntity | undefined, part?: EntityPart): ParsedEntity | undefined {
+  if (!entity) {
+    return undefined;
+  }
+
+  return {
+    stateEntityFullName: entity.fullName,
+    entity: entity.name,
+    part: part || EntityPart.Unspecified,
+    primaryKeys: entity.primaryKey,
+    events: entity.events,
+    queryMethods: entity.queryService?.methods?.map((method) => method.fullGrpcName),
+    commandMethods: entity.commandServices?.flatMap(
+      (service) => service.methods?.map((method) => method.fullGrpcName) || [],
+    ),
+  };
+}
+
 function buildApiSchemaRef(ref: APIRefValue): ParsedRef {
   return { $ref: `${JSON_SCHEMA_REFERENCE_PREFIX}${ref.package}.${ref.schema}` };
 }
@@ -508,14 +526,8 @@ export function apiSchemaToSource(
             obj.entity || matchingStateEntity
               ? ({
                   stateEntityFullName: matchingStateEntity?.fullName,
-                  entity: obj.entity?.entity || matchingStateEntity?.name,
-                  part: obj.entity?.part || EntityPart.Unspecified,
-                  primaryKeys: matchingStateEntity?.primaryKey,
-                  events: matchingStateEntity?.events,
-                  queryMethods: matchingStateEntity?.queryService?.methods?.map((method) => method.fullGrpcName),
-                  commandMethods: matchingStateEntity?.commandServices?.flatMap(
-                    (service) => service.methods?.map((method) => method.fullGrpcName) || [],
-                  ),
+                  name: matchingStateEntity?.name || obj.entity?.entity || '',
+                  ...mapApiStateEntity(matchingStateEntity, obj.entity?.part || EntityPart.Unspecified),
                 } as ParsedEntity)
               : undefined;
 
@@ -680,7 +692,7 @@ export function parseApiSource(source: API): ParsedSource {
       return options;
     }
 
-    function mapService(service: APIService) {
+    function mapService(service: APIService, relatedEntity?: APIStateEntity) {
       const parsedService: ParsedService = {
         name: service.name,
         methods: [],
@@ -716,6 +728,7 @@ export function parseApiSource(source: API): ParsedSource {
           pathParameters: mapApiParameters(method.request?.pathParameters, stateEntities),
           queryParameters: mapApiParameters(method.request?.queryParameters, stateEntities),
           listOptions: mapListOptions(method.request?.list),
+          relatedEntity: relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined,
         });
       }
 
@@ -726,13 +739,13 @@ export function parseApiSource(source: API): ParsedSource {
 
     pkg.stateEntities?.forEach((entity) => {
       if (entity.queryService) {
-        mapService(entity.queryService);
+        mapService(entity.queryService, entity);
       }
 
-      entity.commandServices?.forEach(mapService);
+      entity.commandServices?.forEach((service) => mapService(service, entity));
     });
 
-    pkg.services?.forEach(mapService);
+    pkg.services?.forEach((service) => mapService(service));
 
     if (parsedPackage.services.length) {
       parsed.packages.push(parsedPackage);
