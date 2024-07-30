@@ -1,5 +1,5 @@
 import type { InterfaceDeclaration, TypeNode, TypeAliasDeclaration, EnumDeclaration } from 'typescript';
-import type { ParsedEnum, ParsedMethod, ParsedObject, ParsedOneOf, ParsedSchema } from './parsed-types';
+import type { ParsedEnum, ParsedMethod, ParsedObject, ParsedSchema } from './parsed-types';
 
 export interface GeneratedSchema<TSchema extends ParsedSchema = ParsedSchema> {
   generatedName: string;
@@ -18,7 +18,7 @@ export interface BuiltMethodSchema {
   queryParametersSchema?: GeneratedSchema<ParsedObject>;
   responseBodySchema?: GeneratedSchema<ParsedObject>;
   list?: BuiltMethodListSchema;
-  relatedEntity?: GeneratedSchema<ParsedObject | ParsedOneOf>;
+  relatedEntity?: GeneratedSchema<ParsedObject>;
 }
 
 export interface GeneratedClientFunction {

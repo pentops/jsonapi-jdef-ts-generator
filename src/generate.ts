@@ -622,7 +622,7 @@ export class Generator {
       : undefined;
 
     if (relatedEntity) {
-      builtMethod.relatedEntity = relatedEntity as GeneratedSchema<ParsedObject | ParsedOneOf>;
+      builtMethod.relatedEntity = relatedEntity as GeneratedSchema<ParsedObject>;
     }
 
     if (responseBody) {
