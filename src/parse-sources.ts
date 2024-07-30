@@ -610,7 +610,11 @@ function getApiMethodRequestResponseFullGrpcName(method: APIMethod, requestOrRes
     .otherwise(() => '');
 }
 
-function mapApiParameters(parameters: APIObjectProperty[] | undefined, stateEntities: APIStateEntity[]) {
+function mapApiParameters(
+  parameters: APIObjectProperty[] | undefined,
+  stateEntities: APIStateEntity[],
+  isPathParameter?: boolean,
+) {
   if (!parameters?.length) {
     return undefined;
   }
@@ -620,6 +624,10 @@ function mapApiParameters(parameters: APIObjectProperty[] | undefined, stateEnti
 
     if (!converted) {
       return acc;
+    }
+
+    if (isPathParameter) {
+      converted.required = true;
     }
 
     return [...acc, converted];
@@ -727,7 +735,7 @@ export function parseApiSource(source: API): ParsedSource {
                 getApiMethodRequestResponseFullGrpcName(method, requestBodyAsObjectSchema),
               )
             : undefined,
-          pathParameters: mapApiParameters(method.request?.pathParameters, stateEntities),
+          pathParameters: mapApiParameters(method.request?.pathParameters, stateEntities, true),
           queryParameters: mapApiParameters(method.request?.queryParameters, stateEntities),
           listOptions: mapListOptions(method.request?.list),
           relatedEntity: relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined,
