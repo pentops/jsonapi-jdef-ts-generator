@@ -640,40 +640,6 @@ export class Generator {
       .otherwise(() => undefined);
 
     switch (this.config.types.requestType) {
-      case 'merged': {
-        const defaultName = requestBaseName || REQUEST_SUFFIX;
-
-        const mergedSchema: ParsedObject = {
-          object: {
-            name: method.requestBody || method.queryParameters || method.pathParameters ? defaultName : '',
-            properties: new Map(),
-            rules: {},
-            ...requestBody,
-            fullGrpcName: requestBody?.object?.fullGrpcName || `${methodGrpcNameBase}.${defaultName}` || '',
-          },
-        };
-
-        if (method.pathParameters?.length) {
-          method.pathParameters.forEach((param) => {
-            mergedSchema.object.properties.set(param.name, param);
-          });
-        }
-
-        if (method.queryParameters?.length) {
-          method.queryParameters.forEach((param) => {
-            mergedSchema.object.properties.set(param.name, param);
-          });
-        }
-
-        if (mergedSchema.object.properties.size) {
-          builtMethod.mergedRequestSchema = {
-            generatedName: this.getValidTypeName(mergedSchema, requestBaseName),
-            rawSchema: mergedSchema,
-          };
-        }
-
-        break;
-      }
       case 'split': {
         if (requestBody?.object?.properties?.size) {
           builtMethod.requestBodySchema = {
@@ -720,6 +686,41 @@ export class Generator {
           builtMethod.queryParametersSchema = {
             generatedName: this.getSchemaName(queryParameterSchema, schemas),
             rawSchema: queryParameterSchema,
+          };
+        }
+
+        break;
+      }
+      case 'merged':
+      default: {
+        const defaultName = requestBaseName || REQUEST_SUFFIX;
+
+        const mergedSchema: ParsedObject = {
+          object: {
+            name: method.requestBody || method.queryParameters || method.pathParameters ? defaultName : '',
+            properties: new Map(requestBody?.object.properties),
+            rules: {},
+            ...requestBody,
+            fullGrpcName: requestBody?.object?.fullGrpcName || `${methodGrpcNameBase}.${defaultName}` || '',
+          },
+        };
+
+        if (method.pathParameters?.length) {
+          method.pathParameters.forEach((param) => {
+            mergedSchema.object.properties.set(param.name, param);
+          });
+        }
+
+        if (method.queryParameters?.length) {
+          method.queryParameters.forEach((param) => {
+            mergedSchema.object.properties.set(param.name, param);
+          });
+        }
+
+        if (mergedSchema.object.properties.size) {
+          builtMethod.mergedRequestSchema = {
+            generatedName: this.getValidTypeName(mergedSchema, requestBaseName),
+            rawSchema: mergedSchema,
           };
         }
 
@@ -972,29 +973,6 @@ export class Generator {
       ];
 
       switch (this.config.types.requestType) {
-        case 'merged': {
-          const requestParamName = 'request';
-
-          if (method.mergedRequestSchema?.generatedName) {
-            makeRequestFnArguments.push(
-              factory.createParameterDeclaration(
-                undefined,
-                undefined,
-                factory.createIdentifier(requestParamName),
-                optionalFieldMarker,
-                factory.createTypeReferenceNode(method.mergedRequestSchema.generatedName),
-              ),
-            );
-          }
-
-          requestInitFnArguments.push(
-            method.mergedRequestSchema?.generatedName
-              ? factory.createIdentifier(requestParamName)
-              : factory.createIdentifier('undefined'),
-          );
-
-          break;
-        }
         case 'split': {
           const pathParametersParamName = 'pathParameters';
           const queryParametersParamName = 'queryParameters';
@@ -1056,9 +1034,30 @@ export class Generator {
 
           break;
         }
+        case 'merged':
+        default: {
+          const requestParamName = 'request';
 
-        default:
-          return;
+          if (method.mergedRequestSchema?.generatedName) {
+            makeRequestFnArguments.push(
+              factory.createParameterDeclaration(
+                undefined,
+                undefined,
+                factory.createIdentifier(requestParamName),
+                optionalFieldMarker,
+                factory.createTypeReferenceNode(method.mergedRequestSchema.generatedName),
+              ),
+            );
+          }
+
+          requestInitFnArguments.push(
+            method.mergedRequestSchema?.generatedName
+              ? factory.createIdentifier(requestParamName)
+              : factory.createIdentifier('undefined'),
+          );
+
+          break;
+        }
       }
 
       makeRequestFnArguments.push(
