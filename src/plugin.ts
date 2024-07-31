@@ -222,7 +222,7 @@ export class PluginFile {
   }
 }
 
-interface PluginConfig {
+export interface PluginConfig {
   files?: PluginFileGeneratorConfig[] | PluginFileConfigCreator;
 }
 
