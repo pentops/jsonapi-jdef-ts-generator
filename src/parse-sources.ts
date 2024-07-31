@@ -11,7 +11,6 @@ import {
   ParsedInteger,
   ParsedKey,
   ParsedMap,
-  ParsedMethod,
   ParsedMethodListOptions,
   ParsedObject,
   ParsedObjectProperty,
@@ -298,13 +297,7 @@ export function parseJdefSource(source: JDEF): ParsedSource {
       services: [],
     };
 
-    const methodsByService: Map<string, ParsedMethod[]> = new Map();
-
     for (const method of pkg.methods) {
-      if (!methodsByService.has(method.grpcServiceName)) {
-        methodsByService.set(method.grpcServiceName, []);
-      }
-
       function mapParameters(parameters: JDEFParameter[] | undefined) {
         return parameters?.reduce<ParsedObjectProperty[]>((acc, parameter) => {
           const converted = jdefParameterToSource(parameter);
@@ -317,7 +310,17 @@ export function parseJdefSource(source: JDEF): ParsedSource {
         }, []);
       }
 
-      methodsByService.get(method.grpcServiceName)?.push({
+      let service = parsedPackage.services.find((service) => service.name === method.grpcServiceName);
+      if (!service) {
+        service = {
+          name: method.grpcServiceName,
+          methods: [],
+        };
+
+        parsedPackage.services.push(service);
+      }
+
+      service.methods.push({
         name: method.grpcMethodName,
         fullGrpcName: method.fullGrpcName,
         httpMethod: method.httpMethod,
@@ -333,16 +336,8 @@ export function parseJdefSource(source: JDEF): ParsedSource {
           : undefined,
         pathParameters: mapParameters(method.pathParameters),
         queryParameters: mapParameters(method.queryParameters),
+        parentService: service,
       });
-    }
-
-    for (const serviceName in methodsByService) {
-      if (methodsByService.get(serviceName)?.length) {
-        parsedPackage.services.push({
-          name: serviceName,
-          methods: methodsByService.get(serviceName)!,
-        });
-      }
     }
 
     if (parsedPackage.services.length) {
