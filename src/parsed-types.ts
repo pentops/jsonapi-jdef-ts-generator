@@ -189,7 +189,7 @@ export interface ParsedMethod<TSchemaWithRef extends ParsedSchemaWithRef = Parse
 
 export interface ParsedService<TSchemaWithRef extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   name: string;
-  label?: string;
+  fullGrpcName: string;
   methods: ParsedMethod<TSchemaWithRef>[];
   parentPackage: ParsedPackage;
 }
