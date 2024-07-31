@@ -739,6 +739,7 @@ export function parseApiSource(source: API): ParsedSource {
           queryParameters: mapApiParameters(method.request?.queryParameters, stateEntities),
           listOptions: mapListOptions(method.request?.list),
           relatedEntity: relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined,
+          parentService: parsedService,
         });
       }
 

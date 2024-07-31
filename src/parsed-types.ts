@@ -184,6 +184,7 @@ export interface ParsedMethod<TSchemaWithRef extends ParsedSchemaWithRef = Parse
   queryParameters?: ParsedObjectProperty<TSchemaWithRef>[];
   listOptions?: ParsedMethodListOptions;
   relatedEntity?: ParsedEntity;
+  parentService: ParsedService;
 }
 
 export interface ParsedService<TSchemaWithRef extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
