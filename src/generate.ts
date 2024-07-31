@@ -299,13 +299,7 @@ export class Generator {
           return { node: this.buildOneOf(s, schemaGenerics, genericValues) };
         })
         .with({ array: P.not(P.nullish) }, (s) => {
-          const { node, comment } = this.buildBaseType(
-            s.array.itemSchema,
-            genericValues,
-            // match(s.array.itemSchema)
-            //   .with({ $ref: P.not(P.nullish) }, () => genericValues)
-            //   .otherwise(() => undefined),
-          );
+          const { node, comment } = this.buildBaseType(s.array.itemSchema, genericValues);
 
           return { node: factory.createArrayTypeNode(node), comment };
         })
