@@ -315,6 +315,7 @@ export function parseJdefSource(source: JDEF): ParsedSource {
         service = {
           name: method.grpcServiceName,
           methods: [],
+          parentPackage: parsedPackage,
         };
 
         parsedPackage.services.push(service);
@@ -701,6 +702,7 @@ export function parseApiSource(source: API): ParsedSource {
       const parsedService: ParsedService = {
         name: service.name,
         methods: [],
+        parentPackage: parsedPackage,
       };
 
       for (const method of service.methods || []) {
