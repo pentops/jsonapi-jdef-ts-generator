@@ -5,9 +5,16 @@ import type { Config, GenericOverride, GenericOverrideMap, GenericOverrideWithVa
 import { buildMergedRequestInit, buildSplitRequestInit, makeRequest } from '@pentops/jsonapi-request';
 import {
   buildGenericReferenceNode,
+  cleanRefName,
   createImportDeclaration,
   getAllGenericsForChildren,
+  getFullGRPCName,
   getImportPath,
+  getObjectProperties,
+  getSchemaName,
+  getValidKeyName,
+  isCharacterSafeForName,
+  isKeyword,
 } from './helpers';
 import type {
   ParsedEnum,
@@ -26,7 +33,6 @@ import {
   GeneratedSchema,
   GeneratedSchemaWithNode,
 } from './generated-types';
-import { JSON_SCHEMA_REFERENCE_PREFIX } from './parse-sources';
 
 const {
   addSyntheticLeadingComment,
@@ -55,19 +61,6 @@ const REQUEST_INIT_PARAMETER_NAME = 'requestInit';
 
 const optionalFieldMarker = factory.createToken(SyntaxKind.QuestionToken);
 
-function isCharacterSafeForName(char: string) {
-  return char.match(/\p{Letter}|[0-9]|\$|_/u);
-}
-
-function isKeyword(rawName: string) {
-  try {
-    new Function('var ' + rawName + ';');
-    return false;
-  } catch {
-    return true;
-  }
-}
-
 export class Generator {
   public config: Config;
   public builtMethodSchemas: Map<string, BuiltMethodSchema> = new Map();
@@ -80,34 +73,84 @@ export class Generator {
     this.schemaGenerics = config.types.genericOverrides || new Map();
   }
 
-  private isKeyNameValid(rawName: string) {
-    // If the first character is a number, it's invalid
-    if (!Number.isNaN(Number(rawName[0]))) {
-      return false;
+  private static buildGenericNodeFromDefinition(definition: GenericOverride) {
+    return factory.createTypeParameterDeclaration(
+      undefined,
+      definition.name,
+      definition.extends
+        ? typeof definition.extends === 'object'
+          ? definition.extends
+          : buildGenericReferenceNode(definition.extends)
+        : undefined,
+      definition.default
+        ? typeof definition.default === 'object'
+          ? definition.default
+          : buildGenericReferenceNode(definition.default)
+        : undefined,
+    );
+  }
+
+  private static buildUnionEnum(schema: ParsedEnum) {
+    return factory.createUnionTypeNode(
+      schema.enum.options.map((value) => factory.createLiteralTypeNode(factory.createStringLiteral(value.name, true))),
+    );
+  }
+
+  private static generateEnum(name: string, schema: ParsedEnum, enumType: 'enum' | 'union') {
+    switch (enumType) {
+      case 'enum':
+        return factory.createEnumDeclaration(
+          [factory.createModifier(SyntaxKind.ExportKeyword)],
+          factory.createIdentifier(name),
+          schema.enum.options.map((value) =>
+            factory.createEnumMember(
+              factory.createIdentifier(getValidKeyName(pascalCase(value.name))),
+              factory.createStringLiteral(value.name, true),
+            ),
+          ),
+        );
+      case 'union': {
+        return factory.createTypeAliasDeclaration(
+          [factory.createModifier(SyntaxKind.ExportKeyword)],
+          factory.createIdentifier(name),
+          [],
+          Generator.buildUnionEnum(schema),
+        );
+      }
+    }
+  }
+
+  private static generateOneOfUnionType(generatedName: string, oneOfGeneratedName: string) {
+    return factory.createTypeAliasDeclaration(
+      [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+      generatedName,
+      undefined,
+      ts.factory.createTypeOperatorNode(
+        ts.SyntaxKind.KeyOfKeyword,
+        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Exclude'), [
+          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(oneOfGeneratedName)),
+          factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
+        ]),
+      ),
+    );
+  }
+
+  private static buildSchemaTypeParameterDeclarations(
+    generics: GenericOverrideWithValue[] | undefined,
+  ): ts.TypeParameterDeclaration[] | undefined {
+    if (!generics?.length) {
+      return undefined;
     }
 
-    // If the name contains an unsupported character, it's invalid
-    for (const char of rawName) {
-      if (!isCharacterSafeForName(char)) {
-        return false;
+    const declarations: ts.TypeParameterDeclaration[] = [];
+
+    for (let i = generics.length - 1; i >= 0; i -= 1) {
+      if (generics[i].value === undefined) {
+        declarations.unshift(Generator.buildGenericNodeFromDefinition(generics[i]));
       }
     }
 
-    return true;
-  }
-
-  private cleanRefName(ref: ParsedRef) {
-    return ref.$ref.replace(JSON_SCHEMA_REFERENCE_PREFIX, '');
-  }
-
-  private getSchemaName(schema: ParsedSchemaWithRef | undefined, schemas: Map<string, ParsedSchema>): string {
-    return match(schema)
-      .with({ object: P.not(P.nullish) }, (s) => s.object.name)
-      .with({ enum: P.not(P.nullish) }, (s) => s.enum.name)
-      .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.name)
-      .with({ $ref: P.not(P.nullish) }, (s) => this.getSchemaName(schemas.get(this.cleanRefName(s)), schemas))
-      .with({ array: P.not(P.nullish) }, (s) => this.getSchemaName(s.array.itemSchema, schemas))
-      .otherwise(() => '');
+    return declarations;
   }
 
   private getValidTypeName(schema: ParsedSchemaWithRef, ...backupValues: string[]) {
@@ -115,7 +158,7 @@ export class Generator {
       .with({ object: P.not(P.nullish) }, (s) => s.object.fullGrpcName || s.object.name || '')
       .with({ enum: P.not(P.nullish) }, (s) => s.enum.fullGrpcName || s.enum.name || '')
       .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.fullGrpcName || s.oneOf.name || '')
-      .with({ $ref: P.not(P.nullish) }, (s) => this.cleanRefName(s))
+      .with({ $ref: P.not(P.nullish) }, (s) => cleanRefName(s))
       .otherwise(() => '');
 
     while (!value && backupValues.length) {
@@ -146,67 +189,8 @@ export class Generator {
     return output;
   }
 
-  private getValidKeyName(rawName: string) {
-    return this.isKeyNameValid(rawName) ? rawName : `'${rawName}'`;
-  }
-
-  private getFullGRPCName(schema: ParsedSchemaWithRef | undefined): string {
-    return match(schema)
-      .with({ object: P.not(P.nullish) }, (s) => s.object.fullGrpcName)
-      .with({ enum: P.not(P.nullish) }, (s) => s.enum.fullGrpcName)
-      .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.fullGrpcName)
-      .with({ array: P.not(P.nullish) }, (s) => this.getFullGRPCName(s.array.itemSchema))
-      .with({ $ref: P.not(P.nullish) }, (s) => this.cleanRefName(s))
-      .otherwise(() => '');
-  }
-
-  private getObjectProperties(
-    schema: ParsedSchemaWithRef | undefined,
-    schemas: Map<string, ParsedSchema>,
-  ): Map<string, ParsedObjectProperty> | undefined {
-    return match(schema)
-      .with({ object: P.not(P.nullish) }, (s) => s.object.properties)
-      .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.properties)
-      .with({ $ref: P.not(P.nullish) }, (s) => this.getObjectProperties(schemas.get(this.cleanRefName(s)), schemas))
-      .with({ array: P.not(P.nullish) }, (s) => this.getObjectProperties(s.array.itemSchema, schemas))
-      .with({ map: P.not(P.nullish) }, (s) => {
-        const itemMap = this.getObjectProperties(s.map.itemSchema, schemas);
-        const keyMap = this.getObjectProperties(s.map.keySchema, schemas);
-
-        if (itemMap || keyMap) {
-          return new Map([...(itemMap || new Map()), ...(keyMap || new Map())]);
-        }
-
-        return undefined;
-      })
-      .otherwise(() => undefined);
-  }
-
-  private buildGenericNodeFromDefinition(definition: GenericOverride) {
-    return factory.createTypeParameterDeclaration(
-      undefined,
-      definition.name,
-      definition.extends
-        ? typeof definition.extends === 'object'
-          ? definition.extends
-          : buildGenericReferenceNode(definition.extends)
-        : undefined,
-      definition.default
-        ? typeof definition.default === 'object'
-          ? definition.default
-          : buildGenericReferenceNode(definition.default)
-        : undefined,
-    );
-  }
-
-  private buildUnionEnum(schema: ParsedEnum) {
-    return factory.createUnionTypeNode(
-      schema.enum.options.map((value) => factory.createLiteralTypeNode(factory.createStringLiteral(value.name, true))),
-    );
-  }
-
   private buildRefNode(schema: ParsedRef, genericValues?: GenericOverrideWithValue[]): BaseTypeOutput {
-    const schemaGenerics = this.schemaGenerics.get(this.getFullGRPCName(schema));
+    const schemaGenerics = this.schemaGenerics.get(getFullGRPCName(schema));
     const refGenerics = getAllGenericsForChildren(schemaGenerics);
     const typeArguments: ts.TypeNode[] = [];
 
@@ -250,13 +234,13 @@ export class Generator {
   }
 
   private buildBaseType(schema: ParsedSchemaWithRef, genericValues?: GenericOverrideWithValue[]): BaseTypeOutput {
-    const fullGrpcName = this.getFullGRPCName(schema);
+    const fullGrpcName = getFullGRPCName(schema);
 
     return (
       match(schema)
         .with({ boolean: P.not(P.nullish) }, () => ({ node: factory.createKeywordTypeNode(SyntaxKind.BooleanKeyword) }))
         // all nested enums are union types
-        .with({ enum: P.not(P.nullish) }, (s) => ({ node: this.buildUnionEnum(s) }))
+        .with({ enum: P.not(P.nullish) }, (s) => ({ node: Generator.buildUnionEnum(s) }))
         .with({ key: P.not(P.nullish) }, (s) => ({
           node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
           comment: s.key.format ? `format: ${s.key.format}` : undefined,
@@ -348,7 +332,7 @@ export class Generator {
         .otherwise(() => undefined),
     );
 
-    const validKeyName = this.getValidKeyName(name);
+    const validKeyName = getValidKeyName(name);
 
     if (validKeyName !== name) {
       console.warn(
@@ -418,63 +402,6 @@ export class Generator {
     return factory.createTypeLiteralNode(members as readonly TypeElement[]);
   }
 
-  private buildSchemaTypeParameterDeclarations(
-    generics: GenericOverrideWithValue[] | undefined,
-  ): ts.TypeParameterDeclaration[] | undefined {
-    if (!generics?.length) {
-      return undefined;
-    }
-
-    const declarations: ts.TypeParameterDeclaration[] = [];
-
-    for (let i = generics.length - 1; i >= 0; i -= 1) {
-      if (generics[i].value === undefined) {
-        declarations.unshift(this.buildGenericNodeFromDefinition(generics[i]));
-      }
-    }
-
-    return declarations;
-  }
-
-  private generateEnum(name: string, schema: ParsedEnum, enumType: 'enum' | 'union') {
-    switch (enumType) {
-      case 'enum':
-        return factory.createEnumDeclaration(
-          [factory.createModifier(SyntaxKind.ExportKeyword)],
-          factory.createIdentifier(name),
-          schema.enum.options.map((value) =>
-            factory.createEnumMember(
-              factory.createIdentifier(this.getValidKeyName(pascalCase(value.name))),
-              factory.createStringLiteral(value.name, true),
-            ),
-          ),
-        );
-      case 'union': {
-        return factory.createTypeAliasDeclaration(
-          [factory.createModifier(SyntaxKind.ExportKeyword)],
-          factory.createIdentifier(name),
-          [],
-          this.buildUnionEnum(schema),
-        );
-      }
-    }
-  }
-
-  private generateOneOfUnionType(generatedName: string, oneOfGeneratedName: string) {
-    return factory.createTypeAliasDeclaration(
-      [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
-      generatedName,
-      undefined,
-      ts.factory.createTypeOperatorNode(
-        ts.SyntaxKind.KeyOfKeyword,
-        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Exclude'), [
-          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(oneOfGeneratedName)),
-          factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
-        ]),
-      ),
-    );
-  }
-
   private generateSchema(
     generatedName: string,
     schema: ParsedSchema,
@@ -484,13 +411,13 @@ export class Generator {
       return;
     }
 
-    const fullGrpcName = this.getFullGRPCName(schema);
+    const fullGrpcName = getFullGRPCName(schema);
 
     const schemaGenerics = this.schemaGenerics.get(fullGrpcName);
     const allGenericsWithValues: GenericOverrideWithValue[] | undefined = this.config.types.genericValueDeterminer
       ? this.config.types.genericValueDeterminer(
           schema as ParsedObject | ParsedOneOf,
-          (s) => this.schemaGenerics.get(this.getFullGRPCName(s)),
+          (s) => this.schemaGenerics.get(getFullGRPCName(s)),
           parentMethod,
         )
       : getAllGenericsForChildren(schemaGenerics);
@@ -506,7 +433,7 @@ export class Generator {
             node: factory.createInterfaceDeclaration(
               [factory.createModifier(SyntaxKind.ExportKeyword)],
               factory.createIdentifier(generatedName),
-              this.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
+              Generator.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
               [],
               this.buildObject(s, schemaGenerics, allGenericsWithValues)?.members,
             ),
@@ -524,14 +451,14 @@ export class Generator {
             node: factory.createInterfaceDeclaration(
               [factory.createModifier(SyntaxKind.ExportKeyword)],
               factory.createIdentifier(generatedName),
-              this.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
+              Generator.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
               [],
               this.buildOneOf(s, schemaGenerics, allGenericsWithValues)?.members,
             ),
           },
           {
             generatedName: oneOfUnionGeneratedName,
-            node: this.generateOneOfUnionType(oneOfUnionGeneratedName, generatedName),
+            node: Generator.generateOneOfUnionType(oneOfUnionGeneratedName, generatedName),
           },
         ];
       })
@@ -540,7 +467,7 @@ export class Generator {
           generatedName,
           fullGrpcName,
           rawSchema: s,
-          node: this.generateEnum(generatedName, s, this.config.types.enumType),
+          node: Generator.generateEnum(generatedName, s, this.config.types.enumType),
         },
       ])
       .otherwise(() => {
@@ -565,7 +492,7 @@ export class Generator {
     const methodGrpcNameBase = method.fullGrpcName.replaceAll('/', '');
 
     const responseBodyName =
-      this.getSchemaName(method.responseBody as ParsedSchema, schemas) || `${method.name}${RESPONSE_SUFFIX}`;
+      getSchemaName(method.responseBody as ParsedSchema, schemas) || `${method.name}${RESPONSE_SUFFIX}`;
 
     const requestBaseFirstPriorityBackup = responseBodyName?.endsWith(RESPONSE_SUFFIX)
       ? responseBodyName?.replace(RESPONSE_SUFFIX, REQUEST_SUFFIX)
@@ -591,7 +518,7 @@ export class Generator {
         };
       })
       .with({ $ref: P.not(P.nullish) }, (s) =>
-        match(schemas.get(this.cleanRefName(s)))
+        match(schemas.get(cleanRefName(s)))
           .with({ object: P.not(P.nullish) }, (so) => {
             const defaultName = responseBodyName || so.object.name;
 
@@ -627,7 +554,7 @@ export class Generator {
       .returnType<ParsedObject | undefined>()
       .with({ object: P.not(P.nullish) }, (s) => s)
       .with({ $ref: P.not(P.nullish) }, (s) =>
-        match(schemas.get(this.cleanRefName(s)))
+        match(schemas.get(cleanRefName(s)))
           .with({ object: P.not(P.nullish) }, (so) => so)
           .otherwise(() => undefined),
       )
@@ -678,7 +605,7 @@ export class Generator {
           };
 
           builtMethod.queryParametersSchema = {
-            generatedName: this.getSchemaName(queryParameterSchema, schemas),
+            generatedName: getSchemaName(queryParameterSchema, schemas),
             rawSchema: queryParameterSchema,
           };
         }
@@ -777,7 +704,7 @@ export class Generator {
     const nodes: ts.Node[] = [];
 
     if (schema) {
-      const schemaName = this.getSchemaName(schema, schemas);
+      const schemaName = getSchemaName(schema, schemas);
       const typeName = this.getValidTypeName(schema, schemaName);
       const typeNodes = this.generateSchema(typeName, schema, parentMethod);
 
@@ -1125,13 +1052,13 @@ export class Generator {
     schemas: Map<string, ParsedSchema>,
     visited = new Set<string>(),
   ) {
-    const schemaName = this.getFullGRPCName(schema);
+    const schemaName = getFullGRPCName(schema);
 
     const schemaOverrides = this.schemaGenerics.get(schemaName) || new Map<string, Map<string, GenericOverrideMap>>();
-    const properties = this.getObjectProperties(schema, schemas);
+    const properties = getObjectProperties(schema, schemas);
 
     for (const [propertyName, property] of properties || []) {
-      const propertySchemaName = this.getFullGRPCName(property.schema);
+      const propertySchemaName = getFullGRPCName(property.schema);
 
       if (propertySchemaName && !visited.has(propertySchemaName)) {
         const propertyGenerics =

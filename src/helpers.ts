@@ -1,8 +1,91 @@
 import ts from 'typescript';
 import path from 'path';
+import { match, P } from 'ts-pattern';
 import type { GenericOverride, GenericOverrideMap, GenericOverrideNodeType } from './config';
+import type { ParsedObjectProperty, ParsedRef, ParsedSchema, ParsedSchemaWithRef } from './parsed-types';
 
 const { factory, SyntaxKind } = ts;
+
+export const JSON_SCHEMA_REFERENCE_PREFIX = '#/schemas/';
+
+export function cleanRefName(ref: ParsedRef) {
+  return ref.$ref.replace(JSON_SCHEMA_REFERENCE_PREFIX, '');
+}
+
+export function getSchemaName(schema: ParsedSchemaWithRef | undefined, schemas: Map<string, ParsedSchema>): string {
+  return match(schema)
+    .with({ object: P.not(P.nullish) }, (s) => s.object.name)
+    .with({ enum: P.not(P.nullish) }, (s) => s.enum.name)
+    .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.name)
+    .with({ $ref: P.not(P.nullish) }, (s) => getSchemaName(schemas.get(cleanRefName(s)), schemas))
+    .with({ array: P.not(P.nullish) }, (s) => getSchemaName(s.array.itemSchema, schemas))
+    .otherwise(() => '');
+}
+
+export function getFullGRPCName(schema: ParsedSchemaWithRef | undefined): string {
+  return match(schema)
+    .with({ object: P.not(P.nullish) }, (s) => s.object.fullGrpcName)
+    .with({ enum: P.not(P.nullish) }, (s) => s.enum.fullGrpcName)
+    .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.fullGrpcName)
+    .with({ array: P.not(P.nullish) }, (s) => getFullGRPCName(s.array.itemSchema))
+    .with({ $ref: P.not(P.nullish) }, (s) => cleanRefName(s))
+    .otherwise(() => '');
+}
+
+export function getObjectProperties(
+  schema: ParsedSchemaWithRef | undefined,
+  schemas: Map<string, ParsedSchema> = new Map(),
+): Map<string, ParsedObjectProperty> | undefined {
+  return match(schema)
+    .with({ object: P.not(P.nullish) }, (s) => s.object.properties)
+    .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.properties)
+    .with({ $ref: P.not(P.nullish) }, (s) => getObjectProperties(schemas.get(cleanRefName(s)), schemas))
+    .with({ array: P.not(P.nullish) }, (s) => getObjectProperties(s.array.itemSchema, schemas))
+    .with({ map: P.not(P.nullish) }, (s) => {
+      const itemMap = getObjectProperties(s.map.itemSchema, schemas);
+      const keyMap = getObjectProperties(s.map.keySchema, schemas);
+
+      if (itemMap || keyMap) {
+        return new Map([...(itemMap || new Map()), ...(keyMap || new Map())]);
+      }
+
+      return undefined;
+    })
+    .otherwise(() => undefined);
+}
+
+export function isCharacterSafeForName(char: string) {
+  return char.match(/\p{Letter}|[0-9]|\$|_/u);
+}
+
+export function isKeyword(rawName: string) {
+  try {
+    new Function('var ' + rawName + ';');
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+function isKeyNameValid(rawName: string) {
+  // If the first character is a number, it's invalid
+  if (!Number.isNaN(Number(rawName[0]))) {
+    return false;
+  }
+
+  // If the name contains an unsupported character, it's invalid
+  for (const char of rawName) {
+    if (!isCharacterSafeForName(char)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function getValidKeyName(rawName: string) {
+  return isKeyNameValid(rawName) ? rawName : `'${rawName}'`;
+}
 
 export function getRelativePath(source: string, target: string) {
   const targetArr = target.split('/');

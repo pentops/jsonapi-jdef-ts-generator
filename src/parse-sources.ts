@@ -38,8 +38,7 @@ import {
   APIStateEntity,
 } from './api-types';
 import { EntityPart, HTTPMethod } from './shared-types';
-
-export const JSON_SCHEMA_REFERENCE_PREFIX = '#/schemas/';
+import { JSON_SCHEMA_REFERENCE_PREFIX } from './helpers';
 
 export function jdefParameterToSource(parameter: JDEFParameter): ParsedObjectProperty | undefined {
   const converted = jdefSchemaToSource(parameter?.schema);
