@@ -569,7 +569,7 @@ export class Generator {
           };
         }
 
-        if (method.pathParameters?.length) {
+        if (method.pathParameters?.size) {
           const baseTypeName = `${requestBaseName}${PATH_PARAMETERS_SUFFIX}`;
 
           const pathParameterSchema: ParsedObject = {
@@ -577,10 +577,7 @@ export class Generator {
               fullGrpcName: `${methodGrpcNameBase}.${baseTypeName}`,
               name: baseTypeName,
               rules: {},
-              properties: method.pathParameters.reduce((acc, curr) => {
-                acc.set(curr.name, curr);
-                return acc;
-              }, new Map()),
+              properties: method.pathParameters,
             },
           };
 
@@ -590,17 +587,14 @@ export class Generator {
           };
         }
 
-        if (method.queryParameters?.length) {
+        if (method.queryParameters?.size) {
           const baseTypeName = `${requestBaseName}${QUERY_PARAMETERS_SUFFIX}`;
           const queryParameterSchema: ParsedObject = {
             object: {
               fullGrpcName: `${methodGrpcNameBase}.${baseTypeName}`,
               name: baseTypeName,
               rules: {},
-              properties: method.queryParameters.reduce((acc, curr) => {
-                acc.set(curr.name, curr);
-                return acc;
-              }, new Map()),
+              properties: method.queryParameters,
             },
           };
 
@@ -626,13 +620,13 @@ export class Generator {
           },
         };
 
-        if (method.pathParameters?.length) {
+        if (method.pathParameters?.size) {
           method.pathParameters.forEach((param) => {
             mergedSchema.object.properties.set(param.name, param);
           });
         }
 
-        if (method.queryParameters?.length) {
+        if (method.queryParameters?.size) {
           method.queryParameters.forEach((param) => {
             mergedSchema.object.properties.set(param.name, param);
           });

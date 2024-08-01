@@ -180,8 +180,8 @@ export interface ParsedMethod<TSchemaWithRef extends ParsedSchemaWithRef = Parse
   httpPath: string;
   requestBody?: TSchemaWithRef;
   responseBody?: TSchemaWithRef;
-  pathParameters?: ParsedObjectProperty<TSchemaWithRef>[];
-  queryParameters?: ParsedObjectProperty<TSchemaWithRef>[];
+  pathParameters?: Map<string, ParsedObjectProperty<TSchemaWithRef>> | undefined;
+  queryParameters?: Map<string, ParsedObjectProperty<TSchemaWithRef>> | undefined;
   listOptions?: ParsedMethodListOptions;
   relatedEntity?: ParsedEntity;
   parentService: ParsedService;

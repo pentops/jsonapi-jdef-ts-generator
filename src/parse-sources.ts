@@ -298,15 +298,17 @@ export function parseJdefSource(source: JDEF): ParsedSource {
 
     for (const method of pkg.methods) {
       function mapParameters(parameters: JDEFParameter[] | undefined) {
-        return parameters?.reduce<ParsedObjectProperty[]>((acc, parameter) => {
+        return parameters?.reduce<Map<string, ParsedObjectProperty>>((acc, parameter) => {
           const converted = jdefParameterToSource(parameter);
 
           if (!converted) {
             return acc;
           }
 
-          return [...acc, converted];
-        }, []);
+          acc.set(converted.name, converted);
+
+          return acc;
+        }, new Map());
       }
 
       let service = parsedPackage.services.find((service) => service.name === method.grpcServiceName);
@@ -386,6 +388,52 @@ function mapApiStateEntity(entity: APIStateEntity | undefined, part?: EntityPart
 
 function buildApiSchemaRef(ref: APIRefValue): ParsedRef {
   return { $ref: `${JSON_SCHEMA_REFERENCE_PREFIX}${ref.package}.${ref.schema}` };
+}
+
+function addEntityDataToApiPrimaryKeys(
+  entity: ParsedEntity | undefined,
+  mappedProperties: Map<string, ParsedObjectProperty>,
+): Map<string, ParsedObjectProperty> {
+  if (entity && entity.primaryKeys?.length) {
+    const getPrimaryKeyProperty = (primaryKey: string) => {
+      const keyParts = primaryKey.split('.');
+      let properties = mappedProperties;
+
+      for (let i = 0; i <= keyParts.length; i += 1) {
+        const prospect = properties.get(keyParts[i]);
+
+        if (prospect) {
+          const keySchemaMatch = match(prospect)
+            .returnType<ParsedKey | undefined>()
+            .with({ schema: { key: P.not(P.nullish) } }, (k) => k.schema)
+            .otherwise(() => undefined);
+
+          if (keySchemaMatch) {
+            return keySchemaMatch;
+          }
+
+          const subProperties = getObjectProperties(prospect.schema);
+
+          if (!subProperties?.size) {
+            return;
+          }
+
+          properties = subProperties;
+        }
+      }
+    };
+
+    for (const primaryKey of entity.primaryKeys) {
+      const primaryKeyProperty = getPrimaryKeyProperty(primaryKey);
+
+      if (primaryKeyProperty) {
+        primaryKeyProperty.key.primary = primaryKeyProperty.key.primary ?? true;
+        primaryKeyProperty.key.entity = primaryKeyProperty.key.entity ?? entity.stateEntityFullName;
+      }
+    }
+  }
+
+  return mappedProperties;
 }
 
 export function apiSchemaToSource(
@@ -531,52 +579,13 @@ export function apiSchemaToSource(
 
           const mappedProperties = mapObjectProperties(obj.properties);
 
-          if (entity && entity.primaryKeys?.length) {
-            const getPrimaryKeyProperty = (primaryKey: string) => {
-              const keyParts = primaryKey.split('.');
-              let properties = mappedProperties;
-
-              for (let i = 0; i <= keyParts.length; i++) {
-                const prospect = properties.get(keyParts[i]);
-
-                if (prospect) {
-                  const keySchemaMatch = match(prospect)
-                    .returnType<ParsedKey | undefined>()
-                    .with({ schema: { key: P.not(P.nullish) } }, (k) => k.schema)
-                    .otherwise(() => undefined);
-
-                  if (keySchemaMatch) {
-                    return keySchemaMatch;
-                  }
-
-                  const subProperties = getObjectProperties(prospect.schema);
-
-                  if (!subProperties?.size) {
-                    return;
-                  }
-
-                  properties = subProperties;
-                }
-              }
-            };
-
-            for (const primaryKey of entity.primaryKeys) {
-              const primaryKeyProperty = getPrimaryKeyProperty(primaryKey);
-
-              if (primaryKeyProperty) {
-                primaryKeyProperty.key.primary = primaryKeyProperty.key.primary ?? true;
-                primaryKeyProperty.key.entity = primaryKeyProperty.key.entity || entity.stateEntityFullName;
-              }
-            }
-          }
-
           return {
             object: {
               fullGrpcName,
               name: obj.name,
               description: obj.description,
               additionalProperties: obj.additionalProperties,
-              properties: mappedProperties,
+              properties: addEntityDataToApiPrimaryKeys(entity, mappedProperties),
               rules: obj.rules,
               entity,
             },
@@ -625,7 +634,7 @@ export function apiSchemaToSource(
         ({
           key: {
             format: k.key.format,
-            primary: Boolean(k.key.primary),
+            primary: k.key.primary,
             entity: k.key.entity,
             rules: k.key.rules,
           },
@@ -656,7 +665,7 @@ function mapApiParameters(
     return undefined;
   }
 
-  return parameters.reduce<ParsedObjectProperty[]>((acc, parameter) => {
+  return parameters.reduce<Map<string, ParsedObjectProperty>>((acc, parameter) => {
     const converted = apiObjectPropertyToSource(parameter, stateEntities);
 
     if (!converted) {
@@ -667,8 +676,10 @@ function mapApiParameters(
       converted.required = true;
     }
 
-    return [...acc, converted];
-  }, []);
+    acc.set(converted.name, converted);
+
+    return acc;
+  }, new Map());
 }
 
 export function parseApiSource(source: API): ParsedSource {
@@ -755,6 +766,10 @@ export function parseApiSource(source: API): ParsedSource {
           ? ({ '!type': 'object', 'object': method.request.body } as APIObjectSchema)
           : undefined;
 
+        const mappedRelatedEntity = relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined;
+        const mappedPathParameters = mapApiParameters(method.request?.pathParameters, stateEntities, true);
+        const mappedQueryParameters = mapApiParameters(method.request?.queryParameters, stateEntities);
+
         parsedService.methods.push({
           name: method.name,
           fullGrpcName: method.fullGrpcName,
@@ -774,10 +789,14 @@ export function parseApiSource(source: API): ParsedSource {
                 getApiMethodRequestResponseFullGrpcName(method, requestBodyAsObjectSchema),
               )
             : undefined,
-          pathParameters: mapApiParameters(method.request?.pathParameters, stateEntities, true),
-          queryParameters: mapApiParameters(method.request?.queryParameters, stateEntities),
+          pathParameters: mappedPathParameters
+            ? addEntityDataToApiPrimaryKeys(mappedRelatedEntity, mappedPathParameters)
+            : undefined,
+          queryParameters: mappedQueryParameters
+            ? addEntityDataToApiPrimaryKeys(mappedRelatedEntity, mappedQueryParameters)
+            : undefined,
           listOptions: mapListOptions(method.request?.list),
-          relatedEntity: relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined,
+          relatedEntity: mappedRelatedEntity,
           parentService: parsedService,
         });
       }
