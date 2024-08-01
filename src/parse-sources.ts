@@ -38,7 +38,7 @@ import {
   APIStateEntity,
 } from './api-types';
 import { EntityPart, HTTPMethod } from './shared-types';
-import { JSON_SCHEMA_REFERENCE_PREFIX } from './helpers';
+import { getObjectProperties, JSON_SCHEMA_REFERENCE_PREFIX } from './helpers';
 
 export function jdefParameterToSource(parameter: JDEFParameter): ParsedObjectProperty | undefined {
   const converted = jdefSchemaToSource(parameter?.schema);
@@ -529,13 +529,54 @@ export function apiSchemaToSource(
                 } as ParsedEntity)
               : undefined;
 
+          const mappedProperties = mapObjectProperties(obj.properties);
+
+          if (entity && entity.primaryKeys?.length) {
+            const getPrimaryKeyProperty = (primaryKey: string) => {
+              const keyParts = primaryKey.split('.');
+              let properties = mappedProperties;
+
+              for (let i = 0; i <= keyParts.length; i++) {
+                const prospect = properties.get(keyParts[i]);
+
+                if (prospect) {
+                  const keySchemaMatch = match(prospect)
+                    .returnType<ParsedKey | undefined>()
+                    .with({ schema: { key: P.not(P.nullish) } }, (k) => k.schema)
+                    .otherwise(() => undefined);
+
+                  if (keySchemaMatch) {
+                    return keySchemaMatch;
+                  }
+
+                  const subProperties = getObjectProperties(prospect.schema);
+
+                  if (!subProperties?.size) {
+                    return;
+                  }
+
+                  properties = subProperties;
+                }
+              }
+            };
+
+            for (const primaryKey of entity.primaryKeys) {
+              const primaryKeyProperty = getPrimaryKeyProperty(primaryKey);
+
+              if (primaryKeyProperty) {
+                primaryKeyProperty.key.primary = primaryKeyProperty.key.primary ?? true;
+                primaryKeyProperty.key.entity = primaryKeyProperty.key.entity || entity.stateEntityFullName;
+              }
+            }
+          }
+
           return {
             object: {
               fullGrpcName,
               name: obj.name,
               description: obj.description,
               additionalProperties: obj.additionalProperties,
-              properties: mapObjectProperties(obj.properties),
+              properties: mappedProperties,
               rules: obj.rules,
               entity,
             },
