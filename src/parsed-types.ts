@@ -12,6 +12,7 @@ import {
 
 export interface ParsedMetadata {
   builtAt: Date | null;
+  version: string | undefined;
 }
 
 export interface ParsedEnum {

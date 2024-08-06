@@ -26,8 +26,7 @@ import {
   SortDirection,
 } from './parsed-types';
 import { constantCase } from 'change-case';
-import type {
-  API,
+import {
   APIMethod,
   APIMethodAuthType,
   APIObjectProperty,
@@ -37,6 +36,7 @@ import type {
   APIRootSchema,
   APISchema,
   APIService,
+  APISource,
   APIStateEntity,
 } from './api-types';
 import { EntityPart, HTTPMethod } from './shared-types';
@@ -269,6 +269,7 @@ function getJdefMethodRequestResponseFullGrpcName(method: JDEFMethod, requestOrR
 export function parseJdefSource(source: JDEF): ParsedSource {
   const metadata: ParsedSource['metadata'] = {
     builtAt: null,
+    version: undefined,
   };
 
   if (source.metadata.built_at) {
@@ -693,19 +694,20 @@ export function mapApiAuth(auth: APIMethodAuthType | undefined): ParsedAuthType 
     .otherwise(() => undefined);
 }
 
-export function parseApiSource(source: API): ParsedSource {
+export function parseApiSource(source: APISource): ParsedSource {
   const parsed: ParsedSource = {
     metadata: {
-      builtAt: new Date(source.metadata.builtAt),
+      builtAt: new Date(source.api.metadata.builtAt),
+      version: source.version,
     },
     packages: [],
     schemas: new Map(),
   };
 
-  const stateEntities = source.packages?.flatMap((pkg) => pkg.stateEntities || []);
+  const stateEntities = source.api.packages?.flatMap((pkg) => pkg.stateEntities || []);
 
   // First, parse all root-level schemas
-  for (const pkg of source.packages || []) {
+  for (const pkg of source.api.packages || []) {
     for (const schemaName in pkg.schemas || {}) {
       if (pkg.schemas) {
         const fullGrpcName = `${pkg.name}.${schemaName}`;
@@ -718,7 +720,7 @@ export function parseApiSource(source: API): ParsedSource {
     }
   }
 
-  for (const pkg of source.packages || []) {
+  for (const pkg of source.api.packages || []) {
     const parsedPackage: ParsedPackage = {
       name: pkg.name,
       label: pkg.label,

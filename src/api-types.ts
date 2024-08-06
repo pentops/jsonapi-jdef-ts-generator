@@ -299,3 +299,8 @@ export interface API {
   metadata: APIMetadata;
   packages: APIPackage[];
 }
+
+export interface APISource {
+  version: string;
+  api: API;
+}

@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import { match, P } from 'ts-pattern';
 import { HostedSource, JSONSource, SourceType } from './config';
 import { JDEF } from './jdef-types';
-import { API } from './api-types';
+import { APISource } from './api-types';
 import { ParsedSource } from './parsed-types';
 import { parseApiSource, parseJdefSource } from './parse-sources';
 
@@ -33,7 +33,7 @@ async function getLocalSource(filePath: string, explicitType: SourceType | undef
       const fileContentAsObject = JSON.parse(fileContent);
 
       return match(sourceType)
-        .with('api', () => parseApiSource(fileContentAsObject as API))
+        .with('api', () => parseApiSource(fileContentAsObject as APISource))
         .with('jdef', () => parseJdefSource(fileContentAsObject as JDEF))
         .otherwise(() => undefined);
     } catch (e) {
@@ -67,7 +67,7 @@ async function getHostedSource(hostedSource: HostedSource) {
   const json = await result.json();
 
   return match(sourceType)
-    .with('api', () => parseApiSource(json as API))
+    .with('api', () => parseApiSource(json as APISource))
     .with('jdef', () => parseJdefSource(json as JDEF))
     .otherwise(() => undefined);
 }
@@ -117,7 +117,11 @@ function mergeSources(sources: ParsedSource[]): ParsedSource {
 
       return acc;
     },
-    { metadata: { builtAt: sources[0]?.metadata?.builtAt }, schemas: new Map(), packages: [] },
+    {
+      metadata: { builtAt: sources[0]?.metadata?.builtAt, version: sources[0]?.metadata?.version },
+      schemas: new Map(),
+      packages: [],
+    },
   );
 }
 
