@@ -227,6 +227,36 @@ export interface APIRequest {
   queryParameters?: APIObjectProperty[];
 }
 
+export interface APIMethodAuthTypeNone {
+  '!type': 'none';
+  'none': {};
+}
+
+export interface APIMethodAuthTypeJWTBearer {
+  '!type': 'jwtBearer';
+  'jwtBearer': {};
+}
+
+export interface APIMethodAuthTypeCustomValue {
+  passThroughHeaders: string[];
+}
+
+export interface APIMethodAuthTypeCustom {
+  '!type': 'custom';
+  'custom': APIMethodAuthTypeCustomValue;
+}
+
+export interface APIMethodAuthTypeCookie {
+  '!type': 'cookie';
+  'cookie': {};
+}
+
+export type APIMethodAuthType =
+  | APIMethodAuthTypeNone
+  | APIMethodAuthTypeCustom
+  | APIMethodAuthTypeJWTBearer
+  | APIMethodAuthTypeCookie;
+
 export interface APIMethod {
   fullGrpcName: string;
   httpMethod: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -234,6 +264,7 @@ export interface APIMethod {
   name: string;
   request?: APIRequest;
   responseBody?: APIObjectValue;
+  auth?: APIMethodAuthType;
 }
 
 export interface APIService {

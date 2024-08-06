@@ -173,6 +173,22 @@ export interface ParsedMethodListOptions {
   sortableFields?: SortableField[];
 }
 
+export interface ParsedAuthTypeCustom {
+  custom: {
+    passThroughHeaders: string[];
+  };
+}
+
+export interface ParsedAuthTypeJWTBearer {
+  jwtBearer: {};
+}
+
+export interface ParsedAuthTypeCookie {
+  cookie: {};
+}
+
+export type ParsedAuthType = ParsedAuthTypeCustom | ParsedAuthTypeJWTBearer | ParsedAuthTypeCookie;
+
 export interface ParsedMethod<TSchemaWithRef extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   name: string;
   fullGrpcName: string;
@@ -185,6 +201,7 @@ export interface ParsedMethod<TSchemaWithRef extends ParsedSchemaWithRef = Parse
   listOptions?: ParsedMethodListOptions;
   relatedEntity?: ParsedEntity;
   parentService: ParsedService;
+  auth: ParsedAuthType | undefined;
 }
 
 export interface ParsedService<TSchemaWithRef extends ParsedSchemaWithRef = ParsedSchemaWithRef> {

@@ -3,6 +3,7 @@ import { JDEF, JDEFMethod, JDEFObjectProperty, JDEFParameter, JDEFSchemaWithRef 
 import {
   ParsedAny,
   ParsedArray,
+  ParsedAuthType,
   ParsedBoolean,
   ParsedBytes,
   ParsedEntity,
@@ -25,9 +26,10 @@ import {
   SortDirection,
 } from './parsed-types';
 import { constantCase } from 'change-case';
-import {
+import type {
   API,
   APIMethod,
+  APIMethodAuthType,
   APIObjectProperty,
   APIObjectSchema,
   APIRefValue,
@@ -340,6 +342,7 @@ export function parseJdefSource(source: JDEF): ParsedSource {
         pathParameters: mapParameters(method.pathParameters),
         queryParameters: mapParameters(method.queryParameters),
         parentService: service,
+        auth: undefined,
       });
     }
 
@@ -682,6 +685,14 @@ function mapApiParameters(
   }, new Map());
 }
 
+export function mapApiAuth(auth: APIMethodAuthType | undefined): ParsedAuthType | undefined {
+  return match(auth)
+    .with({ '!type': 'cookie' }, () => ({ cookie: {} }))
+    .with({ '!type': 'jwtBearer' }, () => ({ jwtBearer: {} }))
+    .with({ '!type': 'custom' }, (s) => ({ custom: { passThroughHeaders: s.custom.passThroughHeaders } }))
+    .otherwise(() => undefined);
+}
+
 export function parseApiSource(source: API): ParsedSource {
   const parsed: ParsedSource = {
     metadata: {
@@ -798,6 +809,7 @@ export function parseApiSource(source: API): ParsedSource {
           listOptions: mapListOptions(method.request?.list),
           relatedEntity: mappedRelatedEntity,
           parentService: parsedService,
+          auth: mapApiAuth(method.auth),
         });
       }
 
