@@ -3,7 +3,7 @@ import path from 'path';
 import { match, P } from 'ts-pattern';
 import type { GenericOverride, GenericOverrideMap, GenericOverrideNodeType } from './config';
 import type { ParsedObjectProperty, ParsedRef, ParsedSchema, ParsedSchemaWithRef } from './parsed-types';
-import { PackageSummary } from './generated-types';
+import { GeneratedSchema, PackageSummary } from './generated-types';
 
 const { factory, SyntaxKind } = ts;
 
@@ -40,6 +40,15 @@ export function getPackageSummary(schema: ParsedSchemaWithRef | undefined): Pack
     .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.package)
     .with({ array: P.not(P.nullish) }, (s) => getPackageSummary(s.array.itemSchema))
     .otherwise(() => undefined);
+}
+
+export function getGeneratedSchemasForPackage(
+  fullGrpcPackageName: string,
+  generatedSchemas: Map<string, GeneratedSchema>,
+) {
+  return Array.from(generatedSchemas.values()).filter(
+    (schema) => schema.parentPackage?.package === fullGrpcPackageName,
+  );
 }
 
 export function getObjectProperties(
