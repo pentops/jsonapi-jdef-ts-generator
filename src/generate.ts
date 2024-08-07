@@ -22,6 +22,7 @@ import type {
   ParsedObject,
   ParsedObjectProperty,
   ParsedOneOf,
+  ParsedPackage,
   ParsedRef,
   ParsedSchema,
   ParsedSchemaWithRef,
@@ -32,6 +33,7 @@ import {
   GeneratedClientFunction,
   GeneratedSchema,
   GeneratedSchemaWithNode,
+  PackageSummary,
 } from './generated-types';
 
 const {
@@ -151,6 +153,13 @@ export class Generator {
     }
 
     return declarations;
+  }
+
+  private static buildPackageSummary(pkg: ParsedPackage): PackageSummary {
+    return {
+      package: pkg.name,
+      label: pkg.label,
+    };
   }
 
   private getValidTypeName(schema: ParsedSchemaWithRef, ...backupValues: string[]) {
@@ -536,7 +545,11 @@ export class Generator {
       .otherwise(() => undefined);
 
     const builtMethod =
-      this.builtMethodSchemas.get(method.fullGrpcName) || ({ rawMethod: method } as BuiltMethodSchema);
+      this.builtMethodSchemas.get(method.fullGrpcName) ||
+      ({
+        rawMethod: method,
+        parentPackage: Generator.buildPackageSummary(method.parentService.parentPackage),
+      } as BuiltMethodSchema);
 
     const relatedEntity = method.relatedEntity?.schemaFullGrpcName
       ? this.generatedSchemas.get(method.relatedEntity.schemaFullGrpcName)
@@ -547,7 +560,11 @@ export class Generator {
     }
 
     if (responseBody) {
-      builtMethod.responseBodySchema = { generatedName: this.getValidTypeName(responseBody), rawSchema: responseBody };
+      builtMethod.responseBodySchema = {
+        generatedName: this.getValidTypeName(responseBody),
+        rawSchema: responseBody,
+        parentPackage: builtMethod.parentPackage,
+      };
     }
 
     const requestBody = match(method.requestBody)
@@ -566,6 +583,7 @@ export class Generator {
           builtMethod.requestBodySchema = {
             generatedName: this.getValidTypeName(requestBody, requestBaseName),
             rawSchema: requestBody,
+            parentPackage: builtMethod.parentPackage,
           };
         }
 
@@ -584,6 +602,7 @@ export class Generator {
           builtMethod.pathParametersSchema = {
             generatedName: this.getValidTypeName(pathParameterSchema, baseTypeName),
             rawSchema: pathParameterSchema,
+            parentPackage: builtMethod.parentPackage,
           };
         }
 
@@ -601,6 +620,7 @@ export class Generator {
           builtMethod.queryParametersSchema = {
             generatedName: getSchemaName(queryParameterSchema, schemas),
             rawSchema: queryParameterSchema,
+            parentPackage: builtMethod.parentPackage,
           };
         }
 
@@ -636,6 +656,7 @@ export class Generator {
           builtMethod.mergedRequestSchema = {
             generatedName: this.getValidTypeName(mergedSchema, requestBaseName),
             rawSchema: mergedSchema,
+            parentPackage: builtMethod.parentPackage,
           };
         }
 
@@ -658,7 +679,17 @@ export class Generator {
           },
         };
 
-        return { generatedName: schema.enum.name, rawSchema: schema };
+        const generatedSchema = {
+          generatedName: schema.enum.name,
+          rawSchema: schema,
+          parentPackage: builtMethod.parentPackage,
+        };
+
+        if (!this.generatedSchemas.has(mockGrpcName)) {
+          this.generatedSchemas.set(mockGrpcName, generatedSchema);
+        }
+
+        return generatedSchema;
       };
 
       if (method.listOptions.filterableFields?.length) {
@@ -707,6 +738,7 @@ export class Generator {
         this.generatedSchemas.set(node.fullGrpcName || node.generatedName || schemaName, {
           generatedName: node.generatedName || schemaName,
           rawSchema: node.rawSchema || schema,
+          parentPackage: parentMethod?.parentPackage,
         });
 
         nodes.push(node.node);

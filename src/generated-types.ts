@@ -1,9 +1,15 @@
 import type { InterfaceDeclaration, TypeNode, TypeAliasDeclaration, EnumDeclaration } from 'typescript';
 import type { ParsedEnum, ParsedMethod, ParsedObject, ParsedSchema } from './parsed-types';
 
+export interface PackageSummary {
+  package: string;
+  label: string | undefined;
+}
+
 export interface GeneratedSchema<TSchema extends ParsedSchema = ParsedSchema> {
   generatedName: string;
   rawSchema: TSchema;
+  parentPackage?: PackageSummary;
 }
 
 export type MethodListOptions = 'filterableFields' | 'searchableFields' | 'sortableFields';
@@ -19,6 +25,7 @@ export interface BuiltMethodSchema {
   responseBodySchema?: GeneratedSchema<ParsedObject>;
   list?: BuiltMethodListSchema;
   relatedEntity?: GeneratedSchema<ParsedObject>;
+  parentPackage: PackageSummary;
 }
 
 export interface GeneratedClientFunction {
