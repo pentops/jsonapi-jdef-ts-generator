@@ -1,5 +1,5 @@
 import { match, P } from 'ts-pattern';
-import { JDEF, JDEFMethod, JDEFObjectProperty, JDEFParameter, JDEFSchemaWithRef } from './jdef-types';
+import { JDEF, JDEFMethod, JDEFObjectProperty, JDEFPackage, JDEFParameter, JDEFSchemaWithRef } from './jdef-types';
 import {
   ParsedAny,
   ParsedArray,
@@ -31,6 +31,7 @@ import {
   APIMethodAuthType,
   APIObjectProperty,
   APIObjectSchema,
+  APIPackage,
   APIRefValue,
   APIRequestListOptions,
   APIRootSchema,
@@ -41,6 +42,7 @@ import {
 } from './api-types';
 import { EntityPart, HTTPMethod } from './shared-types';
 import { getObjectProperties, JSON_SCHEMA_REFERENCE_PREFIX } from './helpers';
+import { PackageSummary } from './generated-types';
 
 export function jdefParameterToSource(parameter: JDEFParameter): ParsedObjectProperty | undefined {
   const converted = jdefSchemaToSource(parameter?.schema);
@@ -73,7 +75,22 @@ export function jdefObjectPropertyToSource(
   };
 }
 
-export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: string): ParsedSchemaWithRef | undefined {
+function jdefPackageToSummary(pkg: JDEFPackage | undefined): PackageSummary | undefined {
+  if (!pkg) {
+    return undefined;
+  }
+
+  return {
+    package: pkg.name,
+    label: pkg.label,
+  };
+}
+
+export function jdefSchemaToSource(
+  schema: JDEFSchemaWithRef,
+  schemaName?: string,
+  pkg?: JDEFPackage,
+): ParsedSchemaWithRef | undefined {
   const typeName = schemaName?.split('.').pop() || schemaName || '';
   const fullName = schemaName || '';
 
@@ -105,6 +122,7 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
             prefix: schemaName ? `${constantCase(schemaName)}_` : undefined,
             example: e.example,
             rules: {},
+            package: jdefPackageToSummary(pkg),
             options: e.enum.map((option) => {
               const matchedMetadata = e['x-enum']?.find((metadata) => metadata.name === option);
 
@@ -189,11 +207,13 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
         return {
           map: {
             example: o.example,
-            itemSchema: jdefSchemaToSource(o.additionalProperties),
-            keySchema: o['x-key-property'] ? jdefSchemaToSource(o['x-key-property']) : undefined,
+            itemSchema: jdefSchemaToSource(o.additionalProperties, undefined, pkg),
+            keySchema: o['x-key-property'] ? jdefSchemaToSource(o['x-key-property'], undefined, pkg) : undefined,
           },
         } as ParsedMap;
       }
+
+      const packageSummary = jdefPackageToSummary(pkg);
 
       function buildParsedProperties(properties: Record<string, JDEFObjectProperty> | undefined) {
         return Object.entries(properties || {}).reduce<Map<string, ParsedObjectProperty>>(
@@ -220,6 +240,7 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
             description: o.description,
             name: o['x-name'] || typeName,
             properties: buildParsedProperties(o.properties),
+            package: packageSummary,
           },
         } as ParsedOneOf;
       }
@@ -235,6 +256,7 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
             minProperties: o.minProperties,
             maxProperties: o.maxProperties,
           },
+          package: packageSummary,
         },
       } as ParsedObject;
     })
@@ -244,7 +266,7 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
         ({
           array: {
             example: a.example,
-            itemSchema: jdefSchemaToSource(a.items),
+            itemSchema: jdefSchemaToSource(a.items, undefined, pkg),
             rules: {
               minItems: a.minItems,
               maxItems: a.maxItems,
@@ -284,6 +306,7 @@ export function parseJdefSource(source: JDEF): ParsedSource {
   };
 
   for (const schemaName in source.definitions) {
+    // TODO: match package
     const parsedSchema = jdefSchemaToSource(source.definitions[schemaName], schemaName);
 
     if (parsedSchema) {
@@ -336,10 +359,15 @@ export function parseJdefSource(source: JDEF): ParsedSource {
           ? jdefSchemaToSource(
               method.responseBody,
               getJdefMethodRequestResponseFullGrpcName(method, method.responseBody),
+              pkg,
             )
           : undefined,
         requestBody: method.requestBody
-          ? jdefSchemaToSource(method.requestBody, getJdefMethodRequestResponseFullGrpcName(method, method.requestBody))
+          ? jdefSchemaToSource(
+              method.requestBody,
+              getJdefMethodRequestResponseFullGrpcName(method, method.requestBody),
+              pkg,
+            )
           : undefined,
         pathParameters: mapParameters(method.pathParameters),
         queryParameters: mapParameters(method.queryParameters),
@@ -441,10 +469,22 @@ function addEntityDataToApiPrimaryKeys(
   return mappedProperties;
 }
 
+export function apiPackageToSummary(pkg?: APIPackage): PackageSummary | undefined {
+  if (!pkg) {
+    return undefined;
+  }
+
+  return {
+    package: pkg.name,
+    label: pkg.label,
+  };
+}
+
 export function apiSchemaToSource(
   schema: APISchema,
   stateEntities: APIStateEntity[],
   fullGrpcName?: string,
+  pkg?: APIPackage,
 ): ParsedSchemaWithRef | undefined {
   function mapObjectProperties(properties: APIObjectProperty[] | undefined) {
     return (properties || []).reduce<Map<string, ParsedObjectProperty>>((acc, curr) => {
@@ -471,6 +511,7 @@ export function apiSchemaToSource(
                 name: eWithEnum.name,
                 prefix: eWithEnum.prefix,
                 rules: eWithEnum.rules,
+                package: apiPackageToSummary(pkg),
                 options: eWithEnum.options.map((option) => ({
                   name: option.name,
                   description: option.description,
@@ -563,6 +604,7 @@ export function apiSchemaToSource(
                 name: oneOf.name,
                 properties: mapObjectProperties(oneOf.properties),
                 rules: oneOf.rules,
+                package: apiPackageToSummary(pkg),
               },
             }) as ParsedOneOf,
         )
@@ -594,6 +636,7 @@ export function apiSchemaToSource(
               properties: addEntityDataToApiPrimaryKeys(entity, mappedProperties),
               rules: obj.rules,
               entity,
+              package: apiPackageToSummary(pkg),
             },
           } as ParsedObject;
         })
@@ -601,13 +644,13 @@ export function apiSchemaToSource(
     )
     .with({ '!type': 'any' }, () => ({ any: {} }) as ParsedAny)
     .with({ '!type': 'map' }, (m) => {
-      const convertedItemSchema = apiSchemaToSource(m.map.itemSchema, stateEntities);
+      const convertedItemSchema = apiSchemaToSource(m.map.itemSchema, stateEntities, undefined, pkg);
 
       if (!convertedItemSchema) {
         return undefined;
       }
 
-      const convertedKeySchema = apiSchemaToSource(m.map.keySchema, stateEntities) || {
+      const convertedKeySchema = apiSchemaToSource(m.map.keySchema, stateEntities, undefined, pkg) || {
         '!type': 'string',
         'string': {},
       };
@@ -621,7 +664,7 @@ export function apiSchemaToSource(
       } as ParsedMap;
     })
     .with({ '!type': 'array' }, (a) => {
-      const converted = apiSchemaToSource(a.array.items, stateEntities);
+      const converted = apiSchemaToSource(a.array.items, stateEntities, undefined, pkg);
 
       if (!converted) {
         return undefined;
@@ -714,7 +757,7 @@ export function parseApiSource(source: APISource): ParsedSource {
     for (const schemaName in pkg.schemas || {}) {
       if (pkg.schemas) {
         const fullGrpcName = `${pkg.name}.${schemaName}`;
-        const parsedSchema = apiSchemaToSource(pkg.schemas[schemaName], stateEntities, fullGrpcName);
+        const parsedSchema = apiSchemaToSource(pkg.schemas[schemaName], stateEntities, fullGrpcName, pkg);
 
         if (parsedSchema) {
           parsed.schemas.set(fullGrpcName, parsedSchema as ParsedSchema);
@@ -796,6 +839,7 @@ export function parseApiSource(source: APISource): ParsedSource {
                 responseBodyAsObjectSchema,
                 stateEntities,
                 getApiMethodRequestResponseFullGrpcName(method, responseBodyAsObjectSchema),
+                pkg,
               )
             : undefined,
           requestBody: requestBodyAsObjectSchema
@@ -803,6 +847,7 @@ export function parseApiSource(source: APISource): ParsedSource {
                 requestBodyAsObjectSchema,
                 stateEntities,
                 getApiMethodRequestResponseFullGrpcName(method, requestBodyAsObjectSchema),
+                pkg,
               )
             : undefined,
           pathParameters: mappedPathParameters

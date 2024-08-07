@@ -10,6 +10,7 @@ import {
   StateEntityEvent,
   StringRules,
 } from './shared-types';
+import { PackageSummary } from './generated-types';
 
 export interface ParsedMetadata {
   builtAt: Date | null;
@@ -24,6 +25,7 @@ export interface ParsedEnum {
     prefix: string;
     example?: any;
     rules: EnumRules;
+    package?: PackageSummary;
   };
 }
 
@@ -106,6 +108,7 @@ export interface ParsedObject<TSchemaWithRef extends ParsedSchemaWithRef = Parse
     rules: ObjectRules;
     example?: any;
     additionalProperties?: boolean;
+    package?: PackageSummary;
   };
 }
 
@@ -116,6 +119,7 @@ export interface ParsedOneOf {
     name: string;
     properties: Map<string, ParsedObjectProperty>;
     example?: any;
+    package?: PackageSummary;
   };
 }
 
