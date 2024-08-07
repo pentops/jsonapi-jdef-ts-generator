@@ -13,10 +13,10 @@ const { createPrinter, createSourceFile, factory, ScriptKind, ScriptTarget, List
 export type PluginFileSchemaFilter = (schema: GeneratedSchema) => boolean;
 export type PluginFileClientFunctionFilter = (clientFunction: GeneratedClientFunction) => boolean;
 
-export type PluginFileConfigCreator = (
+export type PluginFileConfigCreator<TFileConfig extends PluginFileGeneratorConfig = PluginFileGeneratorConfig> = (
   generatedSchemas: Map<string, GeneratedSchema>,
   generatedClientFunctions: GeneratedClientFunction[],
-) => PluginFileGeneratorConfig[];
+) => TFileConfig[];
 
 export interface PluginFileGeneratorConfig {
   directory: string;
@@ -50,8 +50,8 @@ export interface WritableFile {
   writtenTo: string;
 }
 
-export class PluginFile {
-  public config: PluginFileGeneratorConfig;
+export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGeneratorConfig> {
+  public config: TConfig;
   public readonly existingFileContent: string | undefined;
   private readonly generatingPluginName: string;
   private nodeList: Node[] = [];
@@ -67,7 +67,7 @@ export class PluginFile {
 
   constructor(
     generatingPluginName: string,
-    config: PluginFileGeneratorConfig,
+    config: TConfig,
     generatedTypesImportConfiguration: GeneratedImportPath,
     generatedClientImportConfiguration: GeneratedImportPath,
     existingFileContent: string | undefined,
@@ -237,22 +237,26 @@ export class PluginFile {
   }
 }
 
-export interface PluginConfig {
-  files?: PluginFileGeneratorConfig[] | PluginFileConfigCreator;
+export interface PluginConfig<TFileConfig extends PluginFileGeneratorConfig = PluginFileGeneratorConfig> {
+  files?: TFileConfig[] | PluginFileConfigCreator<TFileConfig>;
 }
 
-export class PluginBase {
+export class PluginBase<
+  TFileConfig extends PluginFileGeneratorConfig = PluginFileGeneratorConfig,
+  TConfig extends PluginConfig<TFileConfig> = PluginConfig<TFileConfig>,
+> {
   name: string = 'UndefinedPlugin';
-  private pluginConfig: PluginConfig;
+
+  private pluginConfig: TConfig;
   protected api: ParsedSource | undefined;
   protected config: Config | undefined;
   protected cwd: string | undefined;
-  protected files: PluginFile[] = [];
+  protected files: PluginFile<TFileConfig>[] = [];
   protected generatedClientFunctions: GeneratedClientFunction[] = [];
   protected generatedSchemas: Map<string, GeneratedSchema> = new Map();
   private startedAt: number | undefined;
 
-  constructor(pluginConfig: PluginConfig) {
+  constructor(pluginConfig: TConfig) {
     this.pluginConfig = pluginConfig;
   }
 
@@ -285,7 +289,7 @@ export class PluginBase {
         );
       } catch {}
 
-      return new PluginFile(
+      return new PluginFile<TFileConfig>(
         this.name,
         fileConfig,
         {
