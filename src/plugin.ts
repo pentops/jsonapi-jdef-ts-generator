@@ -185,6 +185,12 @@ export class PluginFile {
     this.pendingImportNodes = importNodes;
   }
 
+  public isFileForSchema(generatedSchema: GeneratedSchema) {
+    return typeof this.config.schemaFilter === 'function'
+      ? this.config.schemaFilter(generatedSchema)
+      : (this.config.schemaFilter ?? true);
+  }
+
   public addNodes(...nodes: Node[]) {
     this.nodeList.push(...nodes);
   }
