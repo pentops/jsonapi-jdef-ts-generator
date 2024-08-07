@@ -23,6 +23,12 @@ export interface PluginFileGeneratorConfig {
   fileName: string;
   schemaFilter?: PluginFileSchemaFilter | boolean;
   clientFunctionFilter?: PluginFileClientFunctionFilter | boolean;
+  readExistingFileConfig?:
+    | {
+        encoding: BufferEncoding;
+        flag?: string | undefined;
+      }
+    | BufferEncoding;
 }
 
 export interface GeneratedImportPath {
@@ -46,6 +52,7 @@ export interface WritableFile {
 
 export class PluginFile {
   public config: PluginFileGeneratorConfig;
+  public readonly existingFileContent: string | undefined;
   private readonly generatingPluginName: string;
   private nodeList: Node[] = [];
   private readonly typeImports: Set<string>;
@@ -63,6 +70,7 @@ export class PluginFile {
     config: PluginFileGeneratorConfig,
     generatedTypesImportConfiguration: GeneratedImportPath,
     generatedClientImportConfiguration: GeneratedImportPath,
+    existingFileContent: string | undefined,
   ) {
     this.generatingPluginName = generatingPluginName;
     this.config = config;
@@ -71,6 +79,7 @@ export class PluginFile {
     this.typeImports = new Set();
     this.clientImports = new Set();
     this.manualImports = new Map();
+    this.existingFileContent = existingFileContent;
   }
 
   public generateHeading(comment?: string) {
@@ -252,27 +261,40 @@ export class PluginBase {
     this.generatedSchemas = generator.generatedSchemas;
     this.cwd = cwd;
 
+    if (!this.cwd) {
+      throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
+    }
+
     const fileConfig =
       typeof this.pluginConfig.files === 'function'
         ? this.pluginConfig.files(this.generatedSchemas, this.generatedClientFunctions)
         : this.pluginConfig.files;
-    this.files = (fileConfig || []).map(
-      (fileConfig) =>
-        new PluginFile(
-          this.name,
-          fileConfig,
-          {
-            importPath: generator.config.typeOutput.importPath,
-            fileName: generator.config.typeOutput.fileName,
-            directory: generator.config.typeOutput.directory,
-          },
-          {
-            importPath: generator.config.clientOutput?.importPath,
-            fileName: generator.config.clientOutput?.fileName,
-            directory: generator.config.clientOutput?.directory,
-          },
-        ),
-    );
+    this.files = (fileConfig || []).map((fileConfig) => {
+      let existingFileContent: string | undefined;
+
+      try {
+        existingFileContent = fs.readFileSync(
+          path.join(cwd, fileConfig.directory, fileConfig.fileName),
+          fileConfig.readExistingFileConfig || { encoding: 'utf-8' },
+        );
+      } catch {}
+
+      return new PluginFile(
+        this.name,
+        fileConfig,
+        {
+          importPath: generator.config.typeOutput.importPath,
+          fileName: generator.config.typeOutput.fileName,
+          directory: generator.config.typeOutput.directory,
+        },
+        {
+          importPath: generator.config.clientOutput?.importPath,
+          fileName: generator.config.clientOutput?.fileName,
+          directory: generator.config.clientOutput?.directory,
+        },
+        existingFileContent,
+      );
+    });
   }
 
   protected getFileForSchema(schema: GeneratedSchema) {
