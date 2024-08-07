@@ -147,7 +147,7 @@ export interface APIArraySchema {
 export interface APIKeyValue {
   primary: boolean;
   entity: string;
-  format: 'UNSPECIFIED' | 'UUID';
+  format: 'UNSPECIFIED' | 'UUID' | 'NATURAL_KEY';
   rules?: {};
 }
 
