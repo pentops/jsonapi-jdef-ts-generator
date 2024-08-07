@@ -2,6 +2,7 @@ import {
   ArrayRules,
   BooleanRules,
   EntityObjectSchema,
+  EnumRules,
   EnumValueDescription,
   IntegerRules,
   NumberRules,
@@ -22,6 +23,7 @@ export interface APIEnumValue {
   name: string;
   prefix: string;
   options: EnumValueDescription[];
+  rules?: EnumRules;
 }
 
 export interface APIEnumSchema {
@@ -118,6 +120,7 @@ export interface APIAnySchema {
 export interface APIMapValue {
   keySchema: APISchema;
   itemSchema: APISchema;
+  rules?: {};
 }
 
 export interface APIMapSchema {

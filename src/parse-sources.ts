@@ -104,6 +104,7 @@ export function jdefSchemaToSource(schema: JDEFSchemaWithRef, schemaName?: strin
             name: typeName,
             prefix: schemaName ? `${constantCase(schemaName)}_` : undefined,
             example: e.example,
+            rules: {},
             options: e.enum.map((option) => {
               const matchedMetadata = e['x-enum']?.find((metadata) => metadata.name === option);
 
@@ -469,6 +470,7 @@ export function apiSchemaToSource(
                 fullGrpcName,
                 name: eWithEnum.name,
                 prefix: eWithEnum.prefix,
+                rules: eWithEnum.rules,
                 options: eWithEnum.options.map((option) => ({
                   name: option.name,
                   description: option.description,
@@ -614,6 +616,7 @@ export function apiSchemaToSource(
         map: {
           itemSchema: convertedItemSchema,
           keySchema: convertedKeySchema,
+          rules: m.map.rules || {},
         },
       } as ParsedMap;
     })

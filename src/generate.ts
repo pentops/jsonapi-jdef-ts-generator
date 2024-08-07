@@ -654,6 +654,7 @@ export class Generator {
             name: this.config.types.nameWriter(mockGrpcName),
             prefix: '',
             options: values.map((value) => ({ name: value })),
+            rules: {},
           },
         };
 

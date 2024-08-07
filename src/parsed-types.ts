@@ -1,6 +1,7 @@
 import {
   ArrayRules,
   EntityObjectSchema,
+  EnumRules,
   EnumValueDescription,
   HTTPMethod,
   IntegerRules,
@@ -22,6 +23,7 @@ export interface ParsedEnum {
     options: EnumValueDescription[];
     prefix: string;
     example?: any;
+    rules: EnumRules;
   };
 }
 
@@ -70,6 +72,7 @@ export interface ParsedMap {
   map: {
     itemSchema: ParsedSchemaWithRef;
     keySchema: ParsedSchemaWithRef;
+    rules: {};
     example?: any;
   };
 }

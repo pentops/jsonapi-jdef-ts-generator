@@ -49,6 +49,11 @@ export interface BooleanRules {
   const?: boolean;
 }
 
+export interface EnumRules {
+  in?: string[];
+  notIn?: string[];
+}
+
 export interface EnumValueDescription {
   description?: string;
   name: string;
