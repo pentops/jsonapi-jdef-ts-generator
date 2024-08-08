@@ -77,3 +77,72 @@ export interface StateEntityEvent {
   fullName: string;
   description?: string;
 }
+
+export interface FilteringConstraint {
+  filterable: boolean;
+  defaultFilters?: string[];
+}
+
+export interface SearchingConstraint {
+  searchable: boolean;
+  fieldIdentifier?: string;
+}
+
+export type SortingConstraintValue = 'UNSPECIFIED' | 'ASC' | 'DESC';
+
+export interface SortingConstraint {
+  sortable: boolean;
+  defaultSort?: SortingConstraintValue;
+}
+
+export interface OneOfListRules {
+  filtering?: FilteringConstraint;
+}
+
+export interface IntegerListRules {
+  filtering?: FilteringConstraint;
+  sorting?: SortingConstraint;
+}
+
+export interface FloatListRules {
+  filtering?: FilteringConstraint;
+  sorting?: SortingConstraint;
+}
+
+export interface BooleanListRules {
+  filtering?: FilteringConstraint;
+}
+
+export interface DateListRules {
+  filtering?: FilteringConstraint;
+}
+
+export interface EnumListRules {
+  filtering?: FilteringConstraint;
+}
+
+export interface TimestampListRules {
+  filtering?: FilteringConstraint;
+  sorting?: SortingConstraint;
+}
+
+export interface KeyListRules {
+  filtering?: FilteringConstraint;
+}
+
+export interface OpenTextListRules {
+  searching?: SearchingConstraint;
+}
+
+export interface ForeignKeyListRules {
+  // oneof
+  uniqueString?: KeyListRules;
+  uuid?: KeyListRules;
+}
+
+export interface StringListRules {
+  // oneof
+  openText?: OpenTextListRules;
+  date?: DateListRules;
+  foreignKey?: ForeignKeyListRules;
+}

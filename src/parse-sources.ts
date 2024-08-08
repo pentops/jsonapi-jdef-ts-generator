@@ -511,6 +511,7 @@ export function apiSchemaToSource(
                 name: eWithEnum.name,
                 prefix: eWithEnum.prefix,
                 rules: eWithEnum.rules,
+                listRules: eWithEnum.listRules,
                 package: apiPackageToSummary(pkg),
                 options: eWithEnum.options.map((option) => ({
                   name: option.name,
@@ -528,6 +529,7 @@ export function apiSchemaToSource(
         ({
           boolean: {
             rules: b.boolean.rules || {},
+            listRules: b.boolean.listRules || {},
           },
         }) as ParsedBoolean,
     )
@@ -538,6 +540,7 @@ export function apiSchemaToSource(
           integer: {
             format: i.integer.format,
             rules: i.integer.rules || {},
+            listRules: i.integer.listRules || {},
           },
         }) as ParsedInteger,
     )
@@ -548,6 +551,7 @@ export function apiSchemaToSource(
           float: {
             format: f.float.format,
             rules: f.float.rules || {},
+            listRules: f.float.listRules || {},
           },
         }) as ParsedFloat,
     )
@@ -558,6 +562,7 @@ export function apiSchemaToSource(
           string: {
             format: s.string.format,
             rules: s.string.rules || {},
+            listRules: s.string.listRules || {},
           },
         }) as ParsedString,
     )
@@ -568,6 +573,7 @@ export function apiSchemaToSource(
           string: {
             format: 'date',
             rules: s.date.rules || {},
+            listRules: s.date.listRules || {},
           },
         }) as ParsedString,
     )
@@ -578,6 +584,7 @@ export function apiSchemaToSource(
           string: {
             format: 'date-time',
             rules: s.timestamp.rules || {},
+            listRules: s.timestamp.listRules || {},
           },
         }) as ParsedString,
     )
@@ -604,6 +611,7 @@ export function apiSchemaToSource(
                 name: oneOf.name,
                 properties: mapObjectProperties(oneOf.properties),
                 rules: oneOf.rules,
+                listRules: oneOf.listRules || {},
                 package: apiPackageToSummary(pkg),
               },
             }) as ParsedOneOf,
@@ -612,6 +620,7 @@ export function apiSchemaToSource(
     )
     .with({ '!type': 'object' }, (o) =>
       match(o.object)
+        // TODO: handle flattened refs
         .with({ ref: P.not(P.nullish) }, (objectWithRef) => buildApiSchemaRef(objectWithRef.ref))
         .with(P.not(P.nullish), (obj) => {
           const matchingStateEntity = stateEntities.find((entity) => entity.schemaName === fullGrpcName);
@@ -687,6 +696,7 @@ export function apiSchemaToSource(
             primary: k.key.primary,
             entity: k.key.entity,
             rules: k.key.rules,
+            listRules: k.key.listRules || {},
           },
         }) as ParsedKey,
     )

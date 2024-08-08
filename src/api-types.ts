@@ -1,14 +1,24 @@
 import {
   ArrayRules,
+  BooleanListRules,
   BooleanRules,
+  DateListRules,
   EntityObjectSchema,
+  EnumListRules,
   EnumRules,
   EnumValueDescription,
+  FloatListRules,
+  IntegerListRules,
   IntegerRules,
+  KeyListRules,
   NumberRules,
   ObjectRules,
+  OneOfListRules,
+  SortingConstraintValue,
   StateEntityEvent,
+  StringListRules,
   StringRules,
+  TimestampListRules,
 } from './shared-types';
 
 export interface APIMetadata {
@@ -19,20 +29,30 @@ export interface APIRefFieldValue {
   ref: APIRefValue;
 }
 
+export interface APIObjectRefFieldValue extends APIRefFieldValue {
+  flatten?: boolean;
+}
+
+export interface APIEnumRefFieldValue extends APIRefFieldValue {
+  listRules?: EnumListRules;
+}
+
 export interface APIEnumValue {
   name: string;
   prefix: string;
   options: EnumValueDescription[];
   rules?: EnumRules;
+  listRules?: EnumListRules;
 }
 
-export interface APIEnumSchema {
+export interface APIEnumSchema<TValue = APIEnumValue | APIEnumRefFieldValue> {
   '!type': 'enum';
-  'enum': APIEnumValue | APIRefFieldValue;
+  'enum': TValue;
 }
 
 export interface APIBooleanValue {
   rules?: BooleanRules;
+  listRules?: BooleanListRules;
 }
 
 export interface APIBooleanSchema {
@@ -56,11 +76,12 @@ export interface APIOneOfValue {
   description?: string;
   properties: APIObjectProperty[];
   rules?: {};
+  listRules?: OneOfListRules;
 }
 
-export interface APIOneOfSchema {
+export interface APIOneOfSchema<TValue = APIOneOfValue | APIRefFieldValue> {
   '!type': 'oneof';
-  'oneof': APIOneOfValue | APIRefFieldValue;
+  'oneof': TValue;
 }
 
 export interface APIObjectValue {
@@ -70,9 +91,10 @@ export interface APIObjectValue {
   name: string;
   properties: APIObjectProperty[];
   rules?: ObjectRules;
+  flatten?: true;
 }
 
-export interface APIObjectSchema<TValue = APIObjectValue | APIRefFieldValue> {
+export interface APIObjectSchema<TValue = APIObjectValue | APIObjectRefFieldValue> {
   '!type': 'object';
   'object': TValue;
 }
@@ -80,6 +102,7 @@ export interface APIObjectSchema<TValue = APIObjectValue | APIRefFieldValue> {
 export interface APIIntegerValue {
   format: 'UNSPECIFIED' | 'INT32' | 'INT64' | 'UINT32' | 'UINT64';
   rules: IntegerRules;
+  listRules?: IntegerListRules;
 }
 
 export interface APIIntegerSchema {
@@ -90,6 +113,7 @@ export interface APIIntegerSchema {
 export interface APIFloatValue {
   format: 'UNSPECIFIED' | 'FLOAT32' | 'FLOAT64';
   rules: NumberRules;
+  listRules?: FloatListRules;
 }
 
 export interface APIFloatSchema {
@@ -100,6 +124,7 @@ export interface APIFloatSchema {
 export interface APIStringSchemaValue {
   format?: string;
   rules?: StringRules;
+  listRules?: StringListRules;
 }
 
 export interface APIStringSchema {
@@ -152,6 +177,7 @@ export interface APIKeyValue {
   entity: string;
   format: 'UNSPECIFIED' | 'UUID' | 'NATURAL_KEY';
   rules?: {};
+  listRules?: KeyListRules;
 }
 
 export interface APIKeySchema {
@@ -170,6 +196,7 @@ export interface APIDecimalSchema {
 
 export interface APITimestampValue {
   rules?: {};
+  listRules?: TimestampListRules;
 }
 
 export interface APITimestampSchema {
@@ -179,6 +206,7 @@ export interface APITimestampSchema {
 
 export interface APIDateValue {
   rules?: {};
+  listRules?: DateListRules;
 }
 
 export interface APIDateSchema {
@@ -214,7 +242,7 @@ export interface APIRequestListOptionsSearchableField {
 
 export interface APIRequestListOptionsSortableField {
   name: string;
-  defaultSort?: 'UNSPECIFIED' | 'ASC' | 'DESC';
+  defaultSort?: SortingConstraintValue;
 }
 
 export interface APIRequestListOptions {
