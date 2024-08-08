@@ -293,32 +293,38 @@ export class PluginBase<
       typeof this.pluginConfig.files === 'function'
         ? this.pluginConfig.files(this.generatedSchemas, this.generatedClientFunctions)
         : this.pluginConfig.files;
-    this.files = (fileConfig || []).map((fileConfig) => {
-      let existingFileContent: string | undefined;
+    this.files = (fileConfig || []).map((fileConfig) => this.createPluginFile(fileConfig));
+  }
 
-      try {
-        existingFileContent = fs.readFileSync(
-          path.join(cwd, fileConfig.directory, fileConfig.fileName),
-          fileConfig.readExistingFileConfig || { encoding: 'utf-8' },
-        );
-      } catch {}
+  protected createPluginFile<T extends PluginFileGeneratorConfig = TFileConfig>(fileConfig: T) {
+    if (!this.cwd) {
+      throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
+    }
 
-      return new PluginFile<TFileConfig>(
-        this.name,
-        fileConfig,
-        {
-          importPath: generator.config.typeOutput.importPath,
-          fileName: generator.config.typeOutput.fileName,
-          directory: generator.config.typeOutput.directory,
-        },
-        {
-          importPath: generator.config.clientOutput?.importPath,
-          fileName: generator.config.clientOutput?.fileName,
-          directory: generator.config.clientOutput?.directory,
-        },
-        existingFileContent,
+    let existingFileContent: string | undefined;
+
+    try {
+      existingFileContent = fs.readFileSync(
+        path.join(this.cwd, fileConfig.directory, fileConfig.fileName),
+        fileConfig.readExistingFileConfig || { encoding: 'utf-8' },
       );
-    });
+    } catch {}
+
+    return new PluginFile<T>(
+      this.name,
+      fileConfig,
+      {
+        importPath: this.config?.typeOutput.importPath,
+        fileName: this.config?.typeOutput.fileName,
+        directory: this.config?.typeOutput.directory,
+      },
+      {
+        importPath: this.config?.clientOutput?.importPath,
+        fileName: this.config?.clientOutput?.fileName,
+        directory: this.config?.clientOutput?.directory,
+      },
+      existingFileContent,
+    );
   }
 
   protected getFileForSchema(schema: GeneratedSchema) {
