@@ -51,7 +51,7 @@ export interface WritableFile {
 }
 
 export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGeneratorConfig> {
-  public config: TConfig;
+  public readonly config: TConfig;
   public readonly existingFileContent: string | undefined;
   private readonly generatingPluginName: string;
   private nodeList: Node[] = [];
@@ -201,7 +201,7 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
   }
 
   public getHasContent() {
-    return this.nodeList.length > 0 || this.rawContent;
+    return Boolean(this.nodeList.length > 0 || this.rawContent?.trim().length);
   }
 
   public write(): WritableFile | undefined {
@@ -261,7 +261,7 @@ export class PluginBase<
 > {
   name: string = 'UndefinedPlugin';
 
-  private pluginConfig: TConfig;
+  protected readonly pluginConfig: TConfig;
   protected api: ParsedSource | undefined;
   protected config: Config | undefined;
   protected cwd: string | undefined;
