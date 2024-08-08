@@ -387,8 +387,9 @@ export function parseJdefSource(source: JDEF): ParsedSource {
 export function apiObjectPropertyToSource(
   property: APIObjectProperty,
   stateEntities: APIStateEntity[],
+  schemas: Map<string, APISchema>,
 ): ParsedObjectProperty | undefined {
-  const converted = apiSchemaToSource(property.schema, stateEntities);
+  const converted = apiSchemaToSource(property.schema, stateEntities, schemas);
 
   if (!converted) {
     return undefined;
@@ -419,8 +420,16 @@ function mapApiStateEntity(entity: APIStateEntity | undefined, part?: EntityPart
   };
 }
 
+function getFullGrpcPathForSchemaRef(ref: APIRefValue): string {
+  return `${ref.package}.${ref.schema}`;
+}
+
+function getRefPathForApiSchemaRef(ref: APIRefValue): string {
+  return `${JSON_SCHEMA_REFERENCE_PREFIX}${getFullGrpcPathForSchemaRef(ref)}`;
+}
+
 function buildApiSchemaRef(ref: APIRefValue): ParsedRef {
-  return { $ref: `${JSON_SCHEMA_REFERENCE_PREFIX}${ref.package}.${ref.schema}` };
+  return { $ref: getRefPathForApiSchemaRef(ref) };
 }
 
 function addEntityDataToApiPrimaryKeys(
@@ -480,18 +489,47 @@ export function apiPackageToSummary(pkg?: APIPackage): PackageSummary | undefine
   };
 }
 
+export type APISchemaWithPackage = APISchema & {
+  package: APIPackage;
+};
+
 export function apiSchemaToSource(
   schema: APISchema,
   stateEntities: APIStateEntity[],
+  schemas: Map<string, APISchema>,
   fullGrpcName?: string,
   pkg?: APIPackage,
 ): ParsedSchemaWithRef | undefined {
   function mapObjectProperties(properties: APIObjectProperty[] | undefined) {
     return (properties || []).reduce<Map<string, ParsedObjectProperty>>((acc, curr) => {
-      const converted = apiObjectPropertyToSource(curr, stateEntities);
+      const converted = match(curr.schema)
+        .returnType<ParsedObjectProperty[]>()
+        .with({ object: { flatten: true } }, (objectSchema) => {
+          return match(objectSchema.object)
+            .with({ ref: P.not(P.nullish) }, (objectWithRef) => {
+              const refSchema = schemas.get(getFullGrpcPathForSchemaRef(objectWithRef.ref));
 
-      if (converted) {
-        acc.set(converted.name, converted);
+              return match(refSchema)
+                .with({ object: { properties: P.not(P.nullish) } }, (refObject) => {
+                  const subProperties = mapObjectProperties(refObject.object.properties);
+                  return subProperties ? Array.from(subProperties.values()) : [];
+                })
+                .otherwise(() => []);
+            })
+            .with({ properties: P.not(P.nullish) }, (objectWithProperties) => {
+              const subProperties = mapObjectProperties(objectWithProperties.properties);
+              return subProperties ? Array.from(subProperties.values()) : [];
+            })
+            .otherwise(() => []);
+        })
+        .otherwise(() => {
+          const mappedValue = apiObjectPropertyToSource(curr, stateEntities, schemas);
+
+          return mappedValue ? [mappedValue] : [];
+        });
+
+      for (const item of converted) {
+        acc.set(item.name, item);
       }
 
       return acc;
@@ -653,13 +691,13 @@ export function apiSchemaToSource(
     )
     .with({ '!type': 'any' }, () => ({ any: {} }) as ParsedAny)
     .with({ '!type': 'map' }, (m) => {
-      const convertedItemSchema = apiSchemaToSource(m.map.itemSchema, stateEntities, undefined, pkg);
+      const convertedItemSchema = apiSchemaToSource(m.map.itemSchema, stateEntities, schemas, undefined, pkg);
 
       if (!convertedItemSchema) {
         return undefined;
       }
 
-      const convertedKeySchema = apiSchemaToSource(m.map.keySchema, stateEntities, undefined, pkg) || {
+      const convertedKeySchema = apiSchemaToSource(m.map.keySchema, stateEntities, schemas, undefined, pkg) || {
         '!type': 'string',
         'string': {},
       };
@@ -673,7 +711,7 @@ export function apiSchemaToSource(
       } as ParsedMap;
     })
     .with({ '!type': 'array' }, (a) => {
-      const converted = apiSchemaToSource(a.array.items, stateEntities, undefined, pkg);
+      const converted = apiSchemaToSource(a.array.items, stateEntities, schemas, undefined, pkg);
 
       if (!converted) {
         return undefined;
@@ -719,6 +757,7 @@ function getApiMethodRequestResponseFullGrpcName(method: APIMethod, requestOrRes
 function mapApiParameters(
   parameters: APIObjectProperty[] | undefined,
   stateEntities: APIStateEntity[],
+  schemas: Map<string, APISchema>,
   isPathParameter?: boolean,
 ) {
   if (!parameters?.length) {
@@ -726,7 +765,7 @@ function mapApiParameters(
   }
 
   return parameters.reduce<Map<string, ParsedObjectProperty>>((acc, parameter) => {
-    const converted = apiObjectPropertyToSource(parameter, stateEntities);
+    const converted = apiObjectPropertyToSource(parameter, stateEntities, schemas);
 
     if (!converted) {
       return acc;
@@ -761,18 +800,24 @@ export function parseApiSource(source: APISource): ParsedSource {
   };
 
   const stateEntities = source.api.packages?.flatMap((pkg) => pkg.stateEntities || []);
+  const schemas = new Map<string, APISchemaWithPackage>();
 
-  // First, parse all root-level schemas
+  // First, collect, then parse all root-level schemas
   for (const pkg of source.api.packages || []) {
-    for (const schemaName in pkg.schemas || {}) {
-      if (pkg.schemas) {
-        const fullGrpcName = `${pkg.name}.${schemaName}`;
-        const parsedSchema = apiSchemaToSource(pkg.schemas[schemaName], stateEntities, fullGrpcName, pkg);
-
-        if (parsedSchema) {
-          parsed.schemas.set(fullGrpcName, parsedSchema as ParsedSchema);
-        }
+    if (pkg.schemas) {
+      for (const schemaName in pkg.schemas) {
+        schemas.set(`${pkg.name}.${schemaName}`, { ...pkg.schemas[schemaName], package: pkg });
       }
+    }
+  }
+
+  for (const [fullGrpcName, schema] of schemas) {
+    const { package: pkg, ...rest } = schema;
+
+    const parsedSchema = apiSchemaToSource(rest, stateEntities, schemas, fullGrpcName, pkg);
+
+    if (parsedSchema) {
+      parsed.schemas.set(fullGrpcName, parsedSchema as ParsedSchema);
     }
   }
 
@@ -819,7 +864,7 @@ export function parseApiSource(source: APISource): ParsedSource {
       return options;
     }
 
-    function mapService(service: APIService, relatedEntity?: APIStateEntity) {
+    function mapService(service: APIService, schemas: Map<string, APISchema>, relatedEntity?: APIStateEntity) {
       const parsedService: ParsedService = {
         name: service.name,
         methods: [],
@@ -836,8 +881,8 @@ export function parseApiSource(source: APISource): ParsedSource {
           : undefined;
 
         const mappedRelatedEntity = relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined;
-        const mappedPathParameters = mapApiParameters(method.request?.pathParameters, stateEntities, true);
-        const mappedQueryParameters = mapApiParameters(method.request?.queryParameters, stateEntities);
+        const mappedPathParameters = mapApiParameters(method.request?.pathParameters, stateEntities, schemas, true);
+        const mappedQueryParameters = mapApiParameters(method.request?.queryParameters, stateEntities, schemas);
 
         parsedService.methods.push({
           name: method.name,
@@ -848,6 +893,7 @@ export function parseApiSource(source: APISource): ParsedSource {
             ? apiSchemaToSource(
                 responseBodyAsObjectSchema,
                 stateEntities,
+                schemas,
                 getApiMethodRequestResponseFullGrpcName(method, responseBodyAsObjectSchema),
                 pkg,
               )
@@ -856,6 +902,7 @@ export function parseApiSource(source: APISource): ParsedSource {
             ? apiSchemaToSource(
                 requestBodyAsObjectSchema,
                 stateEntities,
+                schemas,
                 getApiMethodRequestResponseFullGrpcName(method, requestBodyAsObjectSchema),
                 pkg,
               )
@@ -880,13 +927,13 @@ export function parseApiSource(source: APISource): ParsedSource {
 
     pkg.stateEntities?.forEach((entity) => {
       if (entity.queryService) {
-        mapService(entity.queryService, entity);
+        mapService(entity.queryService, schemas, entity);
       }
 
-      entity.commandServices?.forEach((service) => mapService(service, entity));
+      entity.commandServices?.forEach((service) => mapService(service, schemas, entity));
     });
 
-    pkg.services?.forEach((service) => mapService(service));
+    pkg.services?.forEach((service) => mapService(service, schemas));
 
     if (parsedPackage.services.length) {
       parsed.packages.push(parsedPackage);
