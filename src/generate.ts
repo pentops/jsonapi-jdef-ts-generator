@@ -11,6 +11,7 @@ import {
   getFullGRPCName,
   getImportPath,
   getObjectProperties,
+  getPackageSummary,
   getSchemaName,
   getValidKeyName,
   isCharacterSafeForName,
@@ -739,7 +740,7 @@ export class Generator {
         this.generatedSchemas.set(node.fullGrpcName || node.generatedName || schemaName, {
           generatedName: node.generatedName || schemaName,
           rawSchema: node.rawSchema || schema,
-          parentPackage: parentMethod?.parentPackage,
+          parentPackage: parentMethod?.parentPackage || getPackageSummary(node.rawSchema),
         });
 
         nodes.push(node.node);
