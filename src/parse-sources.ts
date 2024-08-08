@@ -658,7 +658,6 @@ export function apiSchemaToSource(
     )
     .with({ '!type': 'object' }, (o) =>
       match(o.object)
-        // TODO: handle flattened refs
         .with({ ref: P.not(P.nullish) }, (objectWithRef) => buildApiSchemaRef(objectWithRef.ref))
         .with(P.not(P.nullish), (obj) => {
           const matchingStateEntity = stateEntities.find((entity) => entity.schemaName === fullGrpcName);
