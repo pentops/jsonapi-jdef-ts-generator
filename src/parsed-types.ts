@@ -26,6 +26,7 @@ export interface ParsedEnum {
     example?: any;
     rules: EnumRules;
     package?: PackageSummary;
+    isDerivedHelperType?: boolean;
   };
 }
 

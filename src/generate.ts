@@ -676,6 +676,7 @@ export class Generator {
             prefix: '',
             options: values.map((value) => ({ name: value })),
             rules: {},
+            isDerivedHelperType: true,
           },
         };
 
