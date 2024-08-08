@@ -86,7 +86,7 @@ export function isKeyword(rawName: string) {
   }
 }
 
-function isKeyNameValid(rawName: string) {
+export function isKeyNameValid(rawName: string) {
   // If the first character is a number, it's invalid
   if (!Number.isNaN(Number(rawName[0]))) {
     return false;

@@ -58,6 +58,7 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
   private readonly typeImports: Set<string>;
   private readonly clientImports: Set<string>;
   private readonly manualImports: Map<string, ManualImport>;
+  private rawContent: string | undefined;
   private pendingHeaderNodes: Node[] = [];
   private pendingImportNodes: Node[] = [];
   private pendingManualImportNodes: Node[] = [];
@@ -138,6 +139,10 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     this.clientImports.add(clientFunctionName);
   }
 
+  public setRawContent(content: string) {
+    this.rawContent = content;
+  }
+
   private generateImports() {
     const importNodes: Node[] = [];
 
@@ -196,7 +201,7 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
   }
 
   public getHasContent() {
-    return this.nodeList.length > 0;
+    return this.nodeList.length > 0 || this.rawContent;
   }
 
   public write(): WritableFile | undefined {
@@ -205,6 +210,15 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     }
 
     this.generateImports();
+
+    if (this.rawContent) {
+      return {
+        content: this.rawContent,
+        directory: this.config.directory,
+        fileName: this.config.fileName,
+        writtenTo: '', // set when written
+      };
+    }
 
     if (this.pendingImportNodes.length || this.pendingManualImportNodes.length || this.pendingHeaderNodes.length) {
       this.generateBlankLine(true);
