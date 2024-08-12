@@ -31,10 +31,10 @@
     "@pentops/jsonapi-request": "^0.0.3",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/node": "^22.1.0",
+    "@types/node": "^22.2.0",
     "prettier": "^3.3.3",
     "rollup": "^4.20.0",
-    "ts-pattern": "^5.2.0",
+    "ts-pattern": "^5.3.1",
     "tslib": "^2.6.3",
     "vitest": "^2.0.5"
   },
