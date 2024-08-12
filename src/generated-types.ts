@@ -33,9 +33,7 @@ export interface GeneratedClientFunction {
   method: BuiltMethodSchema;
 }
 
-export interface GeneratedSchemaWithNode<TSchema extends ParsedSchema = ParsedSchema> {
-  generatedName?: string;
+export interface GeneratedSchemaWithNode<TSchema extends ParsedSchema = ParsedSchema> extends GeneratedSchema<TSchema> {
   fullGrpcName?: string;
-  rawSchema?: TSchema;
   node: TypeNode | InterfaceDeclaration | TypeAliasDeclaration | EnumDeclaration;
 }

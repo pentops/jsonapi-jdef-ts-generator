@@ -66,6 +66,7 @@ const optionalFieldMarker = factory.createToken(SyntaxKind.QuestionToken);
 
 export class Generator {
   public config: Config;
+  private schemaGenerationProspects: Map<string, GeneratedSchemaWithNode> = new Map();
   public builtMethodSchemas: Map<string, BuiltMethodSchema> = new Map();
   public generatedSchemas: Map<string, GeneratedSchema> = new Map();
   public generatedClientFunctions: GeneratedClientFunction[] = [];
@@ -123,19 +124,38 @@ export class Generator {
     }
   }
 
-  private static generateOneOfUnionType(generatedName: string, oneOfGeneratedName: string) {
-    return factory.createTypeAliasDeclaration(
-      [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+  private generateOneOfUnionType(oneOfGeneratedName: string, oneOf: ParsedOneOf): GeneratedSchemaWithNode<ParsedEnum> {
+    const oneOfFullGrpcName = getFullGRPCName(oneOf);
+    const mockGrpcName = `${oneOfFullGrpcName}OneOfValue`;
+    const generatedName = this.config.types.nameWriter(mockGrpcName);
+
+    return {
       generatedName,
-      undefined,
-      ts.factory.createTypeOperatorNode(
-        ts.SyntaxKind.KeyOfKeyword,
-        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Exclude'), [
-          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(oneOfGeneratedName)),
-          factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
-        ]),
+      fullGrpcName: mockGrpcName,
+      rawSchema: {
+        enum: {
+          fullGrpcName: mockGrpcName,
+          name: generatedName,
+          options: Array.from(oneOf.oneOf.properties.keys()).map((name) => ({ name })),
+          prefix: '',
+          isDerivedHelperType: true,
+          package: oneOf.oneOf.package,
+          rules: {},
+        },
+      } as ParsedEnum,
+      node: factory.createTypeAliasDeclaration(
+        [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+        generatedName,
+        undefined,
+        ts.factory.createTypeOperatorNode(
+          ts.SyntaxKind.KeyOfKeyword,
+          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Exclude'), [
+            ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(oneOfGeneratedName)),
+            factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
+          ]),
+        ),
       ),
-    );
+    };
   }
 
   private static buildSchemaTypeParameterDeclarations(
@@ -434,44 +454,35 @@ export class Generator {
 
     return match(schema)
       .returnType<GeneratedSchemaWithNode[] | undefined>()
-      .with({ object: P.not(P.nullish) }, (s) => {
-        return [
-          {
-            generatedName,
-            rawSchema: s,
-            fullGrpcName,
-            node: factory.createInterfaceDeclaration(
-              [factory.createModifier(SyntaxKind.ExportKeyword)],
-              factory.createIdentifier(generatedName),
-              Generator.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
-              [],
-              this.buildObject(s, schemaGenerics, allGenericsWithValues)?.members,
-            ),
-          },
-        ];
-      })
-      .with({ oneOf: P.not(P.nullish) }, (s) => {
-        const oneOfUnionGeneratedName = `${generatedName}OneOfValue`;
-
-        return [
-          {
-            generatedName,
-            rawSchema: s,
-            fullGrpcName,
-            node: factory.createInterfaceDeclaration(
-              [factory.createModifier(SyntaxKind.ExportKeyword)],
-              factory.createIdentifier(generatedName),
-              Generator.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
-              [],
-              this.buildOneOf(s, schemaGenerics, allGenericsWithValues)?.members,
-            ),
-          },
-          {
-            generatedName: oneOfUnionGeneratedName,
-            node: Generator.generateOneOfUnionType(oneOfUnionGeneratedName, generatedName),
-          },
-        ];
-      })
+      .with({ object: P.not(P.nullish) }, (s) => [
+        {
+          generatedName,
+          rawSchema: s,
+          fullGrpcName,
+          node: factory.createInterfaceDeclaration(
+            [factory.createModifier(SyntaxKind.ExportKeyword)],
+            factory.createIdentifier(generatedName),
+            Generator.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
+            [],
+            this.buildObject(s, schemaGenerics, allGenericsWithValues)?.members,
+          ),
+        },
+      ])
+      .with({ oneOf: P.not(P.nullish) }, (s) => [
+        {
+          generatedName,
+          rawSchema: s,
+          fullGrpcName,
+          node: factory.createInterfaceDeclaration(
+            [factory.createModifier(SyntaxKind.ExportKeyword)],
+            factory.createIdentifier(generatedName),
+            Generator.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
+            [],
+            this.buildOneOf(s, schemaGenerics, allGenericsWithValues)?.members,
+          ),
+        },
+        this.generateOneOfUnionType(generatedName, s),
+      ])
       .with({ enum: P.not(P.nullish) }, (s) => [
         {
           generatedName,
@@ -553,7 +564,7 @@ export class Generator {
       } as BuiltMethodSchema);
 
     const relatedEntity = method.relatedEntity?.schemaFullGrpcName
-      ? this.generatedSchemas.get(method.relatedEntity.schemaFullGrpcName)
+      ? this.schemaGenerationProspects.get(method.relatedEntity.schemaFullGrpcName)
       : undefined;
 
     if (relatedEntity) {
@@ -668,7 +679,7 @@ export class Generator {
     if (method.listOptions) {
       builtMethod.list = new Map();
 
-      const createGenericEnum = (name: string, values: string[]): GeneratedSchema<ParsedEnum> => {
+      const createGenericEnum = (name: string, values: string[]): GeneratedSchemaWithNode<ParsedEnum> => {
         const mockGrpcName = `${method.fullGrpcName.replaceAll('/', '')}${name}Fields`;
         const schema: ParsedEnum = {
           enum: {
@@ -681,17 +692,7 @@ export class Generator {
           },
         };
 
-        const generatedSchema = {
-          generatedName: schema.enum.name,
-          rawSchema: schema,
-          parentPackage: builtMethod.parentPackage,
-        };
-
-        if (!this.generatedSchemas.has(mockGrpcName)) {
-          this.generatedSchemas.set(mockGrpcName, generatedSchema);
-        }
-
-        return generatedSchema;
+        return this.buildType(schema, schemas)?.[0] as GeneratedSchemaWithNode<ParsedEnum>;
       };
 
       if (method.listOptions.filterableFields?.length) {
@@ -728,8 +729,8 @@ export class Generator {
     schema: ParsedSchema,
     schemas: Map<string, ParsedSchema>,
     parentMethod?: BuiltMethodSchema,
-  ): ts.Node[] | undefined {
-    const nodes: ts.Node[] = [];
+  ): GeneratedSchemaWithNode[] | undefined {
+    const nodes: GeneratedSchemaWithNode[] = [];
 
     if (schema) {
       const schemaName = getSchemaName(schema, schemas);
@@ -737,34 +738,25 @@ export class Generator {
       const typeNodes = this.generateSchema(typeName, schema, parentMethod);
 
       typeNodes?.forEach((node) => {
-        this.generatedSchemas.set(node.fullGrpcName || node.generatedName || schemaName, {
+        this.schemaGenerationProspects.set(node.fullGrpcName || node.generatedName || schemaName, {
           generatedName: node.generatedName || schemaName,
           rawSchema: node.rawSchema || schema,
           parentPackage: parentMethod?.parentPackage || getPackageSummary(node.rawSchema),
+          node: node.node,
         });
 
-        nodes.push(node.node);
+        nodes.push(node);
       });
     }
 
     return nodes;
   }
 
-  private buildMethodTypes(builtMethod: BuiltMethodSchema, schemas: Map<string, ParsedSchema>): ts.Node[] {
-    const nodes: ts.Node[] = [];
-
-    if (!builtMethod) {
-      return nodes;
-    }
-
+  private buildMethodTypes(builtMethod: BuiltMethodSchema, schemas: Map<string, ParsedSchema>) {
     // Add listify generic values
     if (builtMethod.list) {
       for (const [_, listSchema] of builtMethod.list) {
-        const typeNodes = this.buildType(listSchema.rawSchema, schemas, builtMethod);
-
-        if (typeNodes) {
-          nodes.push(...typeNodes);
-        }
+        this.buildType(listSchema.rawSchema, schemas, builtMethod);
       }
     }
 
@@ -777,50 +769,33 @@ export class Generator {
     ].filter(Boolean) as ParsedSchema[];
 
     for (const methodSchema of methodSchemas) {
-      const typeNodes = this.buildType(methodSchema, schemas, builtMethod);
-
-      if (typeNodes) {
-        nodes.push(...typeNodes);
-      }
+      this.buildType(methodSchema, schemas, builtMethod);
     }
-
-    return nodes;
   }
 
-  private prepareSchemaTypes(source: ParsedSource): ts.Node[] {
-    const nodes: ts.Node[] = [];
+  private prepareSchemaTypes(source: ParsedSource) {
     for (const [_, schema] of source.schemas) {
       this.populateGenerics(schema, source.schemas);
-
-      const typeNodes = this.buildType(schema, source.schemas);
-
-      if (typeNodes) {
-        nodes.push(...typeNodes);
-      }
+      this.buildType(schema, source.schemas);
     }
-
-    return nodes;
   }
 
   private generateTypesFile(source: ParsedSource) {
-    const schemaNodes = this.prepareSchemaTypes(source);
+    this.prepareSchemaTypes(source);
     this.prepareMethods(source);
 
     const nodeList: ts.Node[] = this.config.typeOutput.topOfFileComment
       ? [factory.createJSDocComment(this.config.typeOutput.topOfFileComment), factory.createIdentifier('\n')]
       : [];
 
-    for (const schemaNode of schemaNodes) {
-      nodeList.push(schemaNode, factory.createIdentifier('\n'));
-    }
-
     // Generate request and response types for each method
     for (const [_, method] of this.builtMethodSchemas) {
-      const methodNodes = this.buildMethodTypes(method, source.schemas);
+      this.buildMethodTypes(method, source.schemas);
+    }
 
-      for (const node of methodNodes) {
-        nodeList.push(node, factory.createIdentifier('\n'));
-      }
+    for (const [schemaName, schema] of this.schemaGenerationProspects) {
+      nodeList.push(schema.node, factory.createIdentifier('\n'));
+      this.generatedSchemas.set(schemaName, schema);
     }
 
     const printer = createPrinter({ newLine: NewLineKind.LineFeed });
