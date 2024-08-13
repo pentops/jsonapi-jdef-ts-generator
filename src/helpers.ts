@@ -145,6 +145,18 @@ export function getImportPath(
   return relativePath;
 }
 
+export function createExportDeclaration(namedExports: string[]) {
+  return factory.createExportDeclaration(
+    undefined,
+    false,
+    factory.createNamedExports(
+      namedExports.map((namedExport) =>
+        factory.createExportSpecifier(false, undefined, factory.createIdentifier(namedExport)),
+      ),
+    ),
+  );
+}
+
 export function createImportDeclaration(
   importPath: string,
   namedImports: string[] | undefined,
