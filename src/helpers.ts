@@ -185,7 +185,9 @@ export function createImportDeclaration(
   defaultImport?: string,
 ) {
   const isFullyTypeOnly = Boolean(
-    namedImports?.length && namedImports.every((namedImport) => typeOnlyNamedImports?.includes(namedImport)),
+    !defaultImport &&
+      namedImports?.length &&
+      namedImports.every((namedImport) => typeOnlyNamedImports?.includes(namedImport)),
   );
 
   return factory.createImportDeclaration(
