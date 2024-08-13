@@ -103,6 +103,20 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     }
   }
 
+  public addImportToOtherGeneratedFile(
+    file: PluginFile,
+    namedImports: string[] | undefined,
+    typeOnlyNamedImports?: string[],
+    defaultImport?: string,
+  ) {
+    this.addManualImport(
+      getImportPath(file.config.directory, file.config.fileName, this.config.directory, this.config.fileName),
+      namedImports,
+      typeOnlyNamedImports,
+      defaultImport,
+    );
+  }
+
   public addManualImport(
     importPath: string,
     namedImports: string[] | undefined,
