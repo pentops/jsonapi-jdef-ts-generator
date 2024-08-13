@@ -118,12 +118,29 @@ export function getRelativePath(source: string, target: string) {
   return (relativePath ? `${relativePath}/${targetFileName}` : `./${targetFileName}`).replaceAll(path.sep, '/');
 }
 
+export type ImportPathNameCleaner = (name: string) => string;
+
+const defaultImportPathNameCleaner: ImportPathNameCleaner = (name) => {
+  const fileExt = path.extname(name);
+
+  let returnName = name;
+  if (['.js', '.mjs', '.jsx', '.ts', '.tsx'].includes(fileExt)) {
+    returnName = name.slice(0, -fileExt.length);
+  }
+
+  if (returnName.endsWith('/index')) {
+    returnName = returnName.replace(/\/index$/, '');
+  }
+
+  return returnName;
+};
+
 export function getImportPath(
   toDir: string,
   toFileName: string,
   fromDir: string,
   fromFileName: string,
-  extensionMatcher: RegExp | string = /\.ts$/,
+  pathNameCleaner: ImportPathNameCleaner = defaultImportPathNameCleaner,
 ) {
   let aPath = path.join(toDir, toFileName).replaceAll(path.sep, '/');
   let bPath = path.join(fromDir || './', fromFileName || 'index.ts').replaceAll(path.sep, '/');
@@ -136,10 +153,14 @@ export function getImportPath(
     bPath = `./${bPath}`;
   }
 
-  const relativePath = getRelativePath(bPath, aPath).replaceAll('index', '').replace(extensionMatcher, '');
+  let relativePath = pathNameCleaner(getRelativePath(bPath, aPath));
+
+  if (!relativePath.startsWith('.')) {
+    relativePath = `./${relativePath}`;
+  }
 
   if (relativePath.endsWith('/')) {
-    return relativePath.slice(0, -1);
+    relativePath = relativePath.slice(0, -1);
   }
 
   return relativePath;
