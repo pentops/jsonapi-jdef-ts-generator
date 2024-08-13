@@ -20,6 +20,7 @@ export type PluginFileConfigCreator<TFileConfig extends PluginFileGeneratorConfi
 
 export type PluginFilePreBuildHook = (file: PluginFile, fileToBuild: Omit<WritableFile, 'writtenTo'>) => void;
 export type PluginFilePostBuildHook = (file: PluginFile, fileToBuild: Omit<WritableFile, 'writtenTo'>) => string;
+export type PluginFilePreWriteHook = (file: PluginFile) => void;
 
 export interface PluginFileGeneratorConfig {
   directory: string;
@@ -34,6 +35,7 @@ export interface PluginFileGeneratorConfig {
     | BufferEncoding;
   preBuildHook?: PluginFilePreBuildHook;
   postBuildHook?: PluginFilePostBuildHook;
+  preWriteHook?: PluginFilePreWriteHook;
 }
 
 export interface GeneratedImportPath {
@@ -227,6 +229,8 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     if (!this.getHasContent()) {
       return undefined;
     }
+
+    this.config.preWriteHook?.(this);
 
     this.generateImports();
 
