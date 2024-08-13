@@ -21,6 +21,7 @@ export type PluginFileConfigCreator<TFileConfig extends PluginFileGeneratorConfi
 export type PluginFilePreBuildHook = (file: PluginFile, fileToBuild: Omit<WritableFile, 'writtenTo'>) => void;
 export type PluginFilePostBuildHook = (file: PluginFile, fileToBuild: Omit<WritableFile, 'writtenTo'>) => string;
 export type PluginFilePreWriteHook = (file: PluginFile) => void;
+export type PluginFilePostWriteHook = (file: PluginFile, writtenFile: WritableFile) => void;
 
 export interface PluginFileGeneratorConfig {
   directory: string;
@@ -36,6 +37,7 @@ export interface PluginFileGeneratorConfig {
   preBuildHook?: PluginFilePreBuildHook;
   postBuildHook?: PluginFilePostBuildHook;
   preWriteHook?: PluginFilePreWriteHook;
+  postWriteHook?: PluginFilePostWriteHook;
 }
 
 export interface GeneratedImportPath {
@@ -230,8 +232,6 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
       return undefined;
     }
 
-    this.config.preWriteHook?.(this);
-
     this.generateImports();
 
     if (this.rawContent) {
@@ -395,6 +395,7 @@ export class PluginBase<
         fs.rmSync(generatedFilePath, { recursive: true, force: true });
       }
 
+      file.config.preWriteHook?.(file);
       const writableFile = file.write();
 
       if (writableFile) {
@@ -411,6 +412,7 @@ export class PluginBase<
         }
 
         writableFile.writtenTo = generatedFilePath;
+        file.config.postBuildHook?.(file, writableFile);
         output.writtenFiles.push(writableFile);
       }
     }
