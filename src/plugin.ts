@@ -18,6 +18,9 @@ export type PluginFileConfigCreator<TFileConfig extends PluginFileGeneratorConfi
   generatedClientFunctions: GeneratedClientFunction[],
 ) => TFileConfig[];
 
+export type PluginFilePreBuildHook = (file: PluginFile, fileToBuild: Omit<WritableFile, 'writtenTo'>) => void;
+export type PluginFilePostBuildHook = (file: PluginFile, fileToBuild: Omit<WritableFile, 'writtenTo'>) => string;
+
 export interface PluginFileGeneratorConfig {
   directory: string;
   fileName: string;
@@ -29,6 +32,8 @@ export interface PluginFileGeneratorConfig {
         flag?: string | undefined;
       }
     | BufferEncoding;
+  preBuildHook?: PluginFilePreBuildHook;
+  postBuildHook?: PluginFilePostBuildHook;
 }
 
 export interface GeneratedImportPath {
@@ -250,18 +255,26 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
       this.nodeList = [...this.pendingHeaderNodes, ...this.nodeList];
     }
 
-    const fileContent = this.printer.printList(
+    const writtenFile: WritableFile = {
+      content: '',
+      directory: this.config.directory,
+      fileName: this.config.fileName,
+      writtenTo: '', // set when written
+    };
+
+    this.config.preBuildHook?.(this, writtenFile);
+
+    writtenFile.content = this.printer.printList(
       ListFormat.MultiLine,
       factory.createNodeArray(this.nodeList),
       createSourceFile(this.config.fileName, '', ScriptTarget.ESNext, true, ScriptKind.TS),
     );
 
-    return {
-      content: fileContent,
-      directory: this.config.directory,
-      fileName: this.config.fileName,
-      writtenTo: '', // set when written
-    };
+    if (this.config.postBuildHook) {
+      writtenFile.content = this.config.postBuildHook(this, writtenFile);
+    }
+
+    return writtenFile;
   }
 }
 
@@ -359,7 +372,7 @@ export class PluginBase<
 
   public async run() {
     throw new Error(
-      `[jdef-ts-generator]: TypePlugin must implement \`run\` method, plugin ${this.name} does not have \`run\` method.`,
+      `[jdef-ts-generator]: Plugin must implement \`run\` method, plugin ${this.name} does not have \`run\` method.`,
     );
   }
 
