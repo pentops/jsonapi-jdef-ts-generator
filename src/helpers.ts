@@ -118,7 +118,13 @@ export function getRelativePath(source: string, target: string) {
   return (relativePath ? `${relativePath}/${targetFileName}` : `./${targetFileName}`).replaceAll(path.sep, '/');
 }
 
-export function getImportPath(toDir: string, toFileName: string, fromDir: string, fromFileName: string) {
+export function getImportPath(
+  toDir: string,
+  toFileName: string,
+  fromDir: string,
+  fromFileName: string,
+  extensionMatcher: RegExp | string = /\.ts$/,
+) {
   let aPath = path.join(toDir, toFileName).replaceAll(path.sep, '/');
   let bPath = path.join(fromDir || './', fromFileName || 'index.ts').replaceAll(path.sep, '/');
 
@@ -130,7 +136,7 @@ export function getImportPath(toDir: string, toFileName: string, fromDir: string
     bPath = `./${bPath}`;
   }
 
-  const relativePath = getRelativePath(bPath, aPath).replaceAll('index', '').replace(/\.ts$/, '');
+  const relativePath = getRelativePath(bPath, aPath).replaceAll('index', '').replace(extensionMatcher, '');
 
   if (relativePath.endsWith('/')) {
     return relativePath.slice(0, -1);
