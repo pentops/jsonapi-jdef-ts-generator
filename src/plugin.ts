@@ -1,6 +1,6 @@
 import { Config } from './config';
 import ts, { type Node } from 'typescript';
-import { createImportDeclaration, getImportPath } from './helpers';
+import { createImportDeclaration, createNamedExportDeclaration, getImportPath } from './helpers';
 import fs from 'fs';
 import path from 'path';
 import { Generator } from './generate';
@@ -52,6 +52,17 @@ export interface ManualImport {
   defaultImport?: string;
 }
 
+export interface NamedExports {
+  namedExports: string[];
+  typeOnlyExports: string[];
+}
+
+export interface WildcardExport {
+  wildcard: true;
+}
+
+export type ManualExport = NamedExports | WildcardExport;
+
 export interface WritableFile {
   content: string;
   directory: string;
@@ -67,6 +78,7 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
   private readonly typeImports: Set<string>;
   private readonly clientImports: Set<string>;
   private readonly manualImports: Map<string, ManualImport>;
+  private readonly manualExports: Map<string, ManualExport>;
   private rawContent: string | undefined;
   private pendingHeaderNodes: Node[] = [];
   private pendingImportNodes: Node[] = [];
@@ -89,6 +101,7 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     this.typeImports = new Set();
     this.clientImports = new Set();
     this.manualImports = new Map();
+    this.manualExports = new Map();
     this.existingFileContent = existingFileContent;
   }
 
@@ -154,6 +167,34 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     }
   }
 
+  public addManualExport(exportPath: string, manualExport: ManualExport) {
+    const existingExport = this.manualExports.get(exportPath);
+
+    if (!existingExport) {
+      this.manualExports.set(exportPath, manualExport);
+    } else {
+      this.manualExports.set(
+        exportPath,
+        match(manualExport)
+          .with({ wildcard: true }, () => manualExport)
+          .with({ namedExports: P.not(P.nullish) }, (e) => {
+            const existingNamedExports = match(existingExport)
+              .with({ namedExports: P.not(P.nullish) }, (e) => e.namedExports)
+              .otherwise(() => []);
+            const existingTypeOnlyExports = match(existingExport)
+              .with({ typeOnlyExports: P.not(P.nullish) }, (e) => e.typeOnlyExports)
+              .otherwise(() => []);
+
+            return {
+              namedExports: Array.from(new Set([...existingNamedExports, ...(e.namedExports || [])])),
+              typeOnlyExports: Array.from(new Set([...existingTypeOnlyExports, ...(e.typeOnlyExports || [])])),
+            };
+          })
+          .otherwise(() => existingExport),
+      );
+    }
+  }
+
   public addGeneratedTypeImport(typeName: string) {
     this.typeImports.add(typeName);
   }
@@ -164,6 +205,27 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
 
   public setRawContent(content: string) {
     this.rawContent = content;
+  }
+
+  private generateExports() {
+    const exportNodes: Node[] = [];
+
+    for (const [exportPath, exportConfig] of this.manualExports) {
+      const node = match(exportConfig)
+        .with({ wildcard: true }, () =>
+          factory.createExportDeclaration(undefined, false, undefined, factory.createStringLiteral(exportPath, true)),
+        )
+        .with({ namedExports: P.not(P.nullish) }, (e) =>
+          e.namedExports.length ? createNamedExportDeclaration(e.namedExports, e.typeOnlyExports) : undefined,
+        )
+        .otherwise(() => undefined);
+
+      if (node) {
+        exportNodes.push(node);
+      }
+    }
+
+    this.addNodes(...exportNodes);
   }
 
   private generateImports() {
@@ -258,6 +320,8 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     if (this.pendingHeaderNodes.length) {
       this.nodeList = [...this.pendingHeaderNodes, ...this.nodeList];
     }
+
+    this.generateExports();
 
     const writtenFile: WritableFile = {
       content: '',
