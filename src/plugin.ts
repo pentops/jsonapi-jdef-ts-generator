@@ -78,7 +78,7 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
   private readonly typeImports: Set<string>;
   private readonly clientImports: Set<string>;
   private readonly manualImports: Map<string, ManualImport>;
-  private readonly manualExports: Map<string, ManualExport>;
+  private readonly manualExports: Map<string | undefined, ManualExport>;
   private rawContent: string | undefined;
   private pendingHeaderNodes: Node[] = [];
   private pendingImportNodes: Node[] = [];
@@ -167,7 +167,7 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     }
   }
 
-  public addManualExport(exportPath: string, manualExport: ManualExport) {
+  public addManualExport(exportPath: string | undefined, manualExport: ManualExport) {
     const existingExport = this.manualExports.get(exportPath);
 
     if (!existingExport) {
@@ -213,10 +213,19 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     for (const [exportPath, exportConfig] of this.manualExports) {
       const node = match(exportConfig)
         .with({ wildcard: true }, () =>
-          factory.createExportDeclaration(undefined, false, undefined, factory.createStringLiteral(exportPath, true)),
+          exportPath
+            ? factory.createExportDeclaration(
+                undefined,
+                false,
+                undefined,
+                factory.createStringLiteral(exportPath, true),
+              )
+            : undefined,
         )
         .with({ namedExports: P.not(P.nullish) }, (e) =>
-          e.namedExports.length ? createNamedExportDeclaration(e.namedExports, e.typeOnlyExports) : undefined,
+          e.namedExports.length
+            ? createNamedExportDeclaration(exportPath, e.namedExports, e.typeOnlyExports)
+            : undefined,
         )
         .otherwise(() => undefined);
 
