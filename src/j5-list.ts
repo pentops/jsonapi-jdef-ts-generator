@@ -40,21 +40,21 @@ export const defaultJ5ListGenericValueDeterminer: GenericValueDeterminer = (
     return genericsForSchema.map((generic) => {
       switch (generic) {
         case J5_LIST_V1_FILTER_FIELD_GENERIC_OVERRIDE:
-          const filterFieldEnumName = parentMethod.list?.get('filterableFields')?.generatedName;
+          const filterFieldEnumName = parentMethod.list?.filterableFields?.generatedName;
 
           return {
             ...generic,
             value: filterFieldEnumName ? ts.factory.createTypeReferenceNode(filterFieldEnumName) : null,
           };
         case J5_LIST_V1_SEARCH_FIELD_GENERIC_OVERRIDE:
-          const searchFieldEnumName = parentMethod.list?.get('searchableFields')?.generatedName;
+          const searchFieldEnumName = parentMethod.list?.searchableFields?.generatedName;
 
           return {
             ...generic,
             value: searchFieldEnumName ? ts.factory.createTypeReferenceNode(searchFieldEnumName) : null,
           };
         case J5_LIST_V1_SORT_FIELD_GENERIC_OVERRIDE:
-          const sortFieldEnumName = parentMethod.list?.get('sortableFields')?.generatedName;
+          const sortFieldEnumName = parentMethod.list?.sortableFields?.generatedName;
 
           return {
             ...generic,

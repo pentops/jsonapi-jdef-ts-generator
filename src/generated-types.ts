@@ -12,9 +12,11 @@ export interface GeneratedSchema<TSchema extends ParsedSchema = ParsedSchema> {
   parentPackage?: PackageSummary;
 }
 
-export type MethodListOptions = 'filterableFields' | 'searchableFields' | 'sortableFields';
-
-export type BuiltMethodListSchema = Map<MethodListOptions, GeneratedSchema<ParsedEnum>>;
+export interface BuiltMethodListSchema {
+  filterableFields?: GeneratedSchema<ParsedEnum>;
+  searchableFields?: GeneratedSchema<ParsedEnum>;
+  sortableFields?: GeneratedSchema<ParsedEnum>;
+}
 
 export interface BuiltMethodSchema {
   rawMethod: ParsedMethod;

@@ -677,7 +677,7 @@ export class Generator {
     }
 
     if (method.listOptions) {
-      builtMethod.list = new Map();
+      builtMethod.list = {};
 
       const createGenericEnum = (name: string, values: string[]): GeneratedSchemaWithNode<ParsedEnum> => {
         const mockGrpcName = `${method.fullGrpcName.replaceAll('/', '')}${name}Fields`;
@@ -696,26 +696,20 @@ export class Generator {
       };
 
       if (method.listOptions.filterableFields?.length) {
-        builtMethod.list.set(
-          'filterableFields',
-          createGenericEnum(
-            'Filterable',
-            method.listOptions.filterableFields.map((field) => field.name),
-          ),
+        builtMethod.list.filterableFields = createGenericEnum(
+          'Filterable',
+          method.listOptions.filterableFields.map((field) => field.name),
         );
       }
 
       if (method.listOptions.searchableFields?.length) {
-        builtMethod.list.set('searchableFields', createGenericEnum('Searchable', method.listOptions.searchableFields));
+        builtMethod.list.searchableFields = createGenericEnum('Searchable', method.listOptions.searchableFields);
       }
 
       if (method.listOptions.sortableFields?.length) {
-        builtMethod.list.set(
-          'sortableFields',
-          createGenericEnum(
-            'Sortable',
-            method.listOptions.sortableFields.map((field) => field.name),
-          ),
+        builtMethod.list.sortableFields = createGenericEnum(
+          'Sortable',
+          method.listOptions.sortableFields.map((field) => field.name),
         );
       }
     }
@@ -755,7 +749,7 @@ export class Generator {
   private buildMethodTypes(builtMethod: BuiltMethodSchema, schemas: Map<string, ParsedSchema>) {
     // Add listify generic values
     if (builtMethod.list) {
-      for (const [_, listSchema] of builtMethod.list) {
+      for (const listSchema of Object.values(builtMethod.list || {})) {
         this.buildType(listSchema.rawSchema, schemas, builtMethod);
       }
     }
