@@ -175,6 +175,8 @@ function mergeConfig(userSpecified: Partial<Config>): Config {
   // JSONSource is required
   if (userSpecified.jsonSource) {
     config.jsonSource = userSpecified.jsonSource;
+  } else {
+    console.warn('[jdef-ts-generator]: no JSON source specified, attempting to find `.jdef_config.js` file by default');
   }
 
   return config;
