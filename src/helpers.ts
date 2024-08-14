@@ -166,7 +166,11 @@ export function getImportPath(
   return relativePath;
 }
 
-export function createNamedExportDeclaration(namedExports: string[], typeOnlyExports?: string[]) {
+export function createNamedExportDeclaration(
+  exportPath: string | undefined,
+  namedExports: string[],
+  typeOnlyExports?: string[],
+) {
   const isFullyTypeOnly = Boolean(
     namedExports?.length && namedExports.every((namedExport) => typeOnlyExports?.includes(namedExport)),
   );
@@ -183,6 +187,7 @@ export function createNamedExportDeclaration(namedExports: string[], typeOnlyExp
         ),
       ),
     ),
+    exportPath ? factory.createStringLiteral(exportPath, true) : undefined,
   );
 }
 
