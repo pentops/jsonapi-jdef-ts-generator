@@ -17,8 +17,8 @@ dependencies:
 
 devDependencies:
   '@pentops/jsonapi-request':
-    specifier: ^0.0.3
-    version: 0.0.3
+    specifier: ^0.0.4
+    version: 0.0.4
   '@rollup/plugin-node-resolve':
     specifier: ^15.2.3
     version: 15.2.3(rollup@4.20.0)
@@ -291,15 +291,15 @@ packages:
       '@jridgewell/sourcemap-codec': 1.5.0
     dev: true
 
-  /@pentops/jsonapi-request@0.0.3:
-    resolution: {integrity: sha512-q3brbIsDDnviQsAJSEBKoYjFwSkyvOW4bPN4mua26gSP+sgKwvq/4MdE9XhHrNn+Epij+tmkOQSIzmS8wvCGMg==}
+  /@pentops/jsonapi-request@0.0.4:
+    resolution: {integrity: sha512-UOb0H2KakG3mmdxToUTeg2bfvNA+ll0z9lHCRrrgezYI6FFRdfvVWTDl29HbZmdIFTNY3DsW7Zx5J6GM6Lx/GQ==}
     peerDependencies:
-      uuid: ^9.0.1
+      uuid: ^10.0.0
     peerDependenciesMeta:
       uuid:
         optional: true
     dependencies:
-      qs: 6.12.0
+      qs: 6.13.0
     dev: true
 
   /@rollup/plugin-node-resolve@15.2.3(rollup@4.20.0):
@@ -919,8 +919,8 @@ packages:
     hasBin: true
     dev: true
 
-  /qs@6.12.0:
-    resolution: {integrity: sha512-trVZiI6RMOkO476zLGaBIzszOdFPnCCXHPG9kn0yuS1uz6xdVxPfZdB3vUig9pxPFDM9BRAgz/YUIVQ1/vuiUg==}
+  /qs@6.13.0:
+    resolution: {integrity: sha512-+38qI9SOr8tfZ4QmJNplMUxqjbe7LKvvZgWdExBOmd+egZTtjLB67Gu0HRX3u/XOq7UU2Nx6nsjvS16Z9uwfpg==}
     engines: {node: '>=0.6'}
     dependencies:
       side-channel: 1.0.6
