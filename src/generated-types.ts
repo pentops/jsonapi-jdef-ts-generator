@@ -27,6 +27,7 @@ export interface BuiltMethodSchema {
   responseBodySchema?: GeneratedSchema<ParsedObject>;
   list?: BuiltMethodListSchema;
   relatedEntity?: GeneratedSchema<ParsedObject>;
+  rootEntitySchema?: GeneratedSchema<ParsedObject>;
   parentPackage: PackageSummary;
 }
 

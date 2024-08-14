@@ -17,11 +17,15 @@ export interface ParsedMetadata {
   version: string | undefined;
 }
 
+export interface ParsedEnumValueDescription extends EnumValueDescription {
+  genericReferenceToSchema?: ParsedSchema;
+}
+
 export interface ParsedEnum {
   enum: {
     fullGrpcName: string;
     name: string;
-    options: EnumValueDescription[];
+    options: ParsedEnumValueDescription[];
     prefix: string;
     example?: any;
     rules: EnumRules;
@@ -209,6 +213,7 @@ export interface ParsedMethod<TSchemaWithRef extends ParsedSchemaWithRef = Parse
   queryParameters?: Map<string, ParsedObjectProperty<TSchemaWithRef>> | undefined;
   listOptions?: ParsedMethodListOptions;
   relatedEntity?: ParsedEntity;
+  rootEntitySchema?: ParsedSchemaWithRef;
   parentService: ParsedService;
   auth: ParsedAuthType | undefined;
 }

@@ -27,10 +27,12 @@ import {
 } from './parsed-types';
 import { constantCase } from 'change-case';
 import {
+  APIArraySchema,
   APIMethod,
   APIMethodAuthType,
   APIObjectProperty,
   APIObjectSchema,
+  APIObjectValue,
   APIPackage,
   APIRefValue,
   APIRequestListOptions,
@@ -780,6 +782,64 @@ function mapApiParameters(
   }, new Map());
 }
 
+export function findMethodResponseRootSchema(
+  response: APIObjectValue,
+  packageName: string,
+  parentRelatedEntity?: APIStateEntity,
+): APIObjectSchema | undefined {
+  if (parentRelatedEntity) {
+    for (const property of response.properties || []) {
+      const found = match(property)
+        .with(
+          { schema: { object: { ref: { package: packageName, schema: parentRelatedEntity.schemaName } } } },
+          (s) => s,
+        )
+        .otherwise(() => undefined);
+
+      if (found) {
+        return found.schema;
+      }
+    }
+  }
+
+  // Check for array first (there should be exactly one in a list method, as per j5client handling)
+  let foundArray: APIArraySchema<APIObjectSchema> | undefined;
+  for (const property of response.properties || []) {
+    const found = match(property)
+      .with(
+        { schema: { array: { items: { object: { ref: { package: P.not(P.nullish), schema: P.not(P.nullish) } } } } } },
+        (s) => s,
+      )
+      .otherwise(() => undefined);
+
+    if (found) {
+      if (foundArray) {
+        console.warn(
+          `[jdef-ts-generator]: multiple array schemas found in method response ${response.name}, root schema identification may not be accurate`,
+        );
+      }
+
+      foundArray = found.schema;
+    }
+  }
+
+  if (foundArray) {
+    return foundArray.array.items;
+  }
+
+  for (const property of response.properties || []) {
+    const found = match(property)
+      .with({ schema: { object: { ref: { package: P.not(P.nullish), schema: P.not(P.nullish) } } } }, (s) => s)
+      .otherwise(() => undefined);
+
+    if (found && found.schema.object.ref.package === packageName) {
+      return found.schema;
+    }
+  }
+
+  return undefined;
+}
+
 export function mapApiAuth(auth: APIMethodAuthType | undefined): ParsedAuthType | undefined {
   return match(auth)
     .with({ '!type': 'cookie' }, () => ({ cookie: {} }))
@@ -829,7 +889,10 @@ export function parseApiSource(source: APISource): ParsedSource {
       services: [],
     };
 
-    function mapListOptions(listOptions: APIRequestListOptions | undefined): ParsedMethodListOptions | undefined {
+    function mapListOptions(
+      listOptions: APIRequestListOptions | undefined,
+      keyReplacementMap: Record<string, string> | undefined,
+    ): ParsedMethodListOptions | undefined {
       if (!listOptions) {
         return undefined;
       }
@@ -839,19 +902,21 @@ export function parseApiSource(source: APISource): ParsedSource {
       if (listOptions.filterableFields) {
         options.filterableFields = listOptions.filterableFields.map((field) => {
           return {
-            name: field.name,
+            name: keyReplacementMap?.[field.name] || field.name,
             defaultValues: field.defaultFilters,
           };
         });
       }
 
       if (listOptions.searchableFields) {
-        options.searchableFields = listOptions.searchableFields.map((field) => field.name);
+        options.searchableFields = listOptions.searchableFields.map(
+          (field) => keyReplacementMap?.[field.name] || field.name,
+        );
       }
 
       if (listOptions.sortableFields) {
         options.sortableFields = listOptions.sortableFields.map((field) => ({
-          name: field.name,
+          name: keyReplacementMap?.[field.name] || field.name,
           defaultSort: match(field.defaultSort)
             .returnType<SortDirection | undefined>()
             .with('ASC', () => 'asc')
@@ -861,6 +926,66 @@ export function parseApiSource(source: APISource): ParsedSource {
       }
 
       return options;
+    }
+
+    function getAPIObjectProperties(
+      schema: APISchema,
+      schemas: Map<string, APISchema>,
+    ): APIObjectProperty[] | undefined {
+      return match(schema)
+        .with({ object: { ref: P.not(P.nullish) } }, (o) => {
+          const refValue = schemas.get(getFullGrpcPathForSchemaRef(o.object.ref));
+
+          if (refValue) {
+            return getAPIObjectProperties(refValue, schemas);
+          }
+
+          return undefined;
+        })
+        .with({ object: { properties: P.not(P.nullish) } }, (o) => o.object.properties)
+        .with({ oneof: { ref: P.not(P.nullish) } }, (o) => {
+          const refValue = schemas.get(getFullGrpcPathForSchemaRef(o.oneof.ref));
+
+          if (refValue) {
+            return getAPIObjectProperties(refValue, schemas);
+          }
+
+          return undefined;
+        })
+        .with({ oneof: { properties: P.not(P.nullish) } }, (o) => o.oneof.properties)
+        .with({ array: { items: P.not(P.nullish) } }, (a) => getAPIObjectProperties(a.array.items, schemas))
+        .otherwise(() => undefined);
+    }
+
+    function buildKeyReplacementMap(schema: APIObjectSchema, schemas: Map<string, APISchema>) {
+      const replacementMap: Record<string, string> = {};
+
+      const gather = (properties: APIObjectProperty[] | undefined, path: string = '', replacedPath: string = '') => {
+        for (const property of properties || []) {
+          const subProperties = getAPIObjectProperties(property.schema, schemas);
+          const isFlattened = match(property.schema)
+            .with({ object: { flatten: true } }, () => true)
+            .with({ array: { items: { object: { flatten: true } } } }, () => true)
+            .otherwise(() => false);
+
+          const nextPath = `${path}${path ? '.' : ''}${property.name}`;
+
+          if (subProperties) {
+            const nextPart = isFlattened ? replacedPath : `${replacedPath}${replacedPath ? '.' : ''}${property.name}`;
+            gather(subProperties, nextPath, nextPart);
+          } else {
+            const fullyReplacedPath = `${replacedPath}${replacedPath ? '.' : ''}${property.name}`;
+
+            if (nextPath !== fullyReplacedPath) {
+              replacementMap[nextPath] = fullyReplacedPath;
+            }
+          }
+        }
+      };
+
+      gather(getAPIObjectProperties(schema, schemas));
+
+      return Object.keys(replacementMap).length ? replacementMap : undefined;
     }
 
     function mapService(service: APIService, schemas: Map<string, APISchema>, relatedEntity?: APIStateEntity) {
@@ -879,15 +1004,33 @@ export function parseApiSource(source: APISource): ParsedSource {
           ? ({ '!type': 'object', 'object': method.request.body } as APIObjectSchema)
           : undefined;
 
+        const responseBodyValue = match(responseBodyAsObjectSchema)
+          .with({ object: { ref: P.not(P.nullish) } }, (o) => {
+            const refValue = schemas.get(getFullGrpcPathForSchemaRef(o.object.ref));
+
+            if (refValue && refValue['!type'] === 'object') {
+              return refValue.object as APIObjectValue;
+            }
+
+            return undefined;
+          })
+          .with({ object: { name: P.string } }, (o) => o.object)
+          .otherwise(() => undefined);
+
+        const rootEntitySchema = responseBodyValue
+          ? findMethodResponseRootSchema(responseBodyValue, parsedPackage.name, relatedEntity)
+          : undefined;
         const mappedRelatedEntity = relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined;
         const mappedPathParameters = mapApiParameters(method.request?.pathParameters, stateEntities, schemas, true);
         const mappedQueryParameters = mapApiParameters(method.request?.queryParameters, stateEntities, schemas);
+        const keyReplacementMap = rootEntitySchema ? buildKeyReplacementMap(rootEntitySchema, schemas) : undefined;
 
         parsedService.methods.push({
           name: method.name,
           fullGrpcName: method.fullGrpcName,
           httpMethod: method.httpMethod.toLowerCase() as HTTPMethod,
           httpPath: method.httpPath,
+          rootEntitySchema: rootEntitySchema ? apiSchemaToSource(rootEntitySchema, stateEntities, schemas) : undefined,
           responseBody: responseBodyAsObjectSchema
             ? apiSchemaToSource(
                 responseBodyAsObjectSchema,
@@ -912,7 +1055,7 @@ export function parseApiSource(source: APISource): ParsedSource {
           queryParameters: mappedQueryParameters
             ? addEntityDataToApiPrimaryKeys(mappedRelatedEntity, mappedQueryParameters)
             : undefined,
-          listOptions: mapListOptions(method.request?.list),
+          listOptions: mapListOptions(method.request?.list, keyReplacementMap),
           relatedEntity: mappedRelatedEntity,
           parentService: parsedService,
           auth: mapApiAuth(method.auth),

@@ -166,6 +166,35 @@ export function getImportPath(
   return relativePath;
 }
 
+export function getPropertyByPath(
+  path: string,
+  schema: ParsedSchemaWithRef,
+  schemas: Map<string, ParsedSchema>,
+): ParsedSchema | undefined {
+  const parts = path.split('.');
+  let currentPart = parts.shift();
+  let currentSchema = schema;
+
+  while (currentPart) {
+    const properties = getObjectProperties(currentSchema, schemas);
+
+    if (!properties) {
+      return undefined;
+    }
+
+    if (!properties.has(currentPart)) {
+      return undefined;
+    }
+
+    currentSchema = properties.get(currentPart)!.schema;
+    currentPart = parts.shift();
+  }
+
+  return match(currentSchema)
+    .with({ $ref: P.not(P.nullish) }, (s) => schemas.get(cleanRefName(s)))
+    .otherwise(() => currentSchema as ParsedSchema);
+}
+
 export function createNamedExportDeclaration(
   exportPath: string | undefined,
   namedExports: string[],

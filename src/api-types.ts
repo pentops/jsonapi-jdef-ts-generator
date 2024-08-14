@@ -162,14 +162,14 @@ export interface APIBytesSchema {
   'bytes': APIBytesValue;
 }
 
-export interface APIArrayValue {
-  items: APISchema;
+export interface APIArrayValue<TSchema extends APISchema = APISchema> {
+  items: TSchema;
   rules?: ArrayRules;
 }
 
-export interface APIArraySchema {
+export interface APIArraySchema<TSchema extends APISchema = APISchema> {
   '!type': 'array';
-  'array': APIArrayValue;
+  'array': APIArrayValue<TSchema>;
 }
 
 export interface APIKeyValue {

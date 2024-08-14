@@ -12,6 +12,7 @@ import {
   getImportPath,
   getObjectProperties,
   getPackageSummary,
+  getPropertyByPath,
   getSchemaName,
   getValidKeyName,
   isCharacterSafeForName,
@@ -19,6 +20,7 @@ import {
 } from './helpers';
 import type {
   ParsedEnum,
+  ParsedEnumValueDescription,
   ParsedMethod,
   ParsedObject,
   ParsedObjectProperty,
@@ -571,6 +573,12 @@ export class Generator {
       builtMethod.relatedEntity = relatedEntity as GeneratedSchema<ParsedObject>;
     }
 
+    const rootEntity = this.schemaGenerationProspects.get(getFullGRPCName(method.rootEntitySchema));
+
+    if (rootEntity) {
+      builtMethod.rootEntitySchema = rootEntity as GeneratedSchema<ParsedObject>;
+    }
+
     if (responseBody) {
       builtMethod.responseBodySchema = {
         generatedName: this.getValidTypeName(responseBody),
@@ -686,7 +694,23 @@ export class Generator {
             fullGrpcName: mockGrpcName,
             name: this.config.types.nameWriter(mockGrpcName),
             prefix: '',
-            options: values.map((value) => ({ name: value })),
+            options: values.map((value) => {
+              const base: ParsedEnumValueDescription = { name: value };
+
+              if (rootEntity) {
+                const matchingValue = getPropertyByPath(value, rootEntity.rawSchema, schemas);
+
+                if (matchingValue) {
+                  base.genericReferenceToSchema = matchingValue;
+                } else {
+                  console.warn(
+                    `[jdef-ts-generator]: unable to find property ${value} in related entity ${rootEntity.generatedName} for method: ${method.name}`,
+                  );
+                }
+              }
+
+              return base;
+            }),
             rules: {},
             isDerivedHelperType: true,
           },
