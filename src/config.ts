@@ -181,14 +181,18 @@ function mergeConfig(userSpecified: Partial<Config>): Config {
 }
 
 export async function loadConfig(): Promise<Config> {
-  const configJs = await findUp('.jdef_config.js');
+  try {
+    const configJs = await findUp('.jdef_config.js');
 
-  if (configJs) {
-    const configModule = await import(url.pathToFileURL(configJs).href);
+    if (configJs) {
+      const configModule = await import(url.pathToFileURL(configJs).href);
 
-    if (configModule?.default) {
-      return mergeConfig(configModule.default);
+      if (configModule?.default) {
+        return mergeConfig(configModule.default);
+      }
     }
+  } catch (err) {
+    throw new Error(`[jdef-ts-generator]: error loading .jdef_config.js file: ${err}`);
   }
 
   console.warn('[jdef-ts-generator]: no .jdef_config.js file found, using default config');

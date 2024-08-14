@@ -86,7 +86,9 @@ export async function cli({ cwd, args }: Args) {
   if (config.plugins) {
     for (const plugin of config.plugins) {
       plugin.prepare(cwd, api, generator);
+
       await plugin.run();
+
       const output = plugin.postRun();
 
       for (const writtenFile of output.writtenFiles) {

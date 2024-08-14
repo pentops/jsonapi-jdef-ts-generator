@@ -11,11 +11,11 @@ function guessSourceType(path: string, explicitType: SourceType | undefined) {
     return explicitType;
   }
 
-  if (path.endsWith('api.json')) {
+  if (path.toLowerCase().endsWith('api.json')) {
     return 'api';
   }
 
-  if (path.endsWith('jdef.json')) {
+  if (path.toLowerCase().endsWith('jdef.json')) {
     return 'jdef';
   }
 
@@ -26,7 +26,16 @@ function guessSourceType(path: string, explicitType: SourceType | undefined) {
 
 async function getLocalSource(filePath: string, explicitType: SourceType | undefined) {
   const sourceType = guessSourceType(filePath, explicitType);
-  const fileContent = await fs.readFile(filePath, 'utf8');
+
+  let fileContent: string;
+
+  try {
+    fileContent = await fs.readFile(filePath, 'utf8');
+  } catch (err) {
+    throw new Error(
+      `[jdef-ts-generator]: error encountered while reading custom ${sourceType}.json file at ${filePath}: ${err}`,
+    );
+  }
 
   if (fileContent) {
     try {
