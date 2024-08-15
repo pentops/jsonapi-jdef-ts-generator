@@ -290,6 +290,12 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
       : (this.config.schemaFilter ?? true);
   }
 
+  public isFileForGeneratedClientFunction(generatedFunction: GeneratedClientFunction) {
+    return typeof this.config.clientFunctionFilter === 'function'
+      ? this.config.clientFunctionFilter(generatedFunction)
+      : (this.config.clientFunctionFilter ?? true);
+  }
+
   public addNodes(...nodes: Node[]) {
     this.nodeList.push(...nodes);
   }
