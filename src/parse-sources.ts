@@ -42,7 +42,7 @@ import {
   APISource,
   APIStateEntity,
 } from './api-types';
-import { EntityPart, HTTPMethod } from './shared-types';
+import { EntityPart, HTTPMethod, SortingConstraintValue } from './shared-types';
 import { getObjectProperties, JSON_SCHEMA_REFERENCE_PREFIX } from './helpers';
 import { PackageSummary } from './generated-types';
 
@@ -906,6 +906,14 @@ export function parseApiSource(source: APISource): ParsedSource {
             defaultValues: field.defaultFilters,
           };
         });
+
+        options.defaultFilters = listOptions.filterableFields.reduce<Record<string, string[]>>((acc, curr) => {
+          if (curr.defaultFilters) {
+            acc[curr.name] = curr.defaultFilters;
+          }
+
+          return acc;
+        }, {});
       }
 
       if (listOptions.searchableFields) {
@@ -915,14 +923,30 @@ export function parseApiSource(source: APISource): ParsedSource {
       }
 
       if (listOptions.sortableFields) {
-        options.sortableFields = listOptions.sortableFields.map((field) => ({
-          name: keyReplacementMap?.[field.name] || field.name,
-          defaultSort: match(field.defaultSort)
+        function apiSortDirectionToParsedSortDirection(
+          sortDirection: SortingConstraintValue | undefined,
+        ): SortDirection | undefined {
+          return match(sortDirection)
             .returnType<SortDirection | undefined>()
             .with('ASC', () => 'asc')
             .with('DESC', () => 'desc')
-            .otherwise(() => undefined),
+            .otherwise(() => undefined);
+        }
+
+        options.sortableFields = listOptions.sortableFields.map((field) => ({
+          name: keyReplacementMap?.[field.name] || field.name,
+          defaultSort: apiSortDirectionToParsedSortDirection(field.defaultSort),
         }));
+
+        options.defaultSorts = listOptions.sortableFields.reduce<Record<string, SortDirection>>((acc, curr) => {
+          const sort = apiSortDirectionToParsedSortDirection(curr.defaultSort);
+
+          if (sort) {
+            acc[curr.name] = sort;
+          }
+
+          return acc;
+        }, {});
       }
 
       return options;

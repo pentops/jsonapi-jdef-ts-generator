@@ -1,13 +1,20 @@
 import {
   ArrayRules,
+  BooleanListRules,
   EntityObjectSchema,
+  EnumListRules,
   EnumRules,
   EnumValueDescription,
+  FloatListRules,
   HTTPMethod,
+  IntegerListRules,
   IntegerRules,
+  KeyListRules,
   NumberRules,
   ObjectRules,
+  OneOfListRules,
   StateEntityEvent,
+  StringListRules,
   StringRules,
 } from './shared-types';
 import { PackageSummary } from './generated-types';
@@ -27,16 +34,18 @@ export interface ParsedEnum {
     name: string;
     options: ParsedEnumValueDescription[];
     prefix: string;
-    example?: any;
     rules: EnumRules;
     package?: PackageSummary;
     isDerivedHelperType?: boolean;
+    listRules?: EnumListRules;
+    example?: any;
   };
 }
 
 export interface ParsedBoolean {
   boolean: {
     const?: boolean;
+    listRules?: BooleanListRules;
     example?: any;
   };
 }
@@ -45,6 +54,7 @@ export interface ParsedInteger {
   integer: {
     format?: string;
     rules: IntegerRules;
+    listRules?: IntegerListRules;
     example?: any;
   };
 }
@@ -53,6 +63,7 @@ export interface ParsedFloat {
   float: {
     format?: string;
     rules: NumberRules;
+    listRules?: FloatListRules;
     example?: any;
   };
 }
@@ -61,6 +72,7 @@ export interface ParsedString {
   string: {
     format: string;
     rules: StringRules;
+    listRules?: StringListRules;
     example?: any;
   };
 }
@@ -123,8 +135,9 @@ export interface ParsedOneOf {
     fullGrpcName: string;
     name: string;
     properties: Map<string, ParsedObjectProperty>;
-    example?: any;
     package?: PackageSummary;
+    listRules?: OneOfListRules;
+    example?: any;
   };
 }
 
@@ -146,9 +159,10 @@ export interface ParsedKey {
   key: {
     format: string;
     primary: boolean;
-    example?: any;
     entity?: string;
     rules?: {};
+    listRules?: KeyListRules;
+    example?: any;
   };
 }
 
@@ -181,8 +195,10 @@ export interface SortableField {
 }
 
 export interface ParsedMethodListOptions {
+  defaultFilters?: Record<string, string[]>;
   filterableFields?: FilterableField[];
   searchableFields?: string[];
+  defaultSorts?: Record<string, SortDirection>;
   sortableFields?: SortableField[];
 }
 
