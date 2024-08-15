@@ -166,6 +166,78 @@ export function getImportPath(
   return relativePath;
 }
 
+export function createExpression(value: any): ts.Expression {
+  if (typeof value === 'string') {
+    return factory.createStringLiteral(value, true);
+  }
+
+  if (typeof value === 'number') {
+    if (value.toString().charAt(0) === '-') {
+      return factory.createPrefixUnaryExpression(
+        ts.SyntaxKind.MinusToken,
+        factory.createNumericLiteral(Math.abs(value)),
+      );
+    }
+
+    return factory.createNumericLiteral(value);
+  }
+
+  if (typeof value === 'boolean') {
+    return value ? factory.createTrue() : factory.createFalse();
+  }
+
+  if (Array.isArray(value)) {
+    const elements = value.map((item) => createExpression(item));
+    return factory.createArrayLiteralExpression(elements, true);
+  }
+
+  if (value === null) {
+    return factory.createNull();
+  }
+
+  if (typeof value === 'object') {
+    if (ts.isIdentifier(value)) {
+      return value;
+    }
+
+    if (ts.isObjectLiteralExpression(value)) {
+      return value;
+    }
+
+    return createObjectLiteral(value);
+  }
+
+  if (typeof value === 'undefined') {
+    return factory.createIdentifier('undefined');
+  }
+
+  throw new Error(`Unsupported value type: ${typeof value}`);
+}
+
+export function createObjectLiteral(obj: any): ts.ObjectLiteralExpression {
+  const properties: ts.ObjectLiteralElementLike[] = [];
+
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      properties.push(factory.createPropertyAssignment(factory.createIdentifier(key), createExpression(obj[key])));
+    }
+  }
+
+  return factory.createObjectLiteralExpression(properties, true);
+}
+
+export function generatedSchemaMapToParsedSchemaMap(
+  generatedSchemas: Map<string, GeneratedSchema>,
+): Map<string, ParsedSchema> {
+  const parsedSchemas = new Map<string, ParsedSchema>();
+
+  for (const [key, value] of generatedSchemas) {
+    parsedSchemas.set(key, value.rawSchema);
+  }
+
+  return parsedSchemas;
+}
+
 export function getPropertyByPath(
   path: string,
   schema: ParsedSchemaWithRef,
