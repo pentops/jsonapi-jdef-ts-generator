@@ -221,7 +221,7 @@ export function createExpression(value: any, nodeTests: NodeTest[] = defaultType
       return value;
     }
 
-    return createObjectLiteral(value);
+    return createObjectLiteral(value, nodeTests);
   }
 
   if (typeof value === 'undefined') {
@@ -231,12 +231,17 @@ export function createExpression(value: any, nodeTests: NodeTest[] = defaultType
   throw new Error(`Unsupported value type: ${typeof value}`);
 }
 
-export function createObjectLiteral(obj: any): ts.ObjectLiteralExpression {
+export function createObjectLiteral(
+  obj: any,
+  nodeTests: NodeTest[] = defaultTypeScriptIsChecks,
+): ts.ObjectLiteralExpression {
   const properties: ts.ObjectLiteralElementLike[] = [];
 
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      properties.push(factory.createPropertyAssignment(factory.createIdentifier(key), createExpression(obj[key])));
+      properties.push(
+        factory.createPropertyAssignment(factory.createIdentifier(key), createExpression(obj[key], nodeTests)),
+      );
     }
   }
 
