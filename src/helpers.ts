@@ -166,7 +166,26 @@ export function getImportPath(
   return relativePath;
 }
 
-export function createExpression(value: any): ts.Expression {
+export type NodeTest = (node: ts.Node) => boolean;
+
+export const isTypeScriptNode: NodeTest = (node: any) => {
+  if (
+    !node ||
+    typeof node !== 'object' ||
+    !Object.hasOwnProperty.call(node, 'kind') ||
+    ts.SyntaxKind[node.kind] === undefined ||
+    !Object.hasOwnProperty.call(node, 'flags') ||
+    ts.NodeFlags[node.flags] === undefined
+  ) {
+    return false;
+  }
+
+  return true;
+};
+
+const defaultTypeScriptIsChecks: NodeTest[] = [isTypeScriptNode];
+
+export function createExpression(value: any, nodeTests: NodeTest[] = defaultTypeScriptIsChecks): ts.Expression {
   if (typeof value === 'string') {
     return factory.createStringLiteral(value, true);
   }
@@ -187,8 +206,10 @@ export function createExpression(value: any): ts.Expression {
   }
 
   if (Array.isArray(value)) {
-    const elements = value.map((item) => createExpression(item));
-    return factory.createArrayLiteralExpression(elements, true);
+    return factory.createArrayLiteralExpression(
+      value.map((item) => createExpression(item, nodeTests)),
+      true,
+    );
   }
 
   if (value === null) {
@@ -196,11 +217,7 @@ export function createExpression(value: any): ts.Expression {
   }
 
   if (typeof value === 'object') {
-    if (ts.isIdentifier(value)) {
-      return value;
-    }
-
-    if (ts.isObjectLiteralExpression(value)) {
+    if (nodeTests.some((test) => test(value))) {
       return value;
     }
 
