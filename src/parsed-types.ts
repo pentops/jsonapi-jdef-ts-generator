@@ -196,9 +196,9 @@ export interface SortableField {
 
 export interface ParsedMethodListOptions {
   defaultFilters?: Record<string, string[]>;
+  defaultSorts?: Record<string, SortDirection>;
   filterableFields?: FilterableField[];
   searchableFields?: string[];
-  defaultSorts?: Record<string, SortDirection>;
   sortableFields?: SortableField[];
 }
 

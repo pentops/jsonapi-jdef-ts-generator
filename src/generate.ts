@@ -719,6 +719,14 @@ export class Generator {
         return this.buildType(schema, schemas)?.[0] as GeneratedSchemaWithNode<ParsedEnum>;
       };
 
+      if (method.listOptions.defaultFilters) {
+        builtMethod.list.defaultFilters = method.listOptions.defaultFilters;
+      }
+
+      if (method.listOptions.defaultSorts) {
+        builtMethod.list.defaultSorts = method.listOptions.defaultSorts;
+      }
+
       if (method.listOptions.filterableFields?.length) {
         builtMethod.list.filterableFields = createGenericEnum(
           'Filterable',

@@ -1,5 +1,5 @@
 import type { InterfaceDeclaration, TypeNode, TypeAliasDeclaration, EnumDeclaration } from 'typescript';
-import type { ParsedEnum, ParsedMethod, ParsedObject, ParsedSchema } from './parsed-types';
+import { ParsedEnum, ParsedMethod, ParsedObject, ParsedSchema, SortDirection } from './parsed-types';
 
 export interface PackageSummary {
   package: string;
@@ -13,6 +13,8 @@ export interface GeneratedSchema<TSchema extends ParsedSchema = ParsedSchema> {
 }
 
 export interface BuiltMethodListSchema {
+  defaultFilters?: Record<string, string[]>;
+  defaultSorts?: Record<string, SortDirection>;
   filterableFields?: GeneratedSchema<ParsedEnum>;
   searchableFields?: GeneratedSchema<ParsedEnum>;
   sortableFields?: GeneratedSchema<ParsedEnum>;
