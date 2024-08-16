@@ -6,11 +6,16 @@ export interface PackageSummary {
   label: string | undefined;
 }
 
-export interface GeneratedSchema<TSchema extends ParsedSchema = ParsedSchema> {
+export type GeneratedSchemaDetails<T> = T extends ParsedEnum ? { generatedValueNames: Map<string, string> } : {};
+
+export interface BaseGeneratedSchema<TSchema extends ParsedSchema = ParsedSchema> {
   generatedName: string;
   rawSchema: TSchema;
   parentPackage?: PackageSummary;
 }
+
+export type GeneratedSchema<TSchema extends ParsedSchema = ParsedSchema> = BaseGeneratedSchema<TSchema> &
+  GeneratedSchemaDetails<TSchema>;
 
 export interface BuiltMethodListSchema {
   defaultFilters?: Record<string, string[]>;
@@ -38,7 +43,7 @@ export interface GeneratedClientFunction {
   method: BuiltMethodSchema;
 }
 
-export interface GeneratedSchemaWithNode<TSchema extends ParsedSchema = ParsedSchema> extends GeneratedSchema<TSchema> {
+export type GeneratedSchemaWithNode<TSchema extends ParsedSchema = ParsedSchema> = {
   fullGrpcName?: string;
   node: TypeNode | InterfaceDeclaration | TypeAliasDeclaration | EnumDeclaration;
-}
+} & GeneratedSchema<TSchema>;

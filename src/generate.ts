@@ -96,31 +96,37 @@ export class Generator {
     );
   }
 
-  private static buildUnionEnum(schema: ParsedEnum) {
+  private static buildUnionEnum(values: string[]) {
     return factory.createUnionTypeNode(
-      schema.enum.options.map((value) => factory.createLiteralTypeNode(factory.createStringLiteral(value.name, true))),
+      values.map((value) => factory.createLiteralTypeNode(factory.createStringLiteral(value, true))),
     );
   }
 
-  private static generateEnum(name: string, schema: ParsedEnum, enumType: 'enum' | 'union') {
+  private buildEnumKeyValueMap(schema: ParsedEnum, enumType: 'enum' | 'union') {
+    return schema.enum.options.reduce<Map<string, string>>((acc, curr) => {
+      acc.set(curr.name, enumType === 'enum' ? getValidKeyName(pascalCase(curr.name)) : curr.name);
+
+      return acc;
+    }, new Map());
+  }
+
+  private static generateEnum(name: string, keyValueMap: Map<string, string>, enumType: 'enum' | 'union') {
     switch (enumType) {
-      case 'enum':
+      case 'enum': {
         return factory.createEnumDeclaration(
           [factory.createModifier(SyntaxKind.ExportKeyword)],
           factory.createIdentifier(name),
-          schema.enum.options.map((value) =>
-            factory.createEnumMember(
-              factory.createIdentifier(getValidKeyName(pascalCase(value.name))),
-              factory.createStringLiteral(value.name, true),
-            ),
+          Array.from(keyValueMap.entries()).map(([key, value]) =>
+            factory.createEnumMember(factory.createIdentifier(value), factory.createStringLiteral(key, true)),
           ),
         );
+      }
       case 'union': {
         return factory.createTypeAliasDeclaration(
           [factory.createModifier(SyntaxKind.ExportKeyword)],
           factory.createIdentifier(name),
           [],
-          Generator.buildUnionEnum(schema),
+          Generator.buildUnionEnum(Array.from(keyValueMap.values())),
         );
       }
     }
@@ -130,15 +136,21 @@ export class Generator {
     const oneOfFullGrpcName = getFullGRPCName(oneOf);
     const mockGrpcName = `${oneOfFullGrpcName}OneOfValue`;
     const generatedName = this.config.types.nameWriter(mockGrpcName);
+    const values = Array.from(oneOf.oneOf.properties.keys());
 
     return {
       generatedName,
       fullGrpcName: mockGrpcName,
+      generatedValueNames: values.reduce<Map<string, string>>((acc, curr) => {
+        acc.set(curr, curr);
+
+        return acc;
+      }, new Map()),
       rawSchema: {
         enum: {
           fullGrpcName: mockGrpcName,
           name: generatedName,
-          options: Array.from(oneOf.oneOf.properties.keys()).map((name) => ({ name })),
+          options: values.map((name) => ({ name })),
           prefix: '',
           isDerivedHelperType: true,
           package: oneOf.oneOf.package,
@@ -272,7 +284,9 @@ export class Generator {
       match(schema)
         .with({ boolean: P.not(P.nullish) }, () => ({ node: factory.createKeywordTypeNode(SyntaxKind.BooleanKeyword) }))
         // all nested enums are union types
-        .with({ enum: P.not(P.nullish) }, (s) => ({ node: Generator.buildUnionEnum(s) }))
+        .with({ enum: P.not(P.nullish) }, (s) => {
+          return { node: Generator.buildUnionEnum(Array.from(this.buildEnumKeyValueMap(s, 'union').keys())) };
+        })
         .with({ key: P.not(P.nullish) }, (s) => ({
           node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
           comment: s.key.format ? `format: ${s.key.format}` : undefined,
@@ -485,14 +499,19 @@ export class Generator {
         },
         this.generateOneOfUnionType(generatedName, s),
       ])
-      .with({ enum: P.not(P.nullish) }, (s) => [
-        {
-          generatedName,
-          fullGrpcName,
-          rawSchema: s,
-          node: Generator.generateEnum(generatedName, s, this.config.types.enumType),
-        },
-      ])
+      .with({ enum: P.not(P.nullish) }, (s) => {
+        const keyValueMap = this.buildEnumKeyValueMap(s, this.config.types.enumType);
+
+        return [
+          {
+            generatedName,
+            fullGrpcName,
+            rawSchema: s,
+            generatedValueNames: keyValueMap,
+            node: Generator.generateEnum(generatedName, keyValueMap, this.config.types.enumType),
+          },
+        ];
+      })
       .otherwise(() => {
         const builtNode = this.buildBaseType(schema).node;
 
