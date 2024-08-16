@@ -1,12 +1,16 @@
 import type { InterfaceDeclaration, TypeNode, TypeAliasDeclaration, EnumDeclaration } from 'typescript';
-import { ParsedEnum, ParsedMethod, ParsedObject, ParsedSchema, SortDirection } from './parsed-types';
+import { ParsedEnum, ParsedMethod, ParsedObject, ParsedOneOf, ParsedSchema, SortDirection } from './parsed-types';
 
 export interface PackageSummary {
   package: string;
   label: string | undefined;
 }
 
-export type GeneratedSchemaDetails<T> = T extends ParsedEnum ? { generatedValueNames: Map<string, string> } : {};
+export type GeneratedSchemaDetails<T> = T extends ParsedEnum
+  ? { generatedValueNames: Map<string, string> }
+  : T extends ParsedOneOf
+    ? { derivedOneOfTypeEnumName: string }
+    : {};
 
 export interface BaseGeneratedSchema<TSchema extends ParsedSchema = ParsedSchema> {
   generatedName: string;

@@ -484,21 +484,26 @@ export class Generator {
           ),
         },
       ])
-      .with({ oneOf: P.not(P.nullish) }, (s) => [
-        {
-          generatedName,
-          rawSchema: s,
-          fullGrpcName,
-          node: factory.createInterfaceDeclaration(
-            [factory.createModifier(SyntaxKind.ExportKeyword)],
-            factory.createIdentifier(generatedName),
-            Generator.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
-            [],
-            this.buildOneOf(s, schemaGenerics, allGenericsWithValues)?.members,
-          ),
-        },
-        this.generateOneOfUnionType(generatedName, s),
-      ])
+      .with({ oneOf: P.not(P.nullish) }, (s) => {
+        const oneOfUnionType = this.generateOneOfUnionType(generatedName, s);
+
+        return [
+          {
+            generatedName,
+            rawSchema: s,
+            fullGrpcName,
+            derivedOneOfTypeEnumName: oneOfUnionType.generatedName,
+            node: factory.createInterfaceDeclaration(
+              [factory.createModifier(SyntaxKind.ExportKeyword)],
+              factory.createIdentifier(generatedName),
+              Generator.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
+              [],
+              this.buildOneOf(s, schemaGenerics, allGenericsWithValues)?.members,
+            ),
+          },
+          oneOfUnionType,
+        ];
+      })
       .with({ enum: P.not(P.nullish) }, (s) => {
         const keyValueMap = this.buildEnumKeyValueMap(s, this.config.types.enumType);
 
@@ -784,6 +789,7 @@ export class Generator {
 
       typeNodes?.forEach((node) => {
         this.schemaGenerationProspects.set(node.fullGrpcName || node.generatedName || schemaName, {
+          ...node,
           generatedName: node.generatedName || schemaName,
           rawSchema: node.rawSchema || schema,
           parentPackage: parentMethod?.parentPackage || getPackageSummary(node.rawSchema),
