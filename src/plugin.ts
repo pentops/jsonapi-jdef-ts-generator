@@ -6,7 +6,12 @@ import path from 'path';
 import { Generator } from './generate';
 import { P, match } from 'ts-pattern';
 import type { ParsedSource } from './parsed-types';
-import type { GeneratedClientFunction, GeneratedSchema } from './generated-types';
+import type {
+  GeneratedClientFunction,
+  GeneratedClientFunctionWithNodes,
+  GeneratedSchema,
+  GeneratedSchemaWithNode,
+} from './generated-types';
 
 const { createPrinter, createSourceFile, factory, ScriptKind, ScriptTarget, ListFormat, NewLineKind } = ts;
 
@@ -372,8 +377,8 @@ export class PluginBase<
   protected config: Config | undefined;
   protected cwd: string | undefined;
   protected files: PluginFile<TFileConfig>[] = [];
-  protected generatedClientFunctions: GeneratedClientFunction[] = [];
-  protected generatedSchemas: Map<string, GeneratedSchema> = new Map();
+  protected generatedClientFunctions: GeneratedClientFunctionWithNodes[] = [];
+  protected generatedSchemas: Map<string, GeneratedSchemaWithNode> = new Map();
   private startedAt: number | undefined;
 
   constructor(pluginConfig: TConfig) {

@@ -34,6 +34,7 @@ import type {
 import {
   BuiltMethodSchema,
   GeneratedClientFunction,
+  GeneratedClientFunctionWithNodes,
   GeneratedSchema,
   GeneratedSchemaWithNode,
   PackageSummary,
@@ -71,7 +72,7 @@ export class Generator {
   private schemaGenerationProspects: Map<string, GeneratedSchemaWithNode> = new Map();
   public builtMethodSchemas: Map<string, BuiltMethodSchema> = new Map();
   public generatedSchemas: Map<string, GeneratedSchemaWithNode> = new Map();
-  public generatedClientFunctions: GeneratedClientFunction[] = [];
+  public generatedClientFunctions: GeneratedClientFunctionWithNodes[] = [];
   public schemaGenerics: Map<string, GenericOverrideMap>;
 
   constructor(config: Config) {
@@ -1087,10 +1088,44 @@ export class Generator {
         factory.createIdentifier('\n'),
       );
 
-      this.generatedClientFunctions.push({
-        generatedName: methodName,
-        method,
-      });
+      const addGeneratedTypesWithNodesToMethod = (
+        method: GeneratedClientFunction,
+      ): GeneratedClientFunctionWithNodes => {
+        const getSchemaWithNode = <TSchema extends ParsedSchema>(
+          schema: GeneratedSchema<TSchema> | undefined,
+        ): GeneratedSchemaWithNode<TSchema> | undefined => {
+          return (
+            schema
+              ? this.generatedSchemas.get(getFullGRPCName(schema.rawSchema) || schema.generatedName) || schema
+              : undefined
+          ) as GeneratedSchemaWithNode<TSchema> | undefined;
+        };
+
+        return {
+          ...method,
+          method: {
+            ...method.method,
+            responseBodySchema: getSchemaWithNode(method.method.responseBodySchema),
+            mergedRequestSchema: getSchemaWithNode(method.method.mergedRequestSchema),
+            requestBodySchema: getSchemaWithNode(method.method.requestBodySchema),
+            pathParametersSchema: getSchemaWithNode(method.method.pathParametersSchema),
+            queryParametersSchema: getSchemaWithNode(method.method.queryParametersSchema),
+            list: method.method.list
+              ? {
+                  defaultFilters: method.method.list.defaultFilters,
+                  defaultSorts: method.method.list.defaultSorts,
+                  filterableFields: getSchemaWithNode(method.method.list.filterableFields),
+                  searchableFields: getSchemaWithNode(method.method.list.searchableFields),
+                  sortableFields: getSchemaWithNode(method.method.list.sortableFields),
+                }
+              : undefined,
+            relatedEntity: getSchemaWithNode(method.method.relatedEntity),
+            rootEntitySchema: getSchemaWithNode(method.method.rootEntitySchema),
+          },
+        };
+      };
+
+      this.generatedClientFunctions.push(addGeneratedTypesWithNodesToMethod({ generatedName: methodName, method }));
     }
 
     const printer = createPrinter({ newLine: NewLineKind.LineFeed });
