@@ -70,7 +70,7 @@ export class Generator {
   public config: Config;
   private schemaGenerationProspects: Map<string, GeneratedSchemaWithNode> = new Map();
   public builtMethodSchemas: Map<string, BuiltMethodSchema> = new Map();
-  public generatedSchemas: Map<string, GeneratedSchema> = new Map();
+  public generatedSchemas: Map<string, GeneratedSchemaWithNode> = new Map();
   public generatedClientFunctions: GeneratedClientFunction[] = [];
   public schemaGenerics: Map<string, GenericOverrideMap>;
 
