@@ -9,7 +9,7 @@ export interface PackageSummary {
 export type GeneratedSchemaDetails<T> = T extends ParsedEnum
   ? { generatedValueNames: Map<string, string> }
   : T extends ParsedOneOf
-    ? { derivedOneOfTypeEnumName: string }
+    ? { derivedOneOfTypeEnum: GeneratedSchema<ParsedEnum> }
     : {};
 
 export interface BaseGeneratedSchema<TSchema extends ParsedSchema = ParsedSchema> {

@@ -493,7 +493,7 @@ export class Generator {
             generatedName,
             rawSchema: s,
             fullGrpcName,
-            derivedOneOfTypeEnumName: oneOfUnionType.generatedName,
+            derivedOneOfTypeEnum: oneOfUnionType,
             node: factory.createInterfaceDeclaration(
               [factory.createModifier(SyntaxKind.ExportKeyword)],
               factory.createIdentifier(generatedName),
