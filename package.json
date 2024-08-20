@@ -31,9 +31,9 @@
     "@pentops/jsonapi-request": "^0.0.4",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/node": "^22.4.0",
+    "@types/node": "^22.4.1",
     "prettier": "^3.3.3",
-    "rollup": "^4.20.0",
+    "rollup": "^4.21.0",
     "ts-pattern": "^5.3.1",
     "tslib": "^2.6.3",
     "vitest": "^2.0.5"
