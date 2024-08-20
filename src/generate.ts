@@ -151,7 +151,7 @@ export class Generator {
         enum: {
           fullGrpcName: mockGrpcName,
           name: generatedName,
-          options: values.map((name) => ({ name })),
+          options: values.map((name) => ({ name, genericReferenceToSchema: oneOf.oneOf.properties.get(name) })),
           prefix: '',
           isDerivedHelperType: true,
           package: oneOf.oneOf.package,
