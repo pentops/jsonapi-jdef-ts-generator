@@ -24,8 +24,8 @@ export interface ParsedMetadata {
   version: string | undefined;
 }
 
-export interface ParsedEnumValueDescription extends EnumValueDescription {
-  genericReferenceToSchema?: ParsedSchema;
+export interface ParsedEnumValueDescription<TSchema extends ParsedSchema = ParsedSchema> extends EnumValueDescription {
+  genericReferenceToSchema?: TSchema;
 }
 
 export interface ParsedEnum {
