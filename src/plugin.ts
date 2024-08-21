@@ -48,7 +48,8 @@ export type PluginFilePostWriteHook<
 
 export type PluginFileReader<TFileContentType = string> = (
   path: string,
-  fileConfig: PluginFileGeneratorConfig<TFileContentType>,
+  directory: string,
+  fileName: string,
 ) => Promise<TFileContentType>;
 
 export const defaultPluginFileReader: PluginFileReader = (path) => fs.readFile(path, { encoding: 'utf-8' });
@@ -137,10 +138,11 @@ export class PluginFile<
   private async readExistingFile(builtFilePath: string) {
     try {
       this.existingFileContent = this.config.readExistingFile
-        ? await this.config.readExistingFile(builtFilePath, this.config)
+        ? await this.config.readExistingFile(builtFilePath, this.config.directory, this.config.fileName)
         : ((await defaultPluginFileReader(
             builtFilePath,
-            this.config as unknown as PluginFileGeneratorConfig,
+            this.config.directory,
+            this.config.fileName,
           )) as TFileContentType);
     } catch {}
   }
