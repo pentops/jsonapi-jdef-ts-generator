@@ -410,7 +410,7 @@ export interface PluginConfig<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
 > {
-  files?: TFileConfig[] | PluginFileConfigCreator<TFileConfig>;
+  files?: TFileConfig[] | PluginFileConfigCreator<TFileContentType, TFileConfig>;
 }
 
 export class PluginBase<
@@ -453,7 +453,7 @@ export class PluginBase<
         ? this.pluginConfig.files(this.generatedSchemas, this.generatedClientFunctions)
         : this.pluginConfig.files;
     this.files = (fileConfig || []).map((fileConfig) =>
-      this.createPluginFile<TFileContentType, TFileConfig>(fileConfig as TFileConfig),
+      this.createPluginFile<TFileContentType, TFileConfig>(fileConfig),
     );
   }
 
