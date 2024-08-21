@@ -1,10 +1,9 @@
-import { Config } from './config';
 import ts, { type Node } from 'typescript';
-import { createImportDeclaration, createNamedExportDeclaration, getImportPath } from './helpers';
+import { P, match } from 'ts-pattern';
 import fs from 'fs';
 import path from 'path';
+import { createImportDeclaration, createNamedExportDeclaration, getImportPath } from './helpers';
 import { Generator } from './generate';
-import { P, match } from 'ts-pattern';
 import type { ParsedSource } from './parsed-types';
 import type {
   GeneratedClientFunction,
@@ -12,6 +11,7 @@ import type {
   GeneratedSchema,
   GeneratedSchemaWithNode,
 } from './generated-types';
+import { Config } from './config';
 
 const { createPrinter, createSourceFile, factory, ScriptKind, ScriptTarget, ListFormat, NewLineKind } = ts;
 
