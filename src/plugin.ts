@@ -351,7 +351,13 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     writtenFile.content = this.printer.printList(
       ListFormat.MultiLine,
       factory.createNodeArray(this.nodeList),
-      createSourceFile(this.config.fileName, '', ScriptTarget.ESNext, true, ScriptKind.TS),
+      createSourceFile(
+        this.config.fileName,
+        '',
+        ScriptTarget.ESNext,
+        true,
+        writtenFile.fileName.endsWith('.tsx') ? ScriptKind.TSX : ScriptKind.TS,
+      ),
     );
 
     if (this.config.postBuildHook) {
