@@ -1,6 +1,6 @@
 import ts, { type Node } from 'typescript';
 import { P, match } from 'ts-pattern';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import { createImportDeclaration, createNamedExportDeclaration, getImportPath } from './helpers';
 import { Generator } from './generate';
@@ -18,31 +18,51 @@ const { createPrinter, createSourceFile, factory, ScriptKind, ScriptTarget, List
 export type PluginFileSchemaFilter = (schema: GeneratedSchema) => boolean;
 export type PluginFileClientFunctionFilter = (clientFunction: GeneratedClientFunction) => boolean;
 
-export type PluginFileConfigCreator<TFileConfig extends PluginFileGeneratorConfig = PluginFileGeneratorConfig> = (
+export type PluginFileConfigCreator<
+  TFileContentType = string,
+  TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
+> = (
   generatedSchemas: Map<string, GeneratedSchema>,
   generatedClientFunctions: GeneratedClientFunction[],
 ) => TFileConfig[];
 
-export type PluginFilePreBuildHook = (file: PluginFile, fileToBuild: Omit<WritableFile, 'writtenTo'>) => void;
-export type PluginFilePostBuildHook = (file: PluginFile, fileToBuild: Omit<WritableFile, 'writtenTo'>) => string;
-export type PluginFilePreWriteHook = (file: PluginFile) => void;
-export type PluginFilePostWriteHook = (file: PluginFile, writtenFile: WritableFile) => void;
+export type PluginFilePreBuildHook<
+  TFileContentType = string,
+  TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
+> = (file: PluginFile<TFileContentType, TFileConfig>, fileToBuild: Omit<WritableFile, 'writtenTo'>) => void;
 
-export interface PluginFileGeneratorConfig {
+export type PluginFilePostBuildHook<
+  TFileContentType = string,
+  TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
+> = (file: PluginFile<TFileContentType, TFileConfig>, fileToBuild: Omit<WritableFile, 'writtenTo'>) => string;
+
+export type PluginFilePreWriteHook<
+  TFileContentType = string,
+  TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
+> = (file: PluginFile<TFileContentType, TFileConfig>) => void;
+
+export type PluginFilePostWriteHook<
+  TFileContentType = string,
+  TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
+> = (file: PluginFile<TFileContentType, TFileConfig>, writtenFile: WritableFile) => void;
+
+export type PluginFileReader<TFileContentType = string> = (
+  path: string,
+  fileConfig: PluginFileGeneratorConfig<TFileContentType>,
+) => Promise<TFileContentType>;
+
+export const defaultPluginFileReader: PluginFileReader = (path) => fs.readFile(path, { encoding: 'utf-8' });
+
+export interface PluginFileGeneratorConfig<TFileContentType = string> {
   directory: string;
   fileName: string;
   schemaFilter?: PluginFileSchemaFilter | boolean;
   clientFunctionFilter?: PluginFileClientFunctionFilter | boolean;
-  readExistingFileConfig?:
-    | {
-        encoding: BufferEncoding;
-        flag?: string | undefined;
-      }
-    | BufferEncoding;
-  preBuildHook?: PluginFilePreBuildHook;
-  postBuildHook?: PluginFilePostBuildHook;
-  preWriteHook?: PluginFilePreWriteHook;
-  postWriteHook?: PluginFilePostWriteHook;
+  readExistingFile?: PluginFileReader<TFileContentType>;
+  preBuildHook?: PluginFilePreBuildHook<TFileContentType>;
+  postBuildHook?: PluginFilePostBuildHook<TFileContentType>;
+  preWriteHook?: PluginFilePreWriteHook<TFileContentType>;
+  postWriteHook?: PluginFilePostWriteHook<TFileContentType>;
 }
 
 export interface GeneratedImportPath {
@@ -75,9 +95,12 @@ export interface WritableFile {
   writtenTo: string;
 }
 
-export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGeneratorConfig> {
+export class PluginFile<
+  TFileContentType = string,
+  TConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
+> {
   public readonly config: TConfig;
-  public readonly existingFileContent: string | undefined;
+  public existingFileContent: TFileContentType | undefined;
   private readonly generatingPluginName: string;
   private nodeList: Node[] = [];
   private readonly typeImports: Set<string>;
@@ -96,7 +119,7 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     config: TConfig,
     generatedTypesImportConfiguration: GeneratedImportPath,
     generatedClientImportConfiguration: GeneratedImportPath,
-    existingFileContent: string | undefined,
+    builtFilePath: string,
   ) {
     this.generatingPluginName = generatingPluginName;
     this.config = config;
@@ -106,7 +129,20 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
     this.clientImports = new Set();
     this.manualImports = new Map();
     this.manualExports = new Map();
-    this.existingFileContent = existingFileContent;
+
+    // Read the file
+    this.readExistingFile(builtFilePath);
+  }
+
+  private async readExistingFile(builtFilePath: string) {
+    try {
+      this.existingFileContent = this.config.readExistingFile
+        ? await this.config.readExistingFile(builtFilePath, this.config)
+        : ((await defaultPluginFileReader(
+            builtFilePath,
+            this.config as unknown as PluginFileGeneratorConfig,
+          )) as TFileContentType);
+    } catch {}
   }
 
   public generateHeading(comment?: string) {
@@ -368,13 +404,17 @@ export class PluginFile<TConfig extends PluginFileGeneratorConfig = PluginFileGe
   }
 }
 
-export interface PluginConfig<TFileConfig extends PluginFileGeneratorConfig = PluginFileGeneratorConfig> {
+export interface PluginConfig<
+  TFileContentType = string,
+  TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
+> {
   files?: TFileConfig[] | PluginFileConfigCreator<TFileConfig>;
 }
 
 export class PluginBase<
-  TFileConfig extends PluginFileGeneratorConfig = PluginFileGeneratorConfig,
-  TConfig extends PluginConfig<TFileConfig> = PluginConfig<TFileConfig>,
+  TFileContentType = string,
+  TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
+  TConfig extends PluginConfig<TFileContentType, TFileConfig> = PluginConfig<TFileContentType, TFileConfig>,
 > {
   name: string = 'UndefinedPlugin';
 
@@ -382,7 +422,7 @@ export class PluginBase<
   protected api: ParsedSource | undefined;
   protected config: Config | undefined;
   protected cwd: string | undefined;
-  protected files: PluginFile<TFileConfig>[] = [];
+  protected files: PluginFile<TFileContentType, TFileConfig>[] = [];
   protected generatedClientFunctions: GeneratedClientFunctionWithNodes[] = [];
   protected generatedSchemas: Map<string, GeneratedSchemaWithNode> = new Map();
   private startedAt: number | undefined;
@@ -410,24 +450,20 @@ export class PluginBase<
       typeof this.pluginConfig.files === 'function'
         ? this.pluginConfig.files(this.generatedSchemas, this.generatedClientFunctions)
         : this.pluginConfig.files;
-    this.files = (fileConfig || []).map((fileConfig) => this.createPluginFile(fileConfig));
+    this.files = (fileConfig || []).map((fileConfig) =>
+      this.createPluginFile<TFileContentType, TFileConfig>(fileConfig as TFileConfig),
+    );
   }
 
-  protected createPluginFile<T extends PluginFileGeneratorConfig = TFileConfig>(fileConfig: T) {
+  protected createPluginFile<
+    TContentType = TFileContentType,
+    TConfigType extends PluginFileGeneratorConfig<TContentType> = PluginFileGeneratorConfig<TContentType>,
+  >(fileConfig: TConfigType) {
     if (!this.cwd) {
       throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
     }
 
-    let existingFileContent: string | undefined;
-
-    try {
-      existingFileContent = fs.readFileSync(
-        path.join(this.cwd, fileConfig.directory, fileConfig.fileName),
-        fileConfig.readExistingFileConfig || { encoding: 'utf-8' },
-      );
-    } catch {}
-
-    return new PluginFile<T>(
+    return new PluginFile<TContentType, TConfigType>(
       this.name,
       fileConfig,
       {
@@ -440,7 +476,7 @@ export class PluginBase<
         fileName: this.config?.clientOutput?.fileName,
         directory: this.config?.clientOutput?.directory,
       },
-      existingFileContent,
+      path.join(this.cwd, fileConfig.directory, fileConfig.fileName),
     );
   }
 
@@ -466,7 +502,7 @@ export class PluginBase<
     );
   }
 
-  public postRun(): { writtenFiles: WritableFile[] } {
+  public async postRun(): Promise<{ writtenFiles: WritableFile[] }> {
     const output: { writtenFiles: WritableFile[] } = { writtenFiles: [] };
 
     for (const file of this.files) {
@@ -478,7 +514,7 @@ export class PluginBase<
 
       if (!this.config?.dryRun) {
         // Remove old file
-        fs.rmSync(generatedFilePath, { recursive: true, force: true });
+        await fs.rm(generatedFilePath, { recursive: true, force: true });
       }
 
       file.config.preWriteHook?.(file);
@@ -487,8 +523,8 @@ export class PluginBase<
       if (writableFile) {
         if (!this.config?.dryRun) {
           // Write generated file
-          fs.mkdirSync(path.dirname(generatedFilePath), { recursive: true });
-          fs.writeFileSync(generatedFilePath, writableFile.content);
+          await fs.mkdir(path.dirname(generatedFilePath), { recursive: true });
+          await fs.writeFile(generatedFilePath, writableFile.content);
 
           console.info(`[jdef-ts-generator]: plugin ${this.name} generated file ${generatedFilePath}`);
         } else {

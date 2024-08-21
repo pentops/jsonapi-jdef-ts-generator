@@ -25,6 +25,7 @@
   "dependencies": {
     "change-case": "^5.4.4",
     "find-up": "^7.0.0",
+    "ts-morph": "^23.0.0",
     "typescript": "^5.5.4"
   },
   "devDependencies": {
