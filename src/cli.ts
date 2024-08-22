@@ -92,7 +92,7 @@ export async function cli({ cwd, args }: Args) {
       const output = await plugin.postRun();
 
       for (const writtenFile of output.writtenFiles) {
-        addFileToDirectory(path.dirname(writtenFile.writtenTo), writtenFile.writtenTo);
+        addFileToDirectory(path.dirname(writtenFile.writePath), writtenFile.writePath);
       }
     }
   }

@@ -29,12 +29,12 @@ export type PluginFileConfigCreator<
 export type PluginFilePreBuildHook<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
-> = (file: PluginFile<TFileContentType, TFileConfig>, fileToBuild: Omit<WritableFile, 'writtenTo'>) => void;
+> = (file: PluginFile<TFileContentType, TFileConfig>, fileToBuild: Omit<WritableFile, 'wasWritten'>) => void;
 
 export type PluginFilePostBuildHook<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
-> = (file: PluginFile<TFileContentType, TFileConfig>, fileToBuild: Omit<WritableFile, 'writtenTo'>) => string;
+> = (file: PluginFile<TFileContentType, TFileConfig>, fileToBuild: Omit<WritableFile, 'wasWritten'>) => string;
 
 export type PluginFilePreWriteHook<
   TFileContentType = string,
@@ -93,7 +93,8 @@ export interface WritableFile {
   content: string;
   directory: string;
   fileName: string;
-  writtenTo: string;
+  writePath: string;
+  wasWritten: boolean;
 }
 
 export class PluginFile<
@@ -108,6 +109,7 @@ export class PluginFile<
   private readonly clientImports: Set<string>;
   private readonly manualImports: Map<string, ManualImport>;
   private readonly manualExports: Map<string | undefined, ManualExport>;
+  public writePath: string;
   private rawContent: string | undefined;
   private pendingHeaderNodes: Node[] = [];
   private pendingImportNodes: Node[] = [];
@@ -130,6 +132,7 @@ export class PluginFile<
     this.clientImports = new Set();
     this.manualImports = new Map();
     this.manualExports = new Map();
+    this.writePath = builtFilePath;
 
     // Read the file
     this.readExistingFile(builtFilePath);
@@ -357,9 +360,10 @@ export class PluginFile<
     if (this.rawContent) {
       return {
         content: this.rawContent,
+        writePath: this.writePath,
         directory: this.config.directory,
         fileName: this.config.fileName,
-        writtenTo: '', // set when written
+        wasWritten: false,
       };
     }
 
@@ -379,9 +383,10 @@ export class PluginFile<
 
     const writtenFile: WritableFile = {
       content: '',
+      writePath: this.writePath,
       directory: this.config.directory,
       fileName: this.config.fileName,
-      writtenTo: '', // set when written
+      wasWritten: false,
     };
 
     this.config.preBuildHook?.(this, writtenFile);
@@ -520,11 +525,9 @@ export class PluginBase<
         throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
       }
 
-      const generatedFilePath = path.join(this.cwd, file.config.directory, file.config.fileName);
-
       if (!this.config?.dryRun) {
         // Remove old file
-        await fs.rm(generatedFilePath, { recursive: true, force: true });
+        await fs.rm(file.writePath, { recursive: true, force: true });
       }
 
       file.config.preWriteHook?.(file);
@@ -533,17 +536,17 @@ export class PluginBase<
       if (writableFile) {
         if (!this.config?.dryRun) {
           // Write generated file
-          await fs.mkdir(path.dirname(generatedFilePath), { recursive: true });
-          await fs.writeFile(generatedFilePath, writableFile.content);
+          await fs.mkdir(path.dirname(writableFile.writePath), { recursive: true });
+          await fs.writeFile(writableFile.writePath, writableFile.content);
 
-          console.info(`[jdef-ts-generator]: plugin ${this.name} generated file ${generatedFilePath}`);
+          console.info(`[jdef-ts-generator]: plugin ${this.name} generated file ${writableFile.writePath}`);
         } else {
           console.info(
-            `[jdef-ts-generator]: dry run enabled, file from plugin ${this.name} (${generatedFilePath}) not written. Contents:\n${writableFile.content}`,
+            `[jdef-ts-generator]: dry run enabled, file from plugin ${this.name} (${writableFile.writePath}) not written. Contents:\n${writableFile.content}`,
           );
         }
 
-        writableFile.writtenTo = generatedFilePath;
+        writableFile.wasWritten = true;
         file.config.postBuildHook?.(file, writableFile);
         output.writtenFiles.push(writableFile);
       }
