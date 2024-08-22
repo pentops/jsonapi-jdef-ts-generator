@@ -410,6 +410,7 @@ export interface PluginConfig<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
 > {
+  defaultExistingFileReader?: PluginFileReader<TFileContentType>;
   files?: TFileConfig[] | PluginFileConfigCreator<TFileContentType, TFileConfig>;
 }
 
@@ -453,21 +454,21 @@ export class PluginBase<
         ? this.pluginConfig.files(this.generatedSchemas, this.generatedClientFunctions)
         : this.pluginConfig.files;
     this.files = (fileConfig || []).map((fileConfig) =>
-      this.createPluginFile<TFileContentType, TFileConfig>(fileConfig),
+      this.createPluginFile<TFileContentType, TFileConfig>(fileConfig, this.pluginConfig.defaultExistingFileReader),
     );
   }
 
   protected createPluginFile<
     TContentType = TFileContentType,
     TConfigType extends PluginFileGeneratorConfig<TContentType> = PluginFileGeneratorConfig<TContentType>,
-  >(fileConfig: TConfigType) {
+  >(fileConfig: TConfigType, pluginLevelFileReader: PluginFileReader<TContentType> | undefined) {
     if (!this.cwd) {
       throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
     }
 
     return new PluginFile<TContentType, TConfigType>(
       this.name,
-      fileConfig,
+      { ...fileConfig, readExistingFile: fileConfig.readExistingFile ?? pluginLevelFileReader },
       {
         importPath: this.config?.typeOutput.importPath,
         fileName: this.config?.typeOutput.fileName,
