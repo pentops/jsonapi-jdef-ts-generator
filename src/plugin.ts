@@ -54,16 +54,19 @@ export type PluginFileReader<TFileContentType = string> = (
 
 export const defaultPluginFileReader: PluginFileReader = (path) => fs.readFile(path, { encoding: 'utf-8' });
 
-export interface PluginFileGeneratorConfig<TFileContentType = string> {
+export interface PluginFileHooks<TFileContentType = string> {
+  preBuildHook?: PluginFilePreBuildHook<TFileContentType>;
+  postBuildHook?: PluginFilePostBuildHook<TFileContentType>;
+  preWriteHook?: PluginFilePreWriteHook<TFileContentType>;
+  postWriteHook?: PluginFilePostWriteHook<TFileContentType>;
+}
+
+export interface PluginFileGeneratorConfig<TFileContentType = string> extends PluginFileHooks<TFileContentType> {
   directory: string;
   fileName: string;
   schemaFilter?: PluginFileSchemaFilter | boolean;
   clientFunctionFilter?: PluginFileClientFunctionFilter | boolean;
   readExistingFile?: PluginFileReader<TFileContentType>;
-  preBuildHook?: PluginFilePreBuildHook<TFileContentType>;
-  postBuildHook?: PluginFilePostBuildHook<TFileContentType>;
-  preWriteHook?: PluginFilePreWriteHook<TFileContentType>;
-  postWriteHook?: PluginFilePostWriteHook<TFileContentType>;
 }
 
 export interface GeneratedImportPath {
@@ -416,6 +419,7 @@ export interface PluginConfig<
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
 > {
   defaultExistingFileReader?: PluginFileReader<TFileContentType>;
+  defaultFileHooks?: PluginFileHooks<TFileContentType>;
   files?: TFileConfig[] | PluginFileConfigCreator<TFileContentType, TFileConfig>;
 }
 
@@ -466,21 +470,36 @@ export class PluginBase<
         : this.pluginConfig.files;
 
     this.files = (fileConfig || []).map((fileConfig) =>
-      this.createPluginFile<TFileContentType, TFileConfig>(fileConfig, this.pluginConfig.defaultExistingFileReader),
+      this.createPluginFile<TFileContentType, TFileConfig>(
+        fileConfig,
+        this.pluginConfig.defaultExistingFileReader,
+        this.pluginConfig.defaultFileHooks,
+      ),
     );
   }
 
   protected createPluginFile<
     TContentType = TFileContentType,
     TConfigType extends PluginFileGeneratorConfig<TContentType> = PluginFileGeneratorConfig<TContentType>,
-  >(fileConfig: TConfigType, pluginLevelFileReader: PluginFileReader<TContentType> | undefined) {
+  >(
+    fileConfig: TConfigType,
+    pluginLevelFileReader: PluginFileReader<TContentType> | undefined,
+    pluginLevelFileHooks: PluginFileHooks<TContentType> | undefined,
+  ) {
     if (!this.cwd) {
       throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
     }
 
     return new PluginFile<TContentType, TConfigType>(
       this.name,
-      { ...fileConfig, readExistingFile: fileConfig.readExistingFile ?? pluginLevelFileReader },
+      {
+        ...fileConfig,
+        readExistingFile: fileConfig.readExistingFile ?? pluginLevelFileReader,
+        postBuildHook: fileConfig.postBuildHook ?? pluginLevelFileHooks?.postBuildHook,
+        preBuildHook: fileConfig.preBuildHook ?? pluginLevelFileHooks?.preBuildHook,
+        postWriteHook: fileConfig.postWriteHook ?? pluginLevelFileHooks?.postWriteHook,
+        preWriteHook: fileConfig.preWriteHook ?? pluginLevelFileHooks?.preWriteHook,
+      },
       {
         importPath: this.config?.typeOutput.importPath,
         fileName: this.config?.typeOutput.fileName,
