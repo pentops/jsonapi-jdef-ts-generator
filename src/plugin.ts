@@ -434,7 +434,7 @@ export class PluginBase<
     this.pluginConfig = pluginConfig;
   }
 
-  public prepare(cwd: string, api: ParsedSource, generator: Generator) {
+  public prepare(cwd: string, api: ParsedSource, generator: Generator, initializePluginFiles = true) {
     this.startedAt = performance.now();
 
     console.info(`[jdef-ts-generator]: plugin ${this.name} started`);
@@ -449,10 +449,17 @@ export class PluginBase<
       throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
     }
 
+    if (initializePluginFiles) {
+      this.initializePluginFiles();
+    }
+  }
+
+  protected initializePluginFiles() {
     const fileConfig =
       typeof this.pluginConfig.files === 'function'
         ? this.pluginConfig.files(this.generatedSchemas, this.generatedClientFunctions)
         : this.pluginConfig.files;
+
     this.files = (fileConfig || []).map((fileConfig) =>
       this.createPluginFile<TFileContentType, TFileConfig>(fileConfig, this.pluginConfig.defaultExistingFileReader),
     );
