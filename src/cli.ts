@@ -1,8 +1,8 @@
+import fs from 'fs';
+import path from 'path';
 import { loadConfig } from './config';
 import { getSource } from './get-source';
 import { Generator } from './generate';
-import fs from 'fs';
-import path from 'path';
 
 interface Args {
   cwd: string;
