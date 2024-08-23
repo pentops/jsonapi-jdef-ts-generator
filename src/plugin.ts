@@ -467,6 +467,10 @@ export class PluginBase<
         ? this.pluginConfig.files(this.generatedSchemas, this.generatedClientFunctions)
         : this.pluginConfig.files;
 
+    this.createPluginFilesFromConfig(fileConfig);
+  }
+
+  protected createPluginFilesFromConfig(fileConfig: TFileConfig[] = []) {
     this.files = (fileConfig || []).map((fileConfig) =>
       this.createPluginFile<TFileContentType, TFileConfig>(
         fileConfig,
