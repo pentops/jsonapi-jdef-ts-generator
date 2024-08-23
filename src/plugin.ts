@@ -31,22 +31,31 @@ export type PluginFileConfigCreator<
 export type PluginFilePreBuildHook<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
-> = (file: PluginFile<TFileContentType, TFileConfig>, fileToBuild: Omit<WritableFile, 'wasWritten'>) => void;
+> = (
+  file: PluginFile<TFileContentType, TFileConfig>,
+  fileToBuild: Omit<WritableFile<TFileContentType>, 'wasWritten'>,
+) => void | Promise<void>;
 
 export type PluginFilePostBuildHook<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
-> = (file: PluginFile<TFileContentType, TFileConfig>, fileToBuild: Omit<WritableFile, 'wasWritten'>) => string;
+> = (
+  file: PluginFile<TFileContentType, TFileConfig>,
+  fileToBuild: Omit<WritableFile<TFileContentType>, 'wasWritten'>,
+) => string | Promise<string>;
 
 export type PluginFilePreWriteHook<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
-> = (file: PluginFile<TFileContentType, TFileConfig>) => void;
+> = (file: PluginFile<TFileContentType, TFileConfig>) => void | Promise<void>;
 
 export type PluginFilePostWriteHook<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
-> = (file: PluginFile<TFileContentType, TFileConfig>, writtenFile: WritableFile) => void;
+> = (
+  file: PluginFile<TFileContentType, TFileConfig>,
+  writtenFile: WritableFile<TFileContentType>,
+) => void | Promise<void>;
 
 export type PluginFileReader<TFileContentType = string> = (
   path: string,
@@ -95,13 +104,14 @@ export interface WildcardExport {
 
 export type ManualExport = NamedExports | WildcardExport;
 
-export interface WritableFile {
+export interface WritableFile<TExistingFileContentType = string> {
   content: string;
   directory: string;
   fileName: string;
   writePath: string;
   wasWritten: boolean;
   exportFromIndexFile?: boolean;
+  preExistingContent: TExistingFileContentType | undefined;
 }
 
 export class PluginFile<
@@ -359,10 +369,12 @@ export class PluginFile<
     return Boolean(this.nodeList.length > 0 || this.rawContent?.trim().length);
   }
 
-  public async write(): Promise<WritableFile | undefined> {
+  public async write(): Promise<WritableFile<TFileContentType> | undefined> {
     if (!this.getHasContent()) {
       return undefined;
     }
+
+    const preExistingContent = await this.getExistingFileContent();
 
     this.generateImports();
 
@@ -374,6 +386,7 @@ export class PluginFile<
         directory: this.config.directory,
         fileName: this.config.fileName,
         wasWritten: false,
+        preExistingContent: preExistingContent,
       };
     }
 
@@ -391,17 +404,18 @@ export class PluginFile<
 
     this.generateExports();
 
-    const writtenFile: WritableFile = {
+    const writtenFile: WritableFile<TFileContentType> = {
       content: '',
       exportFromIndexFile: this.config.exportFromIndexFile,
       writePath: this.writePath,
       directory: this.config.directory,
       fileName: this.config.fileName,
       wasWritten: false,
+      preExistingContent: preExistingContent,
     };
 
     if (this.config.preBuildHook) {
-      await this.config.preBuildHook?.(this, writtenFile);
+      await this.config.preBuildHook(this, writtenFile);
     }
 
     writtenFile.content = this.printer.printList(
@@ -550,8 +564,8 @@ export class PluginBase<
     );
   }
 
-  public async postRun(): Promise<{ writtenFiles: WritableFile[] }> {
-    const output: { writtenFiles: WritableFile[] } = { writtenFiles: [] };
+  public async postRun(): Promise<{ writtenFiles: WritableFile<TFileContentType>[] }> {
+    const output: { writtenFiles: WritableFile<TFileContentType>[] } = { writtenFiles: [] };
 
     for (const file of this.files) {
       if (!this.cwd) {
