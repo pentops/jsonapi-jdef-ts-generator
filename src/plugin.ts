@@ -109,7 +109,7 @@ export class PluginFile<
   TConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
 > {
   public readonly config: TConfig;
-  public existingFileContent: Promise<TFileContentType | undefined>;
+  private existingFileContent: Promise<TFileContentType | undefined>;
   private readonly generatingPluginName: string;
   private nodeList: Node[] = [];
   private readonly typeImports: Set<string>;
@@ -149,6 +149,14 @@ export class PluginFile<
           this.config.directory,
           this.config.fileName,
         ) as Promise<TFileContentType>);
+  }
+
+  public async getExistingFileContent() {
+    try {
+      return await this.existingFileContent;
+    } catch {
+      return undefined;
+    }
   }
 
   public generateHeading(comment?: string) {
