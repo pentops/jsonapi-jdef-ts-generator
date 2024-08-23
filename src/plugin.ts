@@ -50,7 +50,7 @@ export type PluginFileReader<TFileContentType = string> = (
   path: string,
   directory: string,
   fileName: string,
-) => Promise<TFileContentType>;
+) => Promise<TFileContentType | undefined>;
 
 export const defaultPluginFileReader: PluginFileReader = (path) => fs.readFile(path, { encoding: 'utf-8' });
 
@@ -105,7 +105,7 @@ export class PluginFile<
   TConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
 > {
   public readonly config: TConfig;
-  public existingFileContent: TFileContentType | undefined;
+  public existingFileContent: Promise<TFileContentType | undefined>;
   private readonly generatingPluginName: string;
   private nodeList: Node[] = [];
   private readonly typeImports: Set<string>;
@@ -138,19 +138,13 @@ export class PluginFile<
     this.writePath = builtFilePath;
 
     // Read the file
-    this.readExistingFile(builtFilePath);
-  }
-
-  private async readExistingFile(builtFilePath: string) {
-    try {
-      this.existingFileContent = this.config.readExistingFile
-        ? await this.config.readExistingFile(builtFilePath, this.config.directory, this.config.fileName)
-        : ((await defaultPluginFileReader(
-            builtFilePath,
-            this.config.directory,
-            this.config.fileName,
-          )) as TFileContentType);
-    } catch {}
+    this.existingFileContent = this.config.readExistingFile
+      ? this.config.readExistingFile(builtFilePath, this.config.directory, this.config.fileName)
+      : (defaultPluginFileReader(
+          builtFilePath,
+          this.config.directory,
+          this.config.fileName,
+        ) as Promise<TFileContentType>);
   }
 
   public generateHeading(comment?: string) {
