@@ -2,6 +2,7 @@ import ts, { type Node } from 'typescript';
 import { P, match } from 'ts-pattern';
 import fs from 'fs/promises';
 import path from 'path';
+import prettyMs from 'pretty-ms';
 import { createImportDeclaration, createNamedExportDeclaration, getImportPath } from './helpers';
 import { Generator } from './generate';
 import type { ParsedSource } from './parsed-types';
@@ -12,6 +13,7 @@ import type {
   GeneratedSchemaWithNode,
 } from './generated-types';
 import { Config } from './config';
+import { logSuccess } from './internal/helpers';
 
 const { createPrinter, createSourceFile, factory, ScriptKind, ScriptTarget, ListFormat, NewLineKind } = ts;
 
@@ -574,7 +576,9 @@ export class PluginBase<
     }
 
     if (this.startedAt) {
-      console.info(`[jdef-ts-generator]: plugin ${this.name} completed in ${performance.now() - this.startedAt}ms`);
+      logSuccess(
+        `[jdef-ts-generator]: plugin ${this.name} completed in ${prettyMs(performance.now() - this.startedAt)}`,
+      );
     }
 
     return output;

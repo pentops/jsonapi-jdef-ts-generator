@@ -1,7 +1,15 @@
 import typescript from '@rollup/plugin-typescript';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 
-const plugins = [typescript(), nodeResolve({ resolveOnly: ['change-case', 'ts-pattern'] })];
+function getPlugins(resolveOnly) {
+  const basePlugins = [typescript()];
+
+  if (resolveOnly) {
+    basePlugins.push(nodeResolve({ resolveOnly }));
+  }
+
+  return basePlugins;
+}
 
 export default [
   {
@@ -10,7 +18,7 @@ export default [
       dir: 'dist',
       format: 'es',
     },
-    plugins,
+    plugins: getPlugins(['change-case', 'ts-pattern', 'pretty-ms', 'parse-ms']),
   },
   {
     input: 'src/types.ts',
@@ -18,7 +26,7 @@ export default [
       dir: 'dist',
       format: 'es',
     },
-    plugins,
+    plugins: getPlugins(),
   },
   {
     input: 'src/parse-sources.ts',
@@ -26,6 +34,6 @@ export default [
       dir: 'dist',
       format: 'es',
     },
-    plugins,
+    plugins: getPlugins(['change-case', 'ts-pattern']),
   },
 ];

@@ -1,8 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import prettyMs from 'pretty-ms';
 import { loadConfig } from './config';
 import { getSource } from './get-source';
 import { Generator } from './generate';
+import { logSuccess } from './internal/helpers';
 
 interface Args {
   cwd: string;
@@ -121,5 +123,5 @@ export async function cli({ cwd, args }: Args) {
     }
   }
 
-  console.info(`[jdef-ts-generator]: type generation complete in ${performance.now() - start}ms`);
+  logSuccess(`[jdef-ts-generator]: type generation complete in ${prettyMs(performance.now() - start)}`);
 }
