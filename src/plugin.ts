@@ -109,7 +109,7 @@ export class PluginFile<
   TConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
 > {
   public readonly config: TConfig;
-  private existingFileContent: Promise<TFileContentType | undefined>;
+  private readonly existingFileContent: Promise<TFileContentType | undefined>;
   private readonly generatingPluginName: string;
   private nodeList: Node[] = [];
   private readonly typeImports: Set<string>;
@@ -359,7 +359,7 @@ export class PluginFile<
     return Boolean(this.nodeList.length > 0 || this.rawContent?.trim().length);
   }
 
-  public write(): WritableFile | undefined {
+  public async write(): Promise<WritableFile | undefined> {
     if (!this.getHasContent()) {
       return undefined;
     }
@@ -400,7 +400,9 @@ export class PluginFile<
       wasWritten: false,
     };
 
-    this.config.preBuildHook?.(this, writtenFile);
+    if (this.config.preBuildHook) {
+      await this.config.preBuildHook?.(this, writtenFile);
+    }
 
     writtenFile.content = this.printer.printList(
       ListFormat.MultiLine,
@@ -415,7 +417,7 @@ export class PluginFile<
     );
 
     if (this.config.postBuildHook) {
-      writtenFile.content = this.config.postBuildHook(this, writtenFile);
+      writtenFile.content = await this.config.postBuildHook(this, writtenFile);
     }
 
     return writtenFile;
@@ -561,8 +563,11 @@ export class PluginBase<
         await fs.rm(file.writePath, { recursive: true, force: true });
       }
 
-      file.config.preWriteHook?.(file);
-      const writableFile = file.write();
+      if (file.config.preWriteHook) {
+        await file.config.preWriteHook(file);
+      }
+
+      const writableFile = await file.write();
 
       if (writableFile) {
         if (!this.config?.dryRun) {
@@ -578,7 +583,11 @@ export class PluginBase<
         }
 
         writableFile.wasWritten = true;
-        file.config.postBuildHook?.(file, writableFile);
+
+        if (file.config.postBuildHook) {
+          await file.config.postBuildHook(file, writableFile);
+        }
+
         output.writtenFiles.push(writableFile);
       }
     }
