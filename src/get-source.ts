@@ -73,6 +73,13 @@ async function getHostedSource(hostedSource: HostedSource) {
     headers,
   });
 
+  if (!result.ok) {
+    console.error(
+      `[jdef-ts-generator]: error fetching hosted source (${hostedSource.url}): [${result.status}] - ${result.statusText}`,
+    );
+    return undefined;
+  }
+
   const json = await result.json();
 
   return match(sourceType)
