@@ -82,10 +82,17 @@ async function getHostedSource(hostedSource: HostedSource) {
 
   const json = await result.json();
 
-  return match(sourceType)
-    .with('api', () => parseApiSource(json as APISource))
-    .with('jdef', () => parseJdefSource(json as JDEF))
-    .otherwise(() => undefined);
+  try {
+    return match(sourceType)
+      .with('api', () => parseApiSource(json as APISource))
+      .with('jdef', () => parseJdefSource(json as JDEF))
+      .otherwise(() => undefined);
+  } catch (err) {
+    // Add context, re-throw
+    throw new Error(
+      `[jdef-ts-generator]: error encountered while parsing hosted source json (${hostedSource.url}): ${err}`,
+    );
+  }
 }
 
 function mergeSources(sources: ParsedSource[]): ParsedSource {
