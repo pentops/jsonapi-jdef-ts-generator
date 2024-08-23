@@ -36,7 +36,7 @@
     "prettier": "^3.3.3",
     "rollup": "^4.21.0",
     "ts-pattern": "^5.3.1",
-    "tslib": "^2.6.3",
+    "tslib": "^2.7.0",
     "vitest": "^2.0.5"
   },
   "peerDependencies": {
