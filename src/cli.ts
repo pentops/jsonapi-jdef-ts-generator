@@ -92,7 +92,9 @@ export async function cli({ cwd, args }: Args) {
       const output = await plugin.postRun();
 
       for (const writtenFile of output.writtenFiles) {
-        addFileToDirectory(path.dirname(writtenFile.writePath), writtenFile.writePath);
+        if (writtenFile.exportFromIndexFile !== false) {
+          addFileToDirectory(path.dirname(writtenFile.writePath), writtenFile.writePath);
+        }
       }
     }
   }
@@ -102,8 +104,9 @@ export async function cli({ cwd, args }: Args) {
       const indexPath = path.join(directory, 'index.ts');
       const indexContent = [...files].reduce((indexFile, file) => {
         const baseName = path.basename(file, '.ts');
+        const ext = path.extname(file);
 
-        if (baseName !== 'index') {
+        if (baseName !== 'index' && ['.ts', '.tsx', '.js', '.jsx', '.mjs'].includes(ext)) {
           return `${indexFile}export * from './${baseName}';\n`;
         }
 

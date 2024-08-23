@@ -63,6 +63,7 @@ export interface PluginFileHooks<TFileContentType = string> {
 
 export interface PluginFileGeneratorConfig<TFileContentType = string> extends PluginFileHooks<TFileContentType> {
   directory: string;
+  exportFromIndexFile?: boolean;
   fileName: string;
   schemaFilter?: PluginFileSchemaFilter | boolean;
   clientFunctionFilter?: PluginFileClientFunctionFilter | boolean;
@@ -98,6 +99,7 @@ export interface WritableFile {
   fileName: string;
   writePath: string;
   wasWritten: boolean;
+  exportFromIndexFile?: boolean;
 }
 
 export class PluginFile<
@@ -356,6 +358,7 @@ export class PluginFile<
 
     if (this.rawContent) {
       return {
+        exportFromIndexFile: this.config.exportFromIndexFile,
         content: this.rawContent,
         writePath: this.writePath,
         directory: this.config.directory,
@@ -380,6 +383,7 @@ export class PluginFile<
 
     const writtenFile: WritableFile = {
       content: '',
+      exportFromIndexFile: this.config.exportFromIndexFile,
       writePath: this.writePath,
       directory: this.config.directory,
       fileName: this.config.fileName,
