@@ -319,8 +319,7 @@ export class PluginFile<
         );
       }
 
-      const typeImports = Array.from(this.typeImports);
-      importNodes.push(createImportDeclaration(importPath, typeImports, typeImports));
+      importNodes.push(createImportDeclaration(importPath, Array.from(this.typeImports)));
     }
 
     if (this.clientImports.size) {
