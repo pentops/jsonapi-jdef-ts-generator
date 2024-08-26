@@ -163,7 +163,8 @@ export class PluginFile<
 
   public async getExistingFileContent() {
     try {
-      return await this.existingFileContent;
+      const content = await this.existingFileContent;
+      return content;
     } catch {
       return undefined;
     }
@@ -373,7 +374,11 @@ export class PluginFile<
       return undefined;
     }
 
-    const preExistingContent = await this.getExistingFileContent();
+    let preExistingContent: TFileContentType | undefined;
+
+    try {
+      preExistingContent = await this.getExistingFileContent();
+    } catch {}
 
     this.generateImports();
 
