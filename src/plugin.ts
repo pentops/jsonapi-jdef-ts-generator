@@ -152,13 +152,22 @@ export class PluginFile<
     this.writePath = builtFilePath;
 
     // Read the file
-    this.existingFileContent = this.config.readExistingFile
-      ? this.config.readExistingFile(builtFilePath, this.config.directory, this.config.fileName)
-      : (defaultPluginFileReader(
-          builtFilePath,
-          this.config.directory,
-          this.config.fileName,
-        ) as Promise<TFileContentType>);
+    this.existingFileContent = (
+      this.config.readExistingFile
+        ? this.config.readExistingFile(builtFilePath, this.config.directory, this.config.fileName)
+        : (defaultPluginFileReader(
+            builtFilePath,
+            this.config.directory,
+            this.config.fileName,
+          ) as Promise<TFileContentType>)
+    ).catch((err) => {
+      console.warn(
+        `[jdef-ts-generator]: plugin (${generatingPluginName}) failed to read existing file data ${builtFilePath}`,
+        err,
+      );
+
+      return undefined;
+    });
   }
 
   public async getExistingFileContent() {
