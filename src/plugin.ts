@@ -3,9 +3,9 @@ import { P, match } from 'ts-pattern';
 import fs from 'fs/promises';
 import path from 'path';
 import prettyMs from 'pretty-ms';
-import { createImportDeclaration, createNamedExportDeclaration, getImportPath } from './helpers';
+import { cleanRefName, createImportDeclaration, createNamedExportDeclaration, getImportPath } from './helpers';
 import { Generator } from './generate';
-import type { ParsedSource } from './parsed-types';
+import type { ParsedObjectProperty, ParsedSchemaWithRef, ParsedSource } from './parsed-types';
 import type {
   GeneratedClientFunction,
   GeneratedClientFunctionWithNodes,
@@ -203,7 +203,7 @@ export class PluginFile<
   }
 
   public addImportToOtherGeneratedFile(
-    file: PluginFile,
+    file: PluginFile<TFileContentType>,
     namedImports: string[] | undefined,
     typeOnlyNamedImports?: string[],
     defaultImport?: string,
@@ -571,6 +571,18 @@ export class PluginBase<
         ? file.config.clientFunctionFilter(clientFunction)
         : (file.config.clientFunctionFilter ?? true),
     );
+  }
+
+  protected findSchemaProperties(schema: ParsedSchemaWithRef): Map<string, ParsedObjectProperty> {
+    return match(schema)
+      .with({ $ref: P.not(P.nullish) }, (r) => {
+        const refValue = this.generatedSchemas.get(cleanRefName(r));
+        return refValue ? this.findSchemaProperties(refValue.rawSchema) : new Map<string, ParsedObjectProperty>();
+      })
+      .with({ object: { properties: P.not(P.nullish) } }, (r) => r.object.properties)
+      .with({ oneOf: { properties: P.not(P.nullish) } }, (r) => r.oneOf.properties)
+      .with({ array: { itemSchema: P.not(P.nullish) } }, (r) => this.findSchemaProperties(r.array.itemSchema))
+      .otherwise(() => new Map<string, ParsedObjectProperty>());
   }
 
   public async run() {
