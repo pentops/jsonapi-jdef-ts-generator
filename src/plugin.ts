@@ -114,6 +114,8 @@ export interface WritableFile<TExistingFileContentType = string> {
   preExistingContent: TExistingFileContentType | undefined;
 }
 
+export type WrittenFile = Omit<WritableFile, 'preExistingContent' | 'wasWritten'>;
+
 export class PluginFile<
   TFileContentType = string,
   TConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
@@ -471,6 +473,7 @@ export class PluginBase<
   protected api: ParsedSource | undefined;
   protected config: Config | undefined;
   protected cwd: string | undefined;
+  protected previouslyWrittenPluginFiles: WrittenFile[] = [];
   protected files: PluginFile<TFileContentType, TFileConfig>[] = [];
   protected generatedClientFunctions: GeneratedClientFunctionWithNodes[] = [];
   protected generatedSchemas: Map<string, GeneratedSchemaWithNode> = new Map();
@@ -480,7 +483,7 @@ export class PluginBase<
     this.pluginConfig = pluginConfig;
   }
 
-  public prepare(cwd: string, api: ParsedSource, generator: Generator, initializePluginFiles = true) {
+  public prepare(cwd: string, api: ParsedSource, generator: Generator, previouslyWrittenPluginFiles: WrittenFile[]) {
     this.startedAt = performance.now();
 
     console.info(`[jdef-ts-generator]: plugin ${this.name} started`);
@@ -490,14 +493,13 @@ export class PluginBase<
     this.generatedClientFunctions = generator.generatedClientFunctions;
     this.generatedSchemas = generator.generatedSchemas;
     this.cwd = cwd;
+    this.previouslyWrittenPluginFiles = previouslyWrittenPluginFiles;
 
     if (!this.cwd) {
       throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
     }
 
-    if (initializePluginFiles) {
-      this.initializePluginFiles();
-    }
+    this.initializePluginFiles();
   }
 
   protected initializePluginFiles() {

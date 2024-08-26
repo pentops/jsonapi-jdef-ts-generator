@@ -5,6 +5,7 @@ import { loadConfig } from './config';
 import { getSource } from './get-source';
 import { Generator } from './generate';
 import { logSuccess } from './internal/helpers';
+import { WrittenFile } from './plugin';
 
 interface Args {
   cwd: string;
@@ -86,14 +87,22 @@ export async function cli({ cwd, args }: Args) {
   }
 
   if (config.plugins) {
+    const writtenPluginFiles = new Set<WrittenFile>();
+
     for (const plugin of config.plugins) {
-      plugin.prepare(cwd, api, generator);
+      plugin.prepare(cwd, api, generator, Array.from(writtenPluginFiles));
 
       await plugin.run();
 
       const output = await plugin.postRun();
 
       for (const writtenFile of output.writtenFiles) {
+        const { preExistingContent: _, wasWritten, ...rest } = writtenFile;
+
+        if (wasWritten) {
+          writtenPluginFiles.add(rest);
+        }
+
         if (writtenFile.exportFromIndexFile !== false) {
           addFileToDirectory(path.dirname(writtenFile.writePath), writtenFile.writePath);
         }
