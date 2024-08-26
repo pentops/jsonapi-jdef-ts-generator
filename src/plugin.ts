@@ -208,6 +208,10 @@ export class PluginFile<
     typeOnlyNamedImports?: string[],
     defaultImport?: string,
   ) {
+    if (file.config.directory === this.config.directory && file.config.fileName === this.config.fileName) {
+      return;
+    }
+
     this.addManualImport(
       getImportPath(file.config.directory, file.config.fileName, this.config.directory, this.config.fileName),
       namedImports,
