@@ -628,7 +628,7 @@ export class PluginBase<
 
     if (!this.config?.dryRun) {
       for (const directory of directoriesToClear) {
-        await fs.rmdir(directory, { recursive: true });
+        await fs.rm(directory, { recursive: true });
       }
     }
 
