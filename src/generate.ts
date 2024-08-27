@@ -1,8 +1,8 @@
 import ts, { type Expression, Identifier, type TypeElement, type TypeNode } from 'typescript';
 import { match, P } from 'ts-pattern';
 import { pascalCase } from 'change-case';
-import type { Config, GenericOverride, GenericOverrideMap, GenericOverrideWithValue } from './config';
 import { buildMergedRequestInit, buildSplitRequestInit, makeRequest } from '@pentops/jsonapi-request';
+import type { Config, GenericOverride, GenericOverrideMap, GenericOverrideWithValue } from './config';
 import {
   buildGenericReferenceNode,
   cleanRefName,

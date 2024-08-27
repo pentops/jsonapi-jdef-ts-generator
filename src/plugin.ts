@@ -1,4 +1,4 @@
-import ts, { type Node } from 'typescript';
+import ts, { ImportDeclaration, type Node } from 'typescript';
 import { P, match } from 'ts-pattern';
 import fs from 'fs/promises';
 import path from 'path';
@@ -6,7 +6,7 @@ import prettyMs from 'pretty-ms';
 import { cleanRefName, createImportDeclaration, createNamedExportDeclaration, getImportPath } from './helpers';
 import { Generator } from './generate';
 import type { ParsedObjectProperty, ParsedSchemaWithRef, ParsedSource } from './parsed-types';
-import type {
+import {
   GeneratedClientFunction,
   GeneratedClientFunctionWithNodes,
   GeneratedSchema,
@@ -73,12 +73,13 @@ export interface PluginFileHooks<TFileContentType = string> {
 }
 
 export interface PluginFileGeneratorConfig<TFileContentType = string> extends PluginFileHooks<TFileContentType> {
+  clearDirectoryBeforeWrite?: boolean;
+  clientFunctionFilter?: PluginFileClientFunctionFilter | boolean;
   directory: string;
   exportFromIndexFile?: boolean;
   fileName: string;
-  schemaFilter?: PluginFileSchemaFilter | boolean;
-  clientFunctionFilter?: PluginFileClientFunctionFilter | boolean;
   readExistingFile?: PluginFileReader<TFileContentType>;
+  schemaFilter?: PluginFileSchemaFilter | boolean;
 }
 
 export interface GeneratedImportPath {
@@ -319,7 +320,7 @@ export class PluginFile<
   }
 
   private generateImports() {
-    const importNodes: Node[] = [];
+    const importNodes: ImportDeclaration[] = [];
 
     if (this.typeImports.size) {
       const importPath = match(this.generatedTypesImportConfiguration)
@@ -360,6 +361,21 @@ export class PluginFile<
         importNodes.push(createImportDeclaration(importPath, namedImports, typeOnlyNamedImports, defaultImport));
       }
     }
+
+    importNodes.sort((a, b) => {
+      const aIdText = ts.isIdentifier(a.moduleSpecifier) ? ts.idText(a.moduleSpecifier) : '';
+      const bIdText = ts.isIdentifier(b.moduleSpecifier) ? ts.idText(b.moduleSpecifier) : '';
+
+      if (aIdText.startsWith('.') && !bIdText.startsWith('.')) {
+        return 1;
+      }
+
+      if (!aIdText.startsWith('.') && bIdText.startsWith('.')) {
+        return -1;
+      }
+
+      return aIdText.localeCompare(bIdText);
+    });
 
     this.pendingImportNodes = importNodes;
   }
@@ -598,11 +614,25 @@ export class PluginBase<
   public async postRun(): Promise<{ writtenFiles: WritableFile<TFileContentType>[] }> {
     const output: { writtenFiles: WritableFile<TFileContentType>[] } = { writtenFiles: [] };
 
-    for (const file of this.files) {
-      if (!this.cwd) {
-        throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
-      }
+    if (!this.cwd) {
+      throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
+    }
 
+    const directoriesToClear = new Set<string>();
+
+    for (const file of this.files) {
+      if (file.config.clearDirectoryBeforeWrite) {
+        directoriesToClear.add(path.dirname(file.writePath));
+      }
+    }
+
+    if (!this.config?.dryRun) {
+      for (const directory of directoriesToClear) {
+        await fs.rmdir(directory, { recursive: true });
+      }
+    }
+
+    for (const file of this.files) {
       if (!this.config?.dryRun) {
         // Remove old file
         await fs.rm(file.writePath, { recursive: true, force: true });
