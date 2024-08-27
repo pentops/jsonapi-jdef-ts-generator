@@ -32,20 +32,20 @@ export interface PropertyAccessPart {
   optional: boolean;
 }
 
-export function createPropertyAccessChain(accessor: string, parts: PropertyAccessPart[]) {
+export function createPropertyAccessChain(accessor: string, accessorIsOptional: boolean, parts: PropertyAccessPart[]) {
   let accessChain: ts.PropertyAccessExpression | undefined;
 
-  parts.forEach((part) => {
+  parts.forEach((part, i) => {
     if (!accessChain) {
       accessChain = factory.createPropertyAccessChain(
         factory.createIdentifier(accessor),
-        part.optional ? factory.createToken(ts.SyntaxKind.QuestionDotToken) : undefined,
+        accessorIsOptional ? factory.createToken(ts.SyntaxKind.QuestionDotToken) : undefined,
         part.name,
       );
     } else {
       accessChain = factory.createPropertyAccessChain(
         accessChain,
-        part.optional ? factory.createToken(ts.SyntaxKind.QuestionDotToken) : undefined,
+        parts[i - 1]?.optional ? factory.createToken(ts.SyntaxKind.QuestionDotToken) : undefined,
         part.name,
       );
     }
