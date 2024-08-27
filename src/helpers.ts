@@ -13,6 +13,47 @@ export function cleanRefName(ref: ParsedRef) {
   return ref.$ref.replace(JSON_SCHEMA_REFERENCE_PREFIX, '');
 }
 
+export function createLogicalAndChain(expressions: ts.Expression[]) {
+  let logicalAnd: ts.Expression | undefined;
+
+  expressions.forEach((expression) => {
+    if (!logicalAnd) {
+      logicalAnd = expression;
+    } else {
+      logicalAnd = factory.createLogicalAnd(logicalAnd, expression);
+    }
+  });
+
+  return logicalAnd;
+}
+
+export interface PropertyAccessPart {
+  name: string;
+  optional: boolean;
+}
+
+export function createPropertyAccessChain(accessor: string, parts: PropertyAccessPart[]) {
+  let accessChain: ts.PropertyAccessExpression | undefined;
+
+  parts.forEach((part) => {
+    if (!accessChain) {
+      accessChain = factory.createPropertyAccessChain(
+        factory.createIdentifier(accessor),
+        part.optional ? factory.createToken(ts.SyntaxKind.QuestionDotToken) : undefined,
+        part.name,
+      );
+    } else {
+      accessChain = factory.createPropertyAccessChain(
+        accessChain,
+        part.optional ? factory.createToken(ts.SyntaxKind.QuestionDotToken) : undefined,
+        part.name,
+      );
+    }
+  });
+
+  return accessChain;
+}
+
 export function getSchemaName(schema: ParsedSchemaWithRef | undefined, schemas: Map<string, ParsedSchema>): string {
   return match(schema)
     .with({ object: P.not(P.nullish) }, (s) => s.object.name)
