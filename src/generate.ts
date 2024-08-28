@@ -18,7 +18,8 @@ import {
   isCharacterSafeForName,
   isKeyword,
 } from './helpers';
-import type {
+import {
+  DerivedEnumHelperType,
   ParsedEnum,
   ParsedEnumValueDescription,
   ParsedMethod,
@@ -151,13 +152,16 @@ export class Generator {
         enum: {
           fullGrpcName: mockGrpcName,
           name: generatedName,
-          options: values.map((name) => ({ name, genericReferenceToSchema: oneOf.oneOf.properties.get(name) })),
+          options: values.map((name) => ({
+            name,
+            genericReferenceToSchema: oneOf.oneOf.properties.get(name)?.schema,
+          })),
           prefix: '',
-          isDerivedHelperType: true,
+          derivedHelperType: DerivedEnumHelperType.OneOfTypes,
           package: oneOf.oneOf.package,
           rules: {},
         },
-      } as ParsedEnum,
+      },
       node: factory.createTypeAliasDeclaration(
         [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
         generatedName,
@@ -712,8 +716,15 @@ export class Generator {
     if (method.listOptions) {
       builtMethod.list = {};
 
-      const createGenericEnum = (name: string, values: string[]): GeneratedSchemaWithNode<ParsedEnum> => {
-        const mockGrpcName = `${method.fullGrpcName.replaceAll('/', '')}${name}Fields`;
+      const createGenericEnum = (
+        fieldType: DerivedEnumHelperType,
+        values: string[],
+      ): GeneratedSchemaWithNode<ParsedEnum> => {
+        const mockGrpcName = `${method.fullGrpcName.replaceAll('/', '')}${match(fieldType)
+          .with(DerivedEnumHelperType.FilterFields, () => 'Filterable')
+          .with(DerivedEnumHelperType.SearchFields, () => 'Searchable')
+          .with(DerivedEnumHelperType.SortFields, () => 'Sortable')
+          .otherwise(() => '')}Fields`;
         const schema: ParsedEnum = {
           enum: {
             fullGrpcName: mockGrpcName,
@@ -737,7 +748,7 @@ export class Generator {
               return base;
             }),
             rules: {},
-            isDerivedHelperType: true,
+            derivedHelperType: fieldType,
           },
         };
 
@@ -754,18 +765,21 @@ export class Generator {
 
       if (method.listOptions.filterableFields?.length) {
         builtMethod.list.filterableFields = createGenericEnum(
-          'Filterable',
+          DerivedEnumHelperType.FilterFields,
           method.listOptions.filterableFields.map((field) => field.name),
         );
       }
 
       if (method.listOptions.searchableFields?.length) {
-        builtMethod.list.searchableFields = createGenericEnum('Searchable', method.listOptions.searchableFields);
+        builtMethod.list.searchableFields = createGenericEnum(
+          DerivedEnumHelperType.SearchFields,
+          method.listOptions.searchableFields,
+        );
       }
 
       if (method.listOptions.sortableFields?.length) {
         builtMethod.list.sortableFields = createGenericEnum(
-          'Sortable',
+          DerivedEnumHelperType.SortFields,
           method.listOptions.sortableFields.map((field) => field.name),
         );
       }

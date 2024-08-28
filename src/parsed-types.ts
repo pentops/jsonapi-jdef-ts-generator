@@ -24,8 +24,16 @@ export interface ParsedMetadata {
   version: string | undefined;
 }
 
-export interface ParsedEnumValueDescription<TSchema extends ParsedSchema = ParsedSchema> extends EnumValueDescription {
+export interface ParsedEnumValueDescription<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef>
+  extends EnumValueDescription {
   genericReferenceToSchema?: TSchema;
+}
+
+export enum DerivedEnumHelperType {
+  OneOfTypes,
+  FilterFields,
+  SearchFields,
+  SortFields,
 }
 
 export interface ParsedEnum {
@@ -36,7 +44,7 @@ export interface ParsedEnum {
     prefix: string;
     rules: EnumRules;
     package?: PackageSummary;
-    isDerivedHelperType?: boolean;
+    derivedHelperType?: DerivedEnumHelperType;
     listRules?: EnumListRules;
     example?: any;
   };
