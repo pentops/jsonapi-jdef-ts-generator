@@ -363,8 +363,8 @@ export class PluginFile<
     }
 
     importNodes.sort((a, b) => {
-      const aIdText = ts.isIdentifier(a.moduleSpecifier) ? ts.idText(a.moduleSpecifier) : '';
-      const bIdText = ts.isIdentifier(b.moduleSpecifier) ? ts.idText(b.moduleSpecifier) : '';
+      const aIdText = ts.isStringLiteral(a.moduleSpecifier) ? a.moduleSpecifier.text : '';
+      const bIdText = ts.isStringLiteral(b.moduleSpecifier) ? b.moduleSpecifier.text : '';
 
       if (aIdText.startsWith('.') && !bIdText.startsWith('.')) {
         return 1;
