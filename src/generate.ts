@@ -134,7 +134,11 @@ export class Generator {
     }
   }
 
-  private generateOneOfUnionType(oneOfGeneratedName: string, oneOf: ParsedOneOf): GeneratedSchemaWithNode<ParsedEnum> {
+  private generateOneOfUnionType(
+    oneOfGeneratedName: string,
+    oneOf: ParsedOneOf,
+    schemas: Map<string, ParsedSchema>,
+  ): GeneratedSchemaWithNode<ParsedEnum> {
     const oneOfFullGrpcName = getFullGRPCName(oneOf);
     const mockGrpcName = `${oneOfFullGrpcName}OneOfValue`;
     const generatedName = this.config.types.nameWriter(mockGrpcName);
@@ -154,7 +158,7 @@ export class Generator {
           name: generatedName,
           options: values.map((name) => ({
             name,
-            genericReferenceToSchema: oneOf.oneOf.properties.get(name)?.schema,
+            genericReferenceToSchema: getPropertyByPath(name, oneOf, schemas),
           })),
           prefix: '',
           derivedHelperType: DerivedEnumHelperType.OneOfTypes,
@@ -456,6 +460,7 @@ export class Generator {
   private generateSchema(
     generatedName: string,
     schema: ParsedSchema,
+    schemas: Map<string, ParsedSchema>,
     parentMethod?: BuiltMethodSchema,
   ): GeneratedSchemaWithNode[] | undefined {
     if (!generatedName) {
@@ -490,7 +495,7 @@ export class Generator {
         },
       ])
       .with({ oneOf: P.not(P.nullish) }, (s) => {
-        const oneOfUnionType = this.generateOneOfUnionType(generatedName, s);
+        const oneOfUnionType = this.generateOneOfUnionType(generatedName, s, schemas);
 
         return [
           {
@@ -731,7 +736,7 @@ export class Generator {
             name: this.config.types.nameWriter(mockGrpcName),
             prefix: '',
             options: values.map((value) => {
-              const base: ParsedEnumValueDescription = { name: value };
+              const base: ParsedEnumValueDescription<ParsedSchema> = { name: value };
 
               if (rootEntity) {
                 const matchingValue = getPropertyByPath(value, rootEntity.rawSchema, schemas);
@@ -800,7 +805,7 @@ export class Generator {
     if (schema) {
       const schemaName = getSchemaName(schema, schemas);
       const typeName = this.getValidTypeName(schema, schemaName);
-      const typeNodes = this.generateSchema(typeName, schema, parentMethod);
+      const typeNodes = this.generateSchema(typeName, schema, schemas, parentMethod);
 
       typeNodes?.forEach((node) => {
         this.schemaGenerationProspects.set(node.fullGrpcName || node.generatedName || schemaName, {

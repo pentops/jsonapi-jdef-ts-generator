@@ -40,7 +40,7 @@ export interface ParsedEnum {
   enum: {
     fullGrpcName: string;
     name: string;
-    options: ParsedEnumValueDescription[];
+    options: ParsedEnumValueDescription<ParsedSchema>[];
     prefix: string;
     rules: EnumRules;
     package?: PackageSummary;
