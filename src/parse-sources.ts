@@ -846,6 +846,7 @@ export function mapApiAuth(auth: APIMethodAuthType | undefined): ParsedAuthType 
   return match(auth)
     .with({ '!type': 'cookie' }, () => ({ cookie: {} }))
     .with({ '!type': 'jwtBearer' }, () => ({ jwtBearer: {} }))
+    .with({ '!type': 'none' }, () => ({ none: {} }))
     .with({ '!type': 'custom' }, (s) => ({ custom: { passThroughHeaders: s.custom.passThroughHeaders } }))
     .otherwise(() => undefined);
 }

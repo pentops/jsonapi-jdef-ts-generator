@@ -216,6 +216,10 @@ export interface ParsedMethodListOptions {
   sortableFields?: SortableField[];
 }
 
+export interface ParsedAuthTypeNone {
+  none: {};
+}
+
 export interface ParsedAuthTypeCustom {
   custom: {
     passThroughHeaders: string[];
@@ -230,7 +234,7 @@ export interface ParsedAuthTypeCookie {
   cookie: {};
 }
 
-export type ParsedAuthType = ParsedAuthTypeCustom | ParsedAuthTypeJWTBearer | ParsedAuthTypeCookie;
+export type ParsedAuthType = ParsedAuthTypeCustom | ParsedAuthTypeJWTBearer | ParsedAuthTypeCookie | ParsedAuthTypeNone;
 
 export interface ParsedMethod<TSchemaWithRef extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   name: string;
