@@ -681,14 +681,18 @@ export class PluginBase<
 
     if (!this.config?.dryRun) {
       for (const directory of directoriesToClear) {
-        await fs.rm(directory, { recursive: true });
+        try {
+          await fs.rm(directory, { recursive: true });
+        } catch {}
       }
     }
 
     for (const file of this.files) {
       if (!this.config?.dryRun) {
         // Remove old file
-        await fs.rm(file.writePath, { recursive: true, force: true });
+        try {
+          await fs.rm(file.writePath, { recursive: true, force: true });
+        } catch {}
       }
 
       if (file.config.preWriteHook) {
