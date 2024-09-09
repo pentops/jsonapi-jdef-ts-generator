@@ -1,16 +1,20 @@
 import {
   ArrayRules,
-  BooleanListRules,
-  BooleanRules,
+  BoolListRules,
+  BoolRules,
+  BytesRules,
   DateListRules,
   EntityObjectSchema,
+  EnumDocs,
   EnumListRules,
   EnumRules,
   EnumValueDescription,
   FloatListRules,
   IntegerListRules,
   IntegerRules,
+  KeyFormat,
   KeyListRules,
+  MapRules,
   NumberRules,
   ObjectRules,
   OneOfListRules,
@@ -43,6 +47,7 @@ export interface APIEnumValue {
   options: EnumValueDescription[];
   rules?: EnumRules;
   listRules?: EnumListRules;
+  docs?: EnumDocs;
 }
 
 export interface APIEnumSchema<TValue = APIEnumValue | APIEnumRefFieldValue> {
@@ -50,14 +55,14 @@ export interface APIEnumSchema<TValue = APIEnumValue | APIEnumRefFieldValue> {
   'enum': TValue;
 }
 
-export interface APIBooleanValue {
-  rules?: BooleanRules;
-  listRules?: BooleanListRules;
+export interface APIBoolValue {
+  rules?: BoolRules;
+  listRules?: BoolListRules;
 }
 
-export interface APIBooleanSchema {
-  '!type': 'boolean';
-  'boolean': APIBooleanValue;
+export interface APIBoolSchema {
+  '!type': 'bool';
+  'bool': APIBoolValue;
 }
 
 export interface APIObjectProperty {
@@ -142,10 +147,15 @@ export interface APIAnySchema {
   'any': {};
 }
 
+export interface APIMapExtensions {
+  keySingleForm?: string;
+}
+
 export interface APIMapValue {
   keySchema: APISchema;
   itemSchema: APISchema;
-  rules?: {};
+  rules?: MapRules;
+  ext?: APIMapExtensions;
 }
 
 export interface APIMapSchema {
@@ -154,7 +164,7 @@ export interface APIMapSchema {
 }
 
 export interface APIBytesValue {
-  rules?: {};
+  rules?: BytesRules;
 }
 
 export interface APIBytesSchema {
@@ -162,9 +172,14 @@ export interface APIBytesSchema {
   'bytes': APIBytesValue;
 }
 
+export interface APIArrayExtensions {
+  singleForm?: string;
+}
+
 export interface APIArrayValue<TSchema extends APISchema = APISchema> {
   items: TSchema;
   rules?: ArrayRules;
+  ext?: APIArrayExtensions;
 }
 
 export interface APIArraySchema<TSchema extends APISchema = APISchema> {
@@ -172,12 +187,16 @@ export interface APIArraySchema<TSchema extends APISchema = APISchema> {
   'array': APIArrayValue<TSchema>;
 }
 
+export interface APIKeyExtensions {
+  primaryKey?: boolean;
+}
+
 export interface APIKeyValue {
-  primary: boolean;
   entity: string;
-  format: 'UNSPECIFIED' | 'UUID' | 'NATURAL_KEY';
   rules?: {};
   listRules?: KeyListRules;
+  format: KeyFormat;
+  ext?: APIKeyExtensions;
 }
 
 export interface APIKeySchema {
@@ -219,7 +238,7 @@ export type APISchema =
   | APIEnumSchema
   | APIOneOfSchema
   | APIAnySchema
-  | APIBooleanSchema
+  | APIBoolSchema
   | APIMapSchema
   | APIArraySchema
   | APIObjectSchema

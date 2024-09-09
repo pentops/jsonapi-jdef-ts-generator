@@ -47,13 +47,27 @@ export interface ArrayRules {
   uniqueItems?: boolean;
 }
 
-export interface BooleanRules {
+export interface MapRules {
+  minPairs?: number;
+  maxPairs?: number;
+}
+
+export interface BoolRules {
   const?: boolean;
 }
 
 export interface EnumRules {
   in?: string[];
   notIn?: string[];
+}
+
+export interface BytesRules {
+  minLength?: number;
+  maxLength?: number;
+}
+
+export interface EnumDocs {
+  table?: boolean;
 }
 
 export interface EnumValueDescription {
@@ -67,6 +81,7 @@ export enum EntityPart {
   Keys = 'KEYS',
   State = 'STATE',
   Event = 'EVENT',
+  Data = 'DATA',
 }
 
 export interface EntityObjectSchema {
@@ -111,7 +126,7 @@ export interface FloatListRules {
   sorting?: SortingConstraint;
 }
 
-export interface BooleanListRules {
+export interface BoolListRules {
   filtering?: FilteringConstraint;
 }
 
@@ -148,3 +163,27 @@ export interface StringListRules {
   date?: DateListRules;
   foreignKey?: ForeignKeyListRules;
 }
+
+export interface KeyFormatInformal {
+  '!type': 'informal';
+  'informal': {};
+}
+
+export interface KeyFormatCustom {
+  '!type': 'custom';
+  'custom': {
+    pattern: string;
+  };
+}
+
+export interface KeyFormatUUID {
+  '!type': 'uuid';
+  'uuid': {};
+}
+
+export interface KeyFormatID62 {
+  '!type': 'id62';
+  'id62': {};
+}
+
+export type KeyFormat = KeyFormatInformal | KeyFormatCustom | KeyFormatUUID | KeyFormatID62;

@@ -291,15 +291,27 @@ export class Generator {
 
     return (
       match(schema)
-        .with({ boolean: P.not(P.nullish) }, () => ({ node: factory.createKeywordTypeNode(SyntaxKind.BooleanKeyword) }))
+        .with({ bool: P.not(P.nullish) }, () => ({ node: factory.createKeywordTypeNode(SyntaxKind.BooleanKeyword) }))
         // all nested enums are union types
         .with({ enum: P.not(P.nullish) }, (s) => {
           return { node: Generator.buildUnionEnum(Array.from(this.buildEnumKeyValueMap(s, 'union').keys())) };
         })
-        .with({ key: P.not(P.nullish) }, (s) => ({
-          node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
-          comment: s.key.format ? `format: ${s.key.format}` : undefined,
-        }))
+        .with({ key: P.not(P.nullish) }, (s) => {
+          const format = match(s.key.format)
+            .with({ uuid: P.not(P.nullish) }, () => 'uuid')
+            .with({ informal: P.not(P.nullish) }, () => 'informal')
+            .with({ id62: P.not(P.nullish) }, () => 'id62')
+            .with(
+              { custom: P.not(P.nullish) },
+              (c) => `custom${c.custom.pattern ? ` - pattern: ${c.custom.pattern}` : ''}`,
+            )
+            .otherwise(() => undefined);
+
+          return {
+            node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+            comment: format ? `format: ${format}` : undefined,
+          };
+        })
         .with({ string: P.not(P.nullish) }, (s) => ({
           node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
           comment:

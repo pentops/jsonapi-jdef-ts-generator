@@ -4,7 +4,7 @@ import {
   ParsedAny,
   ParsedArray,
   ParsedAuthType,
-  ParsedBoolean,
+  ParsedBool,
   ParsedBytes,
   ParsedEntity,
   ParsedEnum,
@@ -108,11 +108,11 @@ export function jdefSchemaToSource(
       { type: 'boolean' },
       (b) =>
         ({
-          boolean: {
+          bool: {
             const: false,
             example: b.example,
           },
-        }) as ParsedBoolean,
+        }) as ParsedBool,
     )
     .with(
       { enum: P.array(P.string) },
@@ -552,6 +552,7 @@ export function apiSchemaToSource(
                 prefix: eWithEnum.prefix,
                 rules: eWithEnum.rules,
                 listRules: eWithEnum.listRules,
+                docs: eWithEnum.docs,
                 package: apiPackageToSummary(pkg),
                 options: eWithEnum.options.map((option) => ({
                   name: option.name,
@@ -564,14 +565,14 @@ export function apiSchemaToSource(
         .otherwise(() => undefined),
     )
     .with(
-      { '!type': 'boolean' },
+      { '!type': 'bool' },
       (b) =>
         ({
-          boolean: {
-            rules: b.boolean.rules || {},
-            listRules: b.boolean.listRules || {},
+          bool: {
+            rules: b.bool.rules || {},
+            listRules: b.bool.listRules || {},
           },
-        }) as ParsedBoolean,
+        }) as ParsedBool,
     )
     .with(
       { '!type': 'integer' },
@@ -721,18 +722,19 @@ export function apiSchemaToSource(
       return {
         array: {
           itemSchema: converted,
+          singleForm: a.array.ext?.singleForm,
           rules: a.array.rules || {},
         },
       } as ParsedArray;
     })
-    .with({ '!type': 'bytes' }, () => ({ bytes: {} }) as ParsedBytes)
+    .with({ '!type': 'bytes' }, (b) => ({ bytes: { rules: b.bytes.rules } }) as ParsedBytes)
     .with(
       { '!type': 'key' },
       (k) =>
         ({
           key: {
             format: k.key.format,
-            primary: k.key.primary,
+            primary: k.key.ext?.primaryKey || false,
             entity: k.key.entity,
             rules: k.key.rules,
             listRules: k.key.listRules || {},

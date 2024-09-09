@@ -1,6 +1,7 @@
 import {
   ArrayRules,
-  BooleanListRules,
+  BoolListRules,
+  BytesRules,
   EntityObjectSchema,
   EnumListRules,
   EnumRules,
@@ -9,7 +10,9 @@ import {
   HTTPMethod,
   IntegerListRules,
   IntegerRules,
+  KeyFormat,
   KeyListRules,
+  MapRules,
   NumberRules,
   ObjectRules,
   OneOfListRules,
@@ -50,10 +53,10 @@ export interface ParsedEnum {
   };
 }
 
-export interface ParsedBoolean {
-  boolean: {
+export interface ParsedBool {
+  bool: {
     const?: boolean;
-    listRules?: BooleanListRules;
+    listRules?: BoolListRules;
     example?: any;
   };
 }
@@ -99,7 +102,8 @@ export interface ParsedMap {
   map: {
     itemSchema: ParsedSchemaWithRef;
     keySchema: ParsedSchemaWithRef;
-    rules: {};
+    rules: MapRules;
+    keySingleForm?: string;
     example?: any;
   };
 }
@@ -153,19 +157,21 @@ export interface ParsedArray {
   array: {
     itemSchema: ParsedSchemaWithRef;
     rules: ArrayRules;
-    example: any;
+    example?: any;
+    singleForm?: string;
   };
 }
 
 export interface ParsedBytes {
   bytes: {
+    rules?: BytesRules;
     example?: any;
   };
 }
 
 export interface ParsedKey {
   key: {
-    format: string;
+    format: KeyFormat;
     primary: boolean;
     entity?: string;
     rules?: {};
@@ -176,7 +182,7 @@ export interface ParsedKey {
 
 export type ParsedSchema =
   | ParsedEnum
-  | ParsedBoolean
+  | ParsedBool
   | ParsedInteger
   | ParsedFloat
   | ParsedString
