@@ -26,7 +26,7 @@
     "change-case": "^5.4.4",
     "find-up": "^7.0.0",
     "pretty-ms": "^9.1.0",
-    "typescript": "^5.5.4"
+    "typescript": "^5.6.2"
   },
   "devDependencies": {
     "@pentops/jsonapi-request": "^0.0.4",
