@@ -230,25 +230,6 @@ export class PluginFile<
     );
   }
 
-  public removeManualImport(importPath: string, namedImports: string[] | undefined, defaultImport?: string) {
-    const existingImport = this.manualImports.get(importPath);
-
-    if (!existingImport) {
-      return;
-    }
-
-    this.manualImports.set(importPath, {
-      ...existingImport,
-      defaultImport: defaultImport === existingImport.defaultImport ? undefined : existingImport.defaultImport,
-      namedImports: existingImport.namedImports?.filter(
-        (namedImport) => !namedImports || !namedImports.includes(namedImport),
-      ),
-      typeOnlyNamedImports: existingImport.typeOnlyNamedImports?.filter(
-        (namedImport) => !namedImports || !namedImports.includes(namedImport),
-      ),
-    });
-  }
-
   public addManualImport(
     importPath: string,
     namedImports: string[] | undefined,
@@ -275,6 +256,41 @@ export class PluginFile<
           : existingImport.typeOnlyNamedImports,
       });
     }
+  }
+
+  public removeManualImport(importPath: string, namedImports: string[] | undefined, defaultImport?: string) {
+    const existingImport = this.manualImports.get(importPath);
+
+    if (!existingImport) {
+      return;
+    }
+
+    this.manualImports.set(importPath, {
+      ...existingImport,
+      defaultImport: defaultImport === existingImport.defaultImport ? undefined : existingImport.defaultImport,
+      namedImports: existingImport.namedImports?.filter(
+        (namedImport) => !namedImports || !namedImports.includes(namedImport),
+      ),
+      typeOnlyNamedImports: existingImport.typeOnlyNamedImports?.filter(
+        (namedImport) => !namedImports || !namedImports.includes(namedImport),
+      ),
+    });
+  }
+
+  public removeImportToGeneratedFile(
+    file: PluginFile<TFileContentType>,
+    namedImports: string[] | undefined,
+    defaultImport?: string,
+  ) {
+    if (file.config.directory === this.config.directory && file.config.fileName === this.config.fileName) {
+      return;
+    }
+
+    this.removeManualImport(
+      getImportPath(file.config.directory, file.config.fileName, this.config.directory, this.config.fileName),
+      namedImports,
+      defaultImport,
+    );
   }
 
   public addManualExport(exportPath: string | undefined, manualExport: ManualExport) {
