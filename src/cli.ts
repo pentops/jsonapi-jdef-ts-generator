@@ -23,7 +23,9 @@ export async function cli({ cwd, args }: Args) {
     throw new Error('[jdef-ts-generator]: no valid source found');
   }
 
-  console.info('[jdef-ts-generator]: loaded source, beginning type generation');
+  if (config.verbose) {
+    console.info('[jdef-ts-generator]: loaded source, beginning type generation');
+  }
 
   const generator = new Generator(config);
 
@@ -49,7 +51,9 @@ export async function cli({ cwd, args }: Args) {
     fs.mkdirSync(typeOutputDir, { recursive: true });
     fs.writeFileSync(typeOutputPath, typesFile);
 
-    console.info('[jdef-ts-generator]: interfaces and enums generated and saved to disk');
+    if (config.verbose) {
+      logSuccess('[jdef-ts-generator]: interfaces and enums generated and saved to disk');
+    }
   } else {
     console.info(`[jdef-ts-generator]: dry run enabled, file ${typeOutputPath} not written. Contents:\n${typesFile}`);
   }
@@ -75,7 +79,9 @@ export async function cli({ cwd, args }: Args) {
         // Write generated file
         fs.writeFileSync(clientOutputPath, clientFile);
 
-        console.info('[jdef-ts-generator]: api client generated and saved to disk');
+        if (config.verbose) {
+          logSuccess('[jdef-ts-generator]: api client generated and saved to disk');
+        }
       } else {
         console.info(
           `[jdef-ts-generator]: dry run enabled, file ${clientOutputPath} not written. Contents:\n${clientFile}`,

@@ -504,34 +504,10 @@ export function apiSchemaToSource(
 ): ParsedSchemaWithRef | undefined {
   function mapObjectProperties(properties: APIObjectProperty[] | undefined) {
     return (properties || []).reduce<Map<string, ParsedObjectProperty>>((acc, curr) => {
-      const converted = match(curr.schema)
-        .returnType<ParsedObjectProperty[]>()
-        .with({ object: { flatten: true } }, (objectSchema) => {
-          return match(objectSchema.object)
-            .with({ ref: P.not(P.nullish) }, (objectWithRef) => {
-              const refSchema = schemas.get(getFullGrpcPathForSchemaRef(objectWithRef.ref));
+      const mappedValue = apiObjectPropertyToSource(curr, stateEntities, schemas);
 
-              return match(refSchema)
-                .with({ object: { properties: P.not(P.nullish) } }, (refObject) => {
-                  const subProperties = mapObjectProperties(refObject.object.properties);
-                  return subProperties ? Array.from(subProperties.values()) : [];
-                })
-                .otherwise(() => []);
-            })
-            .with({ properties: P.not(P.nullish) }, (objectWithProperties) => {
-              const subProperties = mapObjectProperties(objectWithProperties.properties);
-              return subProperties ? Array.from(subProperties.values()) : [];
-            })
-            .otherwise(() => []);
-        })
-        .otherwise(() => {
-          const mappedValue = apiObjectPropertyToSource(curr, stateEntities, schemas);
-
-          return mappedValue ? [mappedValue] : [];
-        });
-
-      for (const item of converted) {
-        acc.set(item.name, item);
+      if (mappedValue) {
+        acc.set(mappedValue.name, mappedValue);
       }
 
       return acc;
@@ -785,6 +761,7 @@ function mapApiParameters(
 }
 
 export function findMethodResponseRootSchema(
+  schemas: Map<string, APISchema>,
   response: APIObjectValue,
   packageName: string,
   parentRelatedEntity?: APIStateEntity,
@@ -990,15 +967,11 @@ export function parseApiSource(source: APISource): ParsedSource {
       const gather = (properties: APIObjectProperty[] | undefined, path: string = '', replacedPath: string = '') => {
         for (const property of properties || []) {
           const subProperties = getAPIObjectProperties(property.schema, schemas);
-          const isFlattened = match(property.schema)
-            .with({ object: { flatten: true } }, () => true)
-            .with({ array: { items: { object: { flatten: true } } } }, () => true)
-            .otherwise(() => false);
 
           const nextPath = `${path}${path ? '.' : ''}${property.name}`;
 
           if (subProperties) {
-            const nextPart = isFlattened ? replacedPath : `${replacedPath}${replacedPath ? '.' : ''}${property.name}`;
+            const nextPart = `${replacedPath}${replacedPath ? '.' : ''}${property.name}`;
             gather(subProperties, nextPath, nextPart);
           } else {
             const fullyReplacedPath = `${replacedPath}${replacedPath ? '.' : ''}${property.name}`;
@@ -1045,7 +1018,7 @@ export function parseApiSource(source: APISource): ParsedSource {
           .otherwise(() => undefined);
 
         const rootEntitySchema = responseBodyValue
-          ? findMethodResponseRootSchema(responseBodyValue, parsedPackage.name, relatedEntity)
+          ? findMethodResponseRootSchema(schemas, responseBodyValue, parsedPackage.name, relatedEntity)
           : undefined;
         const mappedRelatedEntity = relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined;
         const mappedPathParameters = mapApiParameters(method.request?.pathParameters, stateEntities, schemas, true);

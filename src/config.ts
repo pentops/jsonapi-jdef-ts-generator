@@ -119,6 +119,7 @@ export interface Config {
   plugins?: PluginBase[];
   // jdefJsonSource is the source of the jdef.json file. Only one of service or path can be specified.
   jsonSource: JSONSource | JSONSource[];
+  verbose: boolean;
 }
 
 export const defaultConfig: Config = {
@@ -143,6 +144,7 @@ export const defaultConfig: Config = {
     path: 'jdef.json',
   },
   plugins: [],
+  verbose: false,
 };
 
 function mergeConfig(userSpecified: Partial<Config>): Config {

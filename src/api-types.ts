@@ -33,9 +33,7 @@ export interface APIRefFieldValue {
   ref: APIRefValue;
 }
 
-export interface APIObjectRefFieldValue extends APIRefFieldValue {
-  flatten?: boolean;
-}
+export interface APIObjectRefFieldValue extends APIRefFieldValue {}
 
 export interface APIEnumRefFieldValue extends APIRefFieldValue {
   listRules?: EnumListRules;
@@ -96,7 +94,6 @@ export interface APIObjectValue {
   name: string;
   properties: APIObjectProperty[];
   rules?: ObjectRules;
-  flatten?: true;
 }
 
 export interface APIObjectSchema<TValue = APIObjectValue | APIObjectRefFieldValue> {

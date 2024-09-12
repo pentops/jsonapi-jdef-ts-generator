@@ -558,7 +558,9 @@ export class PluginBase<
   public prepare(cwd: string, api: ParsedSource, generator: Generator, previouslyWrittenPluginFiles: WrittenFile[]) {
     this.startedAt = performance.now();
 
-    console.info(`[jdef-ts-generator]: plugin ${this.name} started`);
+    if (this.config?.verbose) {
+      console.info(`[jdef-ts-generator]: plugin ${this.name} started`);
+    }
 
     this.api = api;
     this.config = generator.config;
@@ -687,6 +689,8 @@ export class PluginBase<
       }
     }
 
+    const writtenFilePaths = new Set();
+
     for (const file of this.files) {
       if (!this.config?.dryRun) {
         // Remove old file
@@ -707,9 +711,9 @@ export class PluginBase<
           await fs.mkdir(path.dirname(writableFile.writePath), { recursive: true });
           await fs.writeFile(writableFile.writePath, writableFile.content);
 
-          console.info(`[jdef-ts-generator]: plugin ${this.name} generated file ${writableFile.writePath}`);
+          writtenFilePaths.add(writableFile.writePath);
         } else {
-          console.info(
+          console.log(
             `[jdef-ts-generator]: dry run enabled, file from plugin ${this.name} (${writableFile.writePath}) not written. Contents:\n${writableFile.content}`,
           );
         }
@@ -721,6 +725,14 @@ export class PluginBase<
         }
 
         output.writtenFiles.push(writableFile as any);
+      }
+    }
+
+    if (this.config?.verbose) {
+      if (writtenFilePaths.size) {
+        console.info(
+          `[jdef-ts-generator]: plugin ${this.name} generated ${writtenFilePaths.size} files:\n${Array.from(writtenFilePaths).join('\n')}`,
+        );
       }
     }
 
