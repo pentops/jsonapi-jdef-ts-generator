@@ -230,6 +230,25 @@ export class PluginFile<
     );
   }
 
+  public removeManualImport(importPath: string, namedImports: string[] | undefined, defaultImport?: string) {
+    const existingImport = this.manualImports.get(importPath);
+
+    if (!existingImport) {
+      return;
+    }
+
+    this.manualImports.set(importPath, {
+      ...existingImport,
+      defaultImport: defaultImport === existingImport.defaultImport ? undefined : existingImport.defaultImport,
+      namedImports: existingImport.namedImports?.filter(
+        (namedImport) => !namedImports || !namedImports.includes(namedImport),
+      ),
+      typeOnlyNamedImports: existingImport.typeOnlyNamedImports?.filter(
+        (namedImport) => !namedImports || !namedImports.includes(namedImport),
+      ),
+    });
+  }
+
   public addManualImport(
     importPath: string,
     namedImports: string[] | undefined,

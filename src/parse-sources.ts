@@ -761,7 +761,6 @@ function mapApiParameters(
 }
 
 export function findMethodResponseRootSchema(
-  schemas: Map<string, APISchema>,
   response: APIObjectValue,
   packageName: string,
   parentRelatedEntity?: APIStateEntity,
@@ -1018,7 +1017,7 @@ export function parseApiSource(source: APISource): ParsedSource {
           .otherwise(() => undefined);
 
         const rootEntitySchema = responseBodyValue
-          ? findMethodResponseRootSchema(schemas, responseBodyValue, parsedPackage.name, relatedEntity)
+          ? findMethodResponseRootSchema(responseBodyValue, parsedPackage.name, relatedEntity)
           : undefined;
         const mappedRelatedEntity = relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined;
         const mappedPathParameters = mapApiParameters(method.request?.pathParameters, stateEntities, schemas, true);
