@@ -6,3 +6,4 @@ export * from './plugin';
 export * from './helpers';
 export * from './types';
 export * from './parse-sources';
+export * from './dereference';

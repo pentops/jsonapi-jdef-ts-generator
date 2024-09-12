@@ -98,23 +98,23 @@ export interface ParsedAny {
   };
 }
 
-export interface ParsedMap {
+export interface ParsedMap<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   map: {
-    itemSchema: ParsedSchemaWithRef;
-    keySchema: ParsedSchemaWithRef;
+    itemSchema: TSchema;
+    keySchema: TSchema;
     rules: MapRules;
     keySingleForm?: string;
     example?: any;
   };
 }
 
-export interface ParsedObjectProperty<TSchemaWithRef extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
+export interface ParsedObjectProperty<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   description?: string;
   example?: any;
   name: string;
   readOnly?: boolean;
   required?: boolean;
-  schema: TSchemaWithRef;
+  schema: TSchema;
   writeOnly?: boolean;
 }
 
@@ -127,13 +127,13 @@ export interface ParsedEntity extends EntityObjectSchema {
   commandMethods?: string[];
 }
 
-export interface ParsedObject<TSchemaWithRef extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
+export interface ParsedObject<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   object: {
     description?: string;
     fullGrpcName: string;
     name: string;
     entity?: ParsedEntity;
-    properties: Map<string, ParsedObjectProperty<TSchemaWithRef>>;
+    properties: Map<string, ParsedObjectProperty<TSchema>>;
     rules: ObjectRules;
     example?: any;
     additionalProperties?: boolean;
@@ -141,21 +141,21 @@ export interface ParsedObject<TSchemaWithRef extends ParsedSchemaWithRef = Parse
   };
 }
 
-export interface ParsedOneOf {
+export interface ParsedOneOf<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   oneOf: {
     description?: string;
     fullGrpcName: string;
     name: string;
-    properties: Map<string, ParsedObjectProperty>;
+    properties: Map<string, ParsedObjectProperty<TSchema>>;
     package?: PackageSummary;
     listRules?: OneOfListRules;
     example?: any;
   };
 }
 
-export interface ParsedArray {
+export interface ParsedArray<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   array: {
-    itemSchema: ParsedSchemaWithRef;
+    itemSchema: TSchema;
     rules: ArrayRules;
     example?: any;
     singleForm?: string;
@@ -195,6 +195,20 @@ export type ParsedSchema =
   | ParsedKey;
 
 export type ParsedSchemaWithRef = ParsedSchema | ParsedRef;
+
+export type DereferencedParsedSchema =
+  | ParsedEnum
+  | ParsedBool
+  | ParsedInteger
+  | ParsedFloat
+  | ParsedString
+  | ParsedAny
+  | ParsedMap<DereferencedParsedSchema>
+  | ParsedObject<DereferencedParsedSchema>
+  | ParsedOneOf<DereferencedParsedSchema>
+  | ParsedArray<DereferencedParsedSchema>
+  | ParsedBytes
+  | ParsedKey;
 
 export interface FilterableField {
   name: string;
@@ -236,35 +250,35 @@ export interface ParsedAuthTypeCookie {
 
 export type ParsedAuthType = ParsedAuthTypeCustom | ParsedAuthTypeJWTBearer | ParsedAuthTypeCookie | ParsedAuthTypeNone;
 
-export interface ParsedMethod<TSchemaWithRef extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
+export interface ParsedMethod<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   name: string;
   fullGrpcName: string;
   httpMethod: HTTPMethod;
   httpPath: string;
-  requestBody?: TSchemaWithRef;
-  responseBody?: TSchemaWithRef;
-  pathParameters?: Map<string, ParsedObjectProperty<TSchemaWithRef>> | undefined;
-  queryParameters?: Map<string, ParsedObjectProperty<TSchemaWithRef>> | undefined;
+  requestBody?: TSchema;
+  responseBody?: TSchema;
+  pathParameters?: Map<string, ParsedObjectProperty<TSchema>> | undefined;
+  queryParameters?: Map<string, ParsedObjectProperty<TSchema>> | undefined;
   listOptions?: ParsedMethodListOptions;
   relatedEntity?: ParsedEntity;
-  rootEntitySchema?: ParsedSchemaWithRef;
-  parentService: ParsedService;
+  rootEntitySchema?: TSchema;
+  parentService: ParsedService<TSchema>;
   auth: ParsedAuthType | undefined;
 }
 
-export interface ParsedService<TSchemaWithRef extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
+export interface ParsedService<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   name: string;
   fullGrpcName: string;
-  methods: ParsedMethod<TSchemaWithRef>[];
-  parentPackage: ParsedPackage;
+  methods: ParsedMethod<TSchema>[];
+  parentPackage: ParsedPackage<TSchema>;
 }
 
-export interface ParsedPackage<TSchemaWithRef extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
+export interface ParsedPackage<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   hidden?: boolean;
   introduction?: string;
   label?: string;
   name: string;
-  services: ParsedService<TSchemaWithRef>[];
+  services: ParsedService<TSchema>[];
 }
 
 export interface ParsedSource<
