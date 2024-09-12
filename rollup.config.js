@@ -36,4 +36,12 @@ export default [
     },
     plugins: getPlugins(['change-case', 'ts-pattern']),
   },
+  {
+    input: 'src/dereference.ts',
+    output: {
+      dir: 'dist',
+      format: 'es',
+    },
+    plugins: getPlugins(['ts-pattern']),
+  },
 ];
