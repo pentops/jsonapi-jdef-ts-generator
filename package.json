@@ -29,10 +29,10 @@
     "typescript": "^5.6.2"
   },
   "devDependencies": {
-    "@pentops/jsonapi-request": "^0.0.4",
+    "@pentops/jsonapi-request": "^0.0.6",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/node": "^22.5.4",
+    "@types/node": "^22.5.5",
     "prettier": "^3.3.3",
     "rollup": "^4.21.3",
     "ts-pattern": "^5.3.1",
