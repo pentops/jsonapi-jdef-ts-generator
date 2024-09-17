@@ -339,6 +339,8 @@ export function createNamedExportDeclaration(
     namedExports?.length && namedExports.every((namedExport) => typeOnlyExports?.includes(namedExport)),
   );
 
+  namedExports?.sort();
+
   return factory.createExportDeclaration(
     undefined,
     isFullyTypeOnly,
@@ -366,6 +368,8 @@ export function createImportDeclaration(
       namedImports?.length &&
       namedImports.every((namedImport) => typeOnlyNamedImports?.includes(namedImport)),
   );
+
+  namedImports?.sort();
 
   return factory.createImportDeclaration(
     undefined,
