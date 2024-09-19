@@ -791,11 +791,11 @@ export function findMethodResponseRootSchema(
       .otherwise(() => undefined);
 
     if (found) {
-      if (foundArray) {
-        console.warn(
-          `[jdef-ts-generator]: multiple array schemas found in method response ${response.name}, root schema identification may not be accurate`,
-        );
-      }
+      // if (foundArray) {
+      //   console.warn(
+      //     `[jdef-ts-generator]: multiple array schemas found in method response ${response.name}, root schema identification may not be accurate`,
+      //   );
+      // }
 
       foundArray = found.schema;
     }
