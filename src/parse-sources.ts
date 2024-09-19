@@ -1,4 +1,5 @@
 import { match, P } from 'ts-pattern';
+import { constantCase } from 'change-case';
 import { JDEF, JDEFMethod, JDEFObjectProperty, JDEFPackage, JDEFParameter, JDEFSchemaWithRef } from './jdef-types';
 import {
   ParsedAny,
@@ -25,7 +26,6 @@ import {
   ParsedString,
   SortDirection,
 } from './parsed-types';
-import { constantCase } from 'change-case';
 import {
   APIArraySchema,
   APIMethod,

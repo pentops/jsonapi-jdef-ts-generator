@@ -3,7 +3,7 @@ import { match, P } from 'ts-pattern';
 import fs from 'fs/promises';
 import path from 'path';
 import prettyMs from 'pretty-ms';
-import { cleanRefName, createImportDeclaration, createNamedExportDeclaration, getImportPath } from './helpers';
+import { cleanRefName, createImportDeclaration, createNamedExportDeclaration } from './helpers';
 import { Generator } from './generate';
 import type { ParsedObjectProperty, ParsedSchemaWithRef, ParsedSource } from './parsed-types';
 import {
@@ -14,6 +14,7 @@ import {
 } from './generated-types';
 import { Config } from './config';
 import { logSuccess } from './internal/helpers';
+import { getImportPath } from './fs-helpers';
 
 const { createPrinter, createSourceFile, factory, ScriptKind, ScriptTarget, ListFormat, NewLineKind } = ts;
 

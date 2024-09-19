@@ -4,6 +4,7 @@ export * from './generate';
 export * from './j5-list';
 export * from './plugin';
 export * from './helpers';
+export * from './fs-helpers';
 export * from './types';
 export * from './parse-sources';
 export * from './dereference';

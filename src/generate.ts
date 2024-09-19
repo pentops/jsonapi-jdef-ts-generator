@@ -9,7 +9,6 @@ import {
   createImportDeclaration,
   getAllGenericsForChildren,
   getFullGRPCName,
-  getImportPath,
   getObjectProperties,
   getPackageSummary,
   getPropertyByPath,
@@ -40,6 +39,7 @@ import {
   GeneratedSchemaWithNode,
   PackageSummary,
 } from './generated-types';
+import { getImportPath } from './fs-helpers';
 
 const {
   addSyntheticLeadingComment,
