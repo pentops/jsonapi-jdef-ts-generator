@@ -12,7 +12,7 @@ import {
   GeneratedSchema,
   GeneratedSchemaWithNode,
 } from './generated-types';
-import { Config } from './config';
+import { Config } from './config-types';
 import { logSuccess } from './internal/helpers';
 import { getImportPath } from './fs-helpers';
 

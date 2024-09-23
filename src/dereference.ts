@@ -1,5 +1,5 @@
 import { match, P } from 'ts-pattern';
-import {
+import type {
   DereferencedParsedSchema,
   ParsedMethod,
   ParsedObjectProperty,

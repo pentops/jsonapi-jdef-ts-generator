@@ -1,6 +1,6 @@
 import ts from 'typescript';
 import { match, P } from 'ts-pattern';
-import type { GenericOverride, GenericOverrideMap, GenericOverrideNodeType } from './config';
+import type { GenericOverride, GenericOverrideMap, GenericOverrideNodeType } from './config-types';
 import type { ParsedObjectProperty, ParsedRef, ParsedSchema, ParsedSchemaWithRef } from './parsed-types';
 import { GeneratedSchema, PackageSummary } from './generated-types';
 

@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import { match, P } from 'ts-pattern';
-import { HostedSource, JSONSource, SourceType } from './config';
+import { HostedSource, JSONSource, SourceType } from './config-types';
 import { JDEF } from './jdef-types';
 import { APISource } from './api-types';
 import { ParsedSource } from './parsed-types';

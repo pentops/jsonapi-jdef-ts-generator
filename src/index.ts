@@ -1,5 +1,6 @@
 export * from './cli';
 export * from './config';
+export * from './config-types';
 export * from './generate';
 export * from './j5-list';
 export * from './plugin';

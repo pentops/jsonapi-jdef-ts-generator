@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import type { GenericOverride, GenericOverrideMap, GenericValueDeterminer } from './config';
+import type { GenericOverride, GenericOverrideMap, GenericValueDeterminer } from './config-types';
 import { getAllGenericsForChildren } from './helpers';
 
 // j5.list.v1 gRPC names for building generic, type-safe request objects
