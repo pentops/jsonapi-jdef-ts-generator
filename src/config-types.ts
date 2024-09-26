@@ -26,6 +26,14 @@ export interface LocalSourcePath {
 
 export type JSONSource = HostedSourceService | LocalSourcePath;
 
+export interface StateConfig {
+  fileName?: `${string}.json`;
+  codemod: {
+    source?: { globs: string[] } | { tsconfigPath: string };
+    rename?: boolean;
+  };
+}
+
 export interface TypeOutput {
   // fileName is the name of the generated types file
   fileName: `${string}.ts`;
@@ -103,5 +111,6 @@ export interface Config {
   plugins?: PluginBase[];
   // jdefJsonSource is the source of the jdef.json file. Only one of service or path can be specified.
   jsonSource: JSONSource | JSONSource[];
+  state?: StateConfig;
   verbose: boolean;
 }

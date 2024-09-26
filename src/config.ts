@@ -39,6 +39,12 @@ export const defaultConfig: Config = {
     path: 'jdef.json',
   },
   plugins: [],
+  state: {
+    fileName: '.jdef_state.json',
+    codemod: {
+      rename: true,
+    },
+  },
   verbose: false,
 };
 
@@ -74,6 +80,10 @@ function mergeConfig(userSpecified: Partial<Config>): Config {
     config.jsonSource = userSpecified.jsonSource;
   } else {
     console.warn('[jdef-ts-generator]: no JSON source specified, attempting to find `.jdef_config.js` file by default');
+  }
+
+  if (userSpecified.state) {
+    config.state = { ...config.state, ...userSpecified.state };
   }
 
   return config;

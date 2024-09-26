@@ -1,11 +1,16 @@
-import fs from 'fs';
+import fs, { existsSync, readFileSync, writeFileSync } from 'fs';
 import path from 'path';
 import prettyMs from 'pretty-ms';
+import { Project } from 'ts-morph';
+import { SyntaxKind } from 'typescript';
 import { loadConfig } from './config';
 import { getSource } from './get-source';
 import { Generator } from './generate';
 import { logSuccess } from './internal/helpers';
 import { WrittenFile } from './plugin';
+import { State } from './state';
+import { RenameCodemod } from './codemod/rename';
+import { ICodemod } from './codemod/types';
 
 interface Args {
   cwd: string;
@@ -60,36 +65,33 @@ export async function cli({ cwd, args }: Args) {
 
   addFileToDirectory(typeOutputDir, typeOutputPath);
 
-  if (config.clientOutput) {
-    if (clientFile) {
-      const clientOutputPath = path.join(
-        cwd,
-        config.clientOutput.directory,
-        config.clientOutput.fileName || 'client.ts',
-      );
-      const clientOutputDir = path.dirname(clientOutputPath);
+  const clientOutputPath = config.clientOutput
+    ? path.join(cwd, config.clientOutput.directory, config.clientOutput.fileName || 'client.ts')
+    : '';
 
-      // Clear output directory and recreate if it's not already been written to
-      if (!config.dryRun && !builtFilesByDirectory.has(clientOutputDir)) {
-        fs.rmSync(clientOutputDir, { recursive: true, force: true });
-        fs.mkdirSync(clientOutputDir, { recursive: true });
-      }
+  if (config.clientOutput && clientFile) {
+    const clientOutputDir = path.dirname(clientOutputPath);
 
-      if (!config.dryRun) {
-        // Write generated file
-        fs.writeFileSync(clientOutputPath, clientFile);
-
-        if (config.verbose) {
-          logSuccess('[jdef-ts-generator]: api client generated and saved to disk');
-        }
-      } else {
-        console.info(
-          `[jdef-ts-generator]: dry run enabled, file ${clientOutputPath} not written. Contents:\n${clientFile}`,
-        );
-      }
-
-      addFileToDirectory(clientOutputDir, clientOutputPath);
+    // Clear output directory and recreate if it's not already been written to
+    if (!config.dryRun && !builtFilesByDirectory.has(clientOutputDir)) {
+      fs.rmSync(clientOutputDir, { recursive: true, force: true });
+      fs.mkdirSync(clientOutputDir, { recursive: true });
     }
+
+    if (!config.dryRun) {
+      // Write generated file
+      fs.writeFileSync(clientOutputPath, clientFile);
+
+      if (config.verbose) {
+        logSuccess('[jdef-ts-generator]: api client generated and saved to disk');
+      }
+    } else {
+      console.info(
+        `[jdef-ts-generator]: dry run enabled, file ${clientOutputPath} not written. Contents:\n${clientFile}`,
+      );
+    }
+
+    addFileToDirectory(clientOutputDir, clientOutputPath);
   }
 
   if (config.plugins) {
@@ -135,6 +137,85 @@ export async function cli({ cwd, args }: Args) {
           fs.writeFileSync(indexPath, indexContent);
         }
       }
+    }
+  }
+
+  if (!config.state?.fileName) {
+    return;
+  }
+
+  // Build generator state
+  const state: State = {
+    schemaFilePath: typeOutputPath,
+    clientFilePath: clientOutputPath,
+    generatedSchemas: Array.from(generator.generatedSchemas.entries()).reduce<State['generatedSchemas']>(
+      (acc, curr) => ({
+        ...acc,
+        [curr[0]]: {
+          generatedSchemaName: curr[1].generatedName,
+          writtenType: curr[1].node.kind,
+        },
+      }),
+      {},
+    ),
+    generatedClientFunctions: generator.generatedClientFunctions.reduce<State['generatedClientFunctions']>(
+      (acc, curr) => ({
+        ...acc,
+        [curr.method.rawMethod.fullGrpcName]: {
+          generatedFunctionName: curr.generatedName,
+          writtenType: SyntaxKind.FunctionDeclaration,
+        },
+      }),
+      {},
+    ),
+  };
+
+  if (config.state.codemod.source && existsSync(config.state.fileName)) {
+    let existingFile: string | undefined;
+
+    try {
+      existingFile = readFileSync(config.state.fileName, { encoding: 'utf-8' });
+    } catch (err) {
+      console.error(`[jdef-ts-generator]: unable to read state file: ${err}`);
+    }
+
+    try {
+      if (existingFile) {
+        const existingState = JSON.parse(existingFile) as State;
+
+        const project = new Project();
+        project.addSourceFilesAtPaths([typeOutputPath, clientOutputPath, ...builtFilesByDirectory.keys()]);
+
+        if ('tsconfigPath' in config.state.codemod.source) {
+          project.addSourceFilesFromTsConfig(config.state.codemod.source.tsconfigPath);
+        } else {
+          project.addSourceFilesAtPaths(config.state.codemod.source.globs);
+        }
+
+        // Run codemods
+        const codemods: ICodemod[] = [];
+
+        if (config.state.codemod.rename) {
+          codemods.push(new RenameCodemod(project));
+        }
+
+        codemods.forEach((codemod) => {
+          codemod.process(existingState, state);
+        });
+
+        await project.save();
+      }
+    } catch (e) {
+      console.error(`[jdef-ts-generator]: unable to parse existing state file: ${e}`);
+    }
+  }
+
+  // Write state file if it's not a dry run
+  if (!config.dryRun) {
+    try {
+      writeFileSync(config.state.fileName, JSON.stringify(state, null, 2), { encoding: 'utf-8' });
+    } catch (err) {
+      console.error(`[jdef-ts-generator]: unable to write state file: ${err}`);
     }
   }
 
