@@ -351,7 +351,7 @@ export class BasePluginFile<
 
     this.generateExports();
 
-    return {
+    this._builtFile = {
       content: '',
       clearDirectoryBeforeWrite: Boolean(this.config.clearDirectoryBeforeWrite),
       exportFromIndexFile: this.config.exportFromIndexFile,
@@ -363,6 +363,8 @@ export class BasePluginFile<
       writtenContent: undefined,
       writtenBy: this.generator,
     };
+
+    return this._builtFile;
   }
 
   async build(): Promise<IWritableFile<TFileContentType> | undefined> {
