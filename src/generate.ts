@@ -19,6 +19,7 @@ import {
 } from './helpers';
 import {
   DerivedEnumHelperType,
+  ParsedAny,
   ParsedEnum,
   ParsedEnumValueDescription,
   ParsedMethod,
@@ -63,7 +64,7 @@ const REQUEST_SUFFIX = 'Request';
 const RESPONSE_SUFFIX = 'Response';
 const REQUEST_INIT_PARAMETER_NAME = 'requestInit';
 const REQUEST_INIT_TYPE_NAME = 'RequestInit';
-const ONEOF_TYPE_FIELD_NAME = '!type';
+const BANG_TYPE_FIELD_NAME = '!type';
 
 const optionalFieldMarker = factory.createToken(SyntaxKind.QuestionToken);
 
@@ -171,7 +172,7 @@ export class Generator {
         undefined,
         factory.createIndexedAccessTypeNode(
           factory.createTypeReferenceNode(oneOfGeneratedName),
-          factory.createLiteralTypeNode(factory.createStringLiteral(ONEOF_TYPE_FIELD_NAME, true)),
+          factory.createLiteralTypeNode(factory.createStringLiteral(BANG_TYPE_FIELD_NAME, true)),
         ),
       ),
     };
@@ -354,11 +355,41 @@ export class Generator {
           node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
           comment: 'bytes',
         }))
-        .with({ any: P.not(P.nullish) }, () => ({ node: factory.createKeywordTypeNode(SyntaxKind.AnyKeyword) }))
+        .with({ any: P.not(P.nullish) }, (s) => ({ node: this.buildAnyType(s, genericValues) }))
         .otherwise(() => {
           console.log('Unknown schema type', schema);
           return { node: factory.createKeywordTypeNode(SyntaxKind.AnyKeyword) };
         })
+    );
+  }
+
+  private buildAnyType(anySchema: ParsedAny, genericValues?: GenericOverrideWithValue[]) {
+    if (!anySchema.any.onlyDefinedTypes) {
+      return factory.createKeywordTypeNode(SyntaxKind.AnyKeyword);
+    }
+
+    return factory.createUnionTypeNode(
+      anySchema.any.onlyDefinedTypes.map((type) => {
+        const schemaGenerics = this.schemaGenerics.get(type);
+
+        return factory.createTypeLiteralNode([
+          factory.createPropertySignature(
+            undefined,
+            factory.createStringLiteral(BANG_TYPE_FIELD_NAME, true),
+            undefined,
+            factory.createLiteralTypeNode(factory.createStringLiteral(type, true)),
+          ),
+          this.buildBaseObjectMember(
+            'value',
+            {
+              name: 'value',
+              schema: { $ref: type },
+            },
+            schemaGenerics,
+            genericValues,
+          ),
+        ]);
+      }),
     );
   }
 
@@ -435,7 +466,7 @@ export class Generator {
         factory.createTypeLiteralNode([
           factory.createPropertySignature(
             undefined,
-            factory.createStringLiteral(ONEOF_TYPE_FIELD_NAME, true),
+            factory.createStringLiteral(BANG_TYPE_FIELD_NAME, true),
             undefined,
             factory.createLiteralTypeNode(factory.createStringLiteral(name, true)),
           ),
