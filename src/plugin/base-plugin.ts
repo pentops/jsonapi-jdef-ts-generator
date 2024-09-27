@@ -25,8 +25,13 @@ export class BasePlugin<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
   TConfig extends PluginConfig<TFileContentType, TFileConfig> = PluginConfig<TFileContentType, TFileConfig>,
+  TFile extends IPluginFile<TFileContentType, TFileConfig, TConfig> = IPluginFile<
+    TFileContentType,
+    TFileConfig,
+    TConfig
+  >,
   TState = unknown,
-> implements IPlugin<TFileContentType, TFileConfig, TConfig, TState>
+> implements IPlugin<TFileContentType, TFileConfig, TConfig, TFile, TState>
 {
   name: string = 'UndefinedPlugin';
 
@@ -35,7 +40,7 @@ export class BasePlugin<
   config: Config | undefined;
   protected cwd: string | undefined;
   protected previouslyWrittenPluginFiles: WrittenFile[] = [];
-  files: IPluginFile<TFileContentType, TFileConfig, TConfig>[] = [];
+  files: TFile[] = [];
   protected generatedClientFunctions: GeneratedClientFunctionWithNodes[] = [];
   protected generatedSchemas: Map<string, GeneratedSchemaWithNode> = new Map();
   private startedAt: number | undefined;
@@ -76,7 +81,7 @@ export class BasePlugin<
 
   protected createPluginFilesFromConfig(fileConfig: TFileConfig[] = []) {
     this.files = (fileConfig || []).map((fileConfig) =>
-      this.createPluginFile<TFileContentType, TFileConfig, TConfig>(
+      this.createPluginFile<TFileContentType, TFileConfig, TConfig, TFile>(
         fileConfig,
         this.pluginConfig.defaultExistingFileReader,
         this.pluginConfig.defaultFileHooks,
@@ -88,17 +93,22 @@ export class BasePlugin<
     TContentType = TFileContentType,
     TConfigType extends PluginFileGeneratorConfig<TContentType> = PluginFileGeneratorConfig<TContentType>,
     TPluginConfig extends PluginConfig<TContentType, TConfigType> = PluginConfig<TContentType, TConfigType>,
+    TFile extends IPluginFile<TFileContentType, TFileConfig, TConfig> = IPluginFile<
+      TFileContentType,
+      TFileConfig,
+      TConfig
+    >,
   >(
     fileConfig: TConfigType,
     pluginLevelFileReader: PluginFileReader<TContentType> | undefined,
     pluginLevelFileHooks: PluginFileHooks<TContentType> | undefined,
-  ) {
+  ): TFile {
     if (!this.cwd) {
       throw new Error(`[jdef-ts-generator]: cwd is not set for plugin ${this.name}, files cannot be generated`);
     }
 
     return new BasePluginFile<TContentType, TConfigType, TPluginConfig>(
-      this as unknown as IPlugin<TContentType, TConfigType, TPluginConfig>,
+      this as any,
       {
         ...fileConfig,
         readExistingFile: fileConfig.readExistingFile ?? pluginLevelFileReader,
@@ -118,7 +128,7 @@ export class BasePlugin<
         directory: this.config?.clientOutput?.directory,
       },
       path.join(this.cwd, fileConfig.directory, fileConfig.fileName),
-    );
+    ) as unknown as TFile;
   }
 
   getFileForSchema(schema: GeneratedSchema) {

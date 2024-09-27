@@ -16,7 +16,13 @@ export class BasePluginFile<
   TFileContentType = string,
   TConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
   TPluginConfig extends PluginConfig<TFileContentType, TConfig> = PluginConfig<TFileContentType, TConfig>,
-  TPlugin extends IPlugin<TFileContentType, TConfig, TPluginConfig> = IPlugin<TFileContentType, TConfig, TPluginConfig>,
+  TPlugin extends IPlugin<TFileContentType, TConfig, TPluginConfig, any, any> = IPlugin<
+    TFileContentType,
+    TConfig,
+    TPluginConfig,
+    any,
+    any
+  >,
 > implements IPluginFile<TFileContentType, TConfig, TPluginConfig, TPlugin>
 {
   readonly config: TConfig;
