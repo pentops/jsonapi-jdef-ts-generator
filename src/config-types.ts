@@ -90,8 +90,6 @@ interface TypeGenerationConfig {
   enumType: 'union' | 'enum';
   // nameWriter is a function that takes the name of a schema and returns the name of the generated type. Can be used to change the naming/casing conventions of the generated interfaces/enums.
   nameWriter: (name: string) => string;
-  // requestType set to merged means that the search parameters, path parameters, and request body will be merged into a single type. When set to split, the search parameters, path parameters, and request body will be split into separate types.
-  requestType: 'merged' | 'split';
 }
 
 interface ClientGenerationConfig {

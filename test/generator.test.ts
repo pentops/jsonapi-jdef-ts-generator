@@ -14,19 +14,10 @@ describe(Generator, () => {
     expect(generator.generate(parsed)).toMatchSnapshot();
   });
 
-  it('should generate split request parameter types from a jdef.json file when configured', async () => {
-    const generator = new Generator({
-      ...defaultConfig,
-      types: { ...defaultConfig.types, requestType: 'split' },
-      clientOutput: { directory: 'client', fileName: 'client.ts' },
-    });
-    expect(generator.generate(parsed)).toMatchSnapshot();
-  });
-
   it('should generate merged request parameter types from a jdef.json file when configured', async () => {
     const generator = new Generator({
       ...defaultConfig,
-      types: { ...defaultConfig.types, requestType: 'merged' },
+      types: { ...defaultConfig.types },
       clientOutput: { directory: 'client', fileName: 'client.ts' },
     });
     expect(generator.generate(parsed)).toMatchSnapshot();

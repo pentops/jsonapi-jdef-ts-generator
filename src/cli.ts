@@ -150,6 +150,7 @@ export async function cli({ cwd, args }: Args) {
       if (!config.dryRun) {
         await mkdir(path.dirname(file.writePath), { recursive: true });
         await writeFile(file.writePath, file.content);
+        file.wasWritten = true;
 
         if (file.exportFromIndexFile !== false) {
           addFileToDirectory(path.dirname(file.writePath), file.writePath);

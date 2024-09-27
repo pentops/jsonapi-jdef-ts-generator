@@ -33,7 +33,6 @@ export const defaultConfig: Config = {
         .split('.')
         .map((s) => pascalCase(s))
         .join(''),
-    requestType: 'merged',
   },
   jsonSource: {
     path: 'jdef.json',

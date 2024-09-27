@@ -1,7 +1,7 @@
 import ts, { type Expression, Identifier, type TypeElement, type TypeNode } from 'typescript';
 import { match, P } from 'ts-pattern';
 import { pascalCase } from 'change-case';
-import { buildMergedRequestInit, buildSplitRequestInit, makeRequest } from '@pentops/jsonapi-request';
+import { buildMergedRequestInit, makeRequest } from '@pentops/jsonapi-request';
 import type { Config, GenericOverride, GenericOverrideMap, GenericOverrideWithValue } from './config-types';
 import {
   buildGenericReferenceNode,
@@ -61,9 +61,8 @@ interface BaseTypeOutput {
 const REQUEST_LIBRARY_NAME = '@pentops/jsonapi-request';
 const REQUEST_SUFFIX = 'Request';
 const RESPONSE_SUFFIX = 'Response';
-const PATH_PARAMETERS_SUFFIX = 'PathParameters';
-const QUERY_PARAMETERS_SUFFIX = 'QueryParameters';
 const REQUEST_INIT_PARAMETER_NAME = 'requestInit';
+const REQUEST_INIT_TYPE_NAME = 'RequestInit';
 const ONEOF_TYPE_FIELD_NAME = '!type';
 
 const optionalFieldMarker = factory.createToken(SyntaxKind.QuestionToken);
@@ -631,91 +630,36 @@ export class Generator {
       )
       .otherwise(() => undefined);
 
-    switch (this.config.types.requestType) {
-      case 'split': {
-        if (requestBody?.object?.properties?.size) {
-          builtMethod.requestBodySchema = {
-            generatedName: this.getValidTypeName(requestBody, requestBaseName),
-            rawSchema: requestBody,
-            parentPackage: builtMethod.parentPackage,
-          };
-        }
+    const defaultName = requestBaseName || REQUEST_SUFFIX;
 
-        if (method.pathParameters?.size) {
-          const baseTypeName = `${requestBaseName}${PATH_PARAMETERS_SUFFIX}`;
+    const mergedSchema: ParsedObject = {
+      object: {
+        name: method.requestBody || method.queryParameters || method.pathParameters ? defaultName : '',
+        properties: new Map(requestBody?.object.properties),
+        rules: {},
+        ...requestBody,
+        fullGrpcName: requestBody?.object?.fullGrpcName || `${methodGrpcNameBase}.${defaultName}` || '',
+      },
+    };
 
-          const pathParameterSchema: ParsedObject = {
-            object: {
-              fullGrpcName: `${methodGrpcNameBase}.${baseTypeName}`,
-              name: baseTypeName,
-              rules: {},
-              properties: method.pathParameters,
-            },
-          };
+    if (method.pathParameters?.size) {
+      method.pathParameters.forEach((param) => {
+        mergedSchema.object.properties.set(param.name, param);
+      });
+    }
 
-          builtMethod.pathParametersSchema = {
-            generatedName: this.getValidTypeName(pathParameterSchema, baseTypeName),
-            rawSchema: pathParameterSchema,
-            parentPackage: builtMethod.parentPackage,
-          };
-        }
+    if (method.queryParameters?.size) {
+      method.queryParameters.forEach((param) => {
+        mergedSchema.object.properties.set(param.name, param);
+      });
+    }
 
-        if (method.queryParameters?.size) {
-          const baseTypeName = `${requestBaseName}${QUERY_PARAMETERS_SUFFIX}`;
-          const queryParameterSchema: ParsedObject = {
-            object: {
-              fullGrpcName: `${methodGrpcNameBase}.${baseTypeName}`,
-              name: baseTypeName,
-              rules: {},
-              properties: method.queryParameters,
-            },
-          };
-
-          builtMethod.queryParametersSchema = {
-            generatedName: getSchemaName(queryParameterSchema, schemas),
-            rawSchema: queryParameterSchema,
-            parentPackage: builtMethod.parentPackage,
-          };
-        }
-
-        break;
-      }
-      case 'merged':
-      default: {
-        const defaultName = requestBaseName || REQUEST_SUFFIX;
-
-        const mergedSchema: ParsedObject = {
-          object: {
-            name: method.requestBody || method.queryParameters || method.pathParameters ? defaultName : '',
-            properties: new Map(requestBody?.object.properties),
-            rules: {},
-            ...requestBody,
-            fullGrpcName: requestBody?.object?.fullGrpcName || `${methodGrpcNameBase}.${defaultName}` || '',
-          },
-        };
-
-        if (method.pathParameters?.size) {
-          method.pathParameters.forEach((param) => {
-            mergedSchema.object.properties.set(param.name, param);
-          });
-        }
-
-        if (method.queryParameters?.size) {
-          method.queryParameters.forEach((param) => {
-            mergedSchema.object.properties.set(param.name, param);
-          });
-        }
-
-        if (mergedSchema.object.properties.size) {
-          builtMethod.mergedRequestSchema = {
-            generatedName: this.getValidTypeName(mergedSchema, requestBaseName),
-            rawSchema: mergedSchema,
-            parentPackage: builtMethod.parentPackage,
-          };
-        }
-
-        break;
-      }
+    if (mergedSchema.object.properties.size) {
+      builtMethod.mergedRequestSchema = {
+        generatedName: this.getValidTypeName(mergedSchema, requestBaseName),
+        rawSchema: mergedSchema,
+        parentPackage: builtMethod.parentPackage,
+      };
     }
 
     if (method.listOptions) {
@@ -894,10 +838,7 @@ export class Generator {
         ),
       );
 
-    const requestInitFn = match(this.config.types.requestType)
-      .with('split', () => buildSplitRequestInit.name)
-      .with('merged', () => buildMergedRequestInit.name)
-      .exhaustive();
+    const requestInitFn = buildMergedRequestInit.name;
 
     const makeRequestFn = makeRequest.name;
 
@@ -968,93 +909,26 @@ export class Generator {
         factory.createStringLiteral(method.rawMethod.httpPath, true),
       ];
 
-      switch (this.config.types.requestType) {
-        case 'split': {
-          const pathParametersParamName = 'pathParameters';
-          const queryParametersParamName = 'queryParameters';
-          const requestBodyParamName = 'requestBody';
+      const requestParamName = 'request';
 
-          if (method.pathParametersSchema?.generatedName) {
-            makeRequestFnArguments.push(
-              factory.createParameterDeclaration(
-                undefined,
-                undefined,
-                factory.createIdentifier(pathParametersParamName),
-                optionalFieldMarker,
-                factory.createTypeReferenceNode(method.pathParametersSchema.generatedName),
-              ),
-            );
-          }
-
-          requestInitFnArguments.push(
-            method.pathParametersSchema?.generatedName
-              ? factory.createIdentifier(pathParametersParamName)
-              : factory.createIdentifier('undefined'),
-          );
-
-          if (method.queryParametersSchema?.generatedName) {
-            makeRequestFnArguments.push(
-              factory.createParameterDeclaration(
-                undefined,
-                undefined,
-                factory.createIdentifier(queryParametersParamName),
-                optionalFieldMarker,
-                factory.createTypeReferenceNode(method.queryParametersSchema.generatedName),
-              ),
-            );
-          }
-
-          requestInitFnArguments.push(
-            method.queryParametersSchema?.generatedName
-              ? factory.createIdentifier(queryParametersParamName)
-              : factory.createIdentifier('undefined'),
-          );
-
-          if (method.requestBodySchema?.generatedName) {
-            makeRequestFnArguments.push(
-              factory.createParameterDeclaration(
-                undefined,
-                undefined,
-                factory.createIdentifier(requestBodyParamName),
-                optionalFieldMarker,
-                factory.createTypeReferenceNode(method.requestBodySchema.generatedName),
-              ),
-            );
-          }
-
-          requestInitFnArguments.push(
-            method.requestBodySchema?.generatedName
-              ? factory.createIdentifier(requestBodyParamName)
-              : factory.createIdentifier('undefined'),
-          );
-
-          break;
-        }
-        case 'merged':
-        default: {
-          const requestParamName = 'request';
-
-          if (method.mergedRequestSchema?.generatedName) {
-            makeRequestFnArguments.push(
-              factory.createParameterDeclaration(
-                undefined,
-                undefined,
-                factory.createIdentifier(requestParamName),
-                optionalFieldMarker,
-                factory.createTypeReferenceNode(method.mergedRequestSchema.generatedName),
-              ),
-            );
-          }
-
-          requestInitFnArguments.push(
-            method.mergedRequestSchema?.generatedName
-              ? factory.createIdentifier(requestParamName)
-              : factory.createIdentifier('undefined'),
-          );
-
-          break;
-        }
+      if (method.mergedRequestSchema?.generatedName) {
+        makeRequestFnArguments.push(
+          factory.createParameterDeclaration(
+            undefined,
+            undefined,
+            factory.createIdentifier(requestParamName),
+            optionalFieldMarker,
+            factory.createTypeReferenceNode(method.mergedRequestSchema.generatedName),
+          ),
+        );
       }
+
+      requestInitFnArguments.push(
+        method.mergedRequestSchema?.generatedName
+          ? factory.createIdentifier(requestParamName)
+          : factory.createIdentifier('undefined'),
+        factory.createIdentifier(REQUEST_INIT_PARAMETER_NAME),
+      );
 
       makeRequestFnArguments.push(
         factory.createParameterDeclaration(
@@ -1062,11 +936,9 @@ export class Generator {
           undefined,
           factory.createIdentifier(REQUEST_INIT_PARAMETER_NAME),
           optionalFieldMarker,
-          factory.createTypeReferenceNode('RequestInit'),
+          factory.createTypeReferenceNode(REQUEST_INIT_TYPE_NAME),
         ),
       );
-
-      requestInitFnArguments.push(factory.createIdentifier(REQUEST_INIT_PARAMETER_NAME));
 
       const methodName = this.config.client.methodNameWriter(method.rawMethod);
 

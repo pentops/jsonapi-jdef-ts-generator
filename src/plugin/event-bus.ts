@@ -11,18 +11,16 @@ import { PluginFileExtractFileContentType } from './file/types';
 export type PluginEvent<TFile extends GeneratorFile<any, any, any>> = {
   preBuildFile: {
     file: TFile;
-    fileToBuild: Omit<IWritableFile<PluginFileExtractFileContentType<TFile>>, 'wasWritten'>;
   };
   postBuildFile: {
     file: TFile;
-    fileToBuild: Omit<IWritableFile<PluginFileExtractFileContentType<TFile>>, 'wasWritten'>;
+    builtFile: Omit<IWritableFile<PluginFileExtractFileContentType<TFile>>, 'wasWritten'>;
   };
   preWriteFile: {
-    file: TFile;
+    file: Omit<IWritableFile<PluginFileExtractFileContentType<TFile>>, 'wasWritten'>;
   };
   postWriteFile: {
-    file: TFile;
-    writtenFile: IWritableFile<PluginFileExtractFileContentType<TFile>>;
+    file: IWritableFile<PluginFileExtractFileContentType<TFile>>;
   };
 };
 

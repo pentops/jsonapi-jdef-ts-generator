@@ -304,6 +304,8 @@ export class BasePluginFile<
   }
 
   async buildContent(): Promise<IWritableFile<TFileContentType> | undefined> {
+    this.generator.eventBus?.emit('preBuildFile', { file: this });
+
     if (!this.getHasContent()) {
       return undefined;
     }
@@ -333,6 +335,8 @@ export class BasePluginFile<
         writtenContent,
         writtenBy: this.generator,
       };
+
+      this.generator.eventBus?.emit('postBuildFile', { file: this, builtFile: this._builtFile });
 
       return this._builtFile;
     }
@@ -382,8 +386,6 @@ export class BasePluginFile<
       return undefined;
     }
 
-    this.generator.eventBus?.emit('preBuildFile', { file: this, fileToBuild: this._builtFile });
-
     this._builtFile.content =
       this._builtFile.content ||
       this.printer.printList(
@@ -397,8 +399,6 @@ export class BasePluginFile<
           this._builtFile.fileName.endsWith('.tsx') ? ScriptKind.TSX : ScriptKind.TS,
         ),
       );
-
-    this.generator.eventBus?.emit('postBuildFile', { file: this, fileToBuild: this._builtFile });
 
     if (this.config.convertStringContentToFileContentType) {
       try {

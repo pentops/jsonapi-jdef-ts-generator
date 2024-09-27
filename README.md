@@ -41,7 +41,6 @@ export default {
         .filter((s) => s && !EXCLUDED_NAMESPACES.includes(s.toLowerCase()))
         .map((s) => s?.[0]?.toUpperCase() + s?.slice(1))
         .join(''),
-    requestType: 'merged',
   },
   jsonSource: {
     path: 'jdef.json',
