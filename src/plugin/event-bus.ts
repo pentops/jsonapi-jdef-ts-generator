@@ -38,6 +38,6 @@ export function createPluginEventBus<
 
 export type PluginEventBus<TFile extends GeneratorFile<any, any, any>> = Emitter<PluginEvent<TFile>>;
 
-export type PluginEventHandlers<TFile extends GeneratorFile<any, any, any>> = {
+export type PluginEventHandlers<TFile extends GeneratorFile<any, any, any>> = Partial<{
   [K in keyof PluginEvent<TFile>]: (payload: PluginEvent<TFile>[K]) => void;
-};
+}>;

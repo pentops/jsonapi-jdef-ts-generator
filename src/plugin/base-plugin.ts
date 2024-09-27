@@ -36,7 +36,6 @@ export class BasePlugin<
   files: TFile[] = [];
   protected generatedClientFunctions: GeneratedClientFunctionWithNodes[] = [];
   protected generatedSchemas: Map<string, GeneratedSchemaWithNode> = new Map();
-  private startedAt: number | undefined;
   eventBus: PluginEventBus<TFile> | undefined;
 
   constructor(pluginConfig: TConfig) {
@@ -51,7 +50,6 @@ export class BasePlugin<
     eventBus: PluginEventBus<TFile>,
   ) {
     this.eventBus = eventBus;
-    this.startedAt = performance.now();
 
     if (this.config?.verbose) {
       console.info(`[jdef-ts-generator]: plugin ${this.name} started`);
