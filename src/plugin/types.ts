@@ -26,17 +26,21 @@ export interface IPlugin<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
   TConfig extends PluginConfig<TFileContentType, TFileConfig> = PluginConfig<TFileContentType, TFileConfig>,
+  // @ts-ignore
+  TFile extends IPluginFile<TFileContentType, TFileConfig, TConfig> = IPluginFile<
+    TFileContentType,
+    TFileConfig,
+    TConfig
+  >,
   TState = unknown,
 > {
   name: string;
   pluginConfig: TConfig;
   api: ParsedSource | undefined;
   config: Config | undefined;
-  files: IPluginFile<TFileContentType, TFileConfig, TConfig>[];
-  getFileForSchema(schema: GeneratedSchema): IPluginFile<TFileContentType, TFileConfig, TConfig> | undefined;
-  getFileForClientFunction(
-    clientFunction: GeneratedClientFunction,
-  ): IPluginFile<TFileContentType, TFileConfig, TConfig> | undefined;
+  files: TFile[];
+  getFileForSchema(schema: GeneratedSchema): TFile | undefined;
+  getFileForClientFunction(clientFunction: GeneratedClientFunction): TFile | undefined;
   prepare(cwd: string, api: ParsedSource, generator: Generator, previouslyWrittenPluginFiles: WrittenFile[]): void;
   run(): Promise<void>;
   postRun(): Promise<{ writtenFiles: WritableFile<TFileContentType>[] }>;

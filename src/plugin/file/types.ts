@@ -31,15 +31,14 @@ export type PluginFilePostBuildHook<
 export type PluginFilePreWriteHook<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
-> = (file: IPluginFile<TFileContentType, TFileConfig>) => void | Promise<void>;
+  TPluginFile extends IPluginFile<TFileContentType, TFileConfig> = IPluginFile<TFileContentType, TFileConfig>,
+> = (file: TPluginFile) => void | Promise<void>;
 
 export type PluginFilePostWriteHook<
   TFileContentType = string,
   TFileConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
-> = (
-  file: IPluginFile<TFileContentType, TFileConfig>,
-  writtenFile: WritableFile<TFileContentType>,
-) => void | Promise<void>;
+  TPluginFile extends IPluginFile<TFileContentType, TFileConfig> = IPluginFile<TFileContentType, TFileConfig>,
+> = (file: TPluginFile, writtenFile: WritableFile<TFileContentType>) => void | Promise<void>;
 
 export type PluginFileReader<TFileContentType = string> = (
   path: string,
@@ -82,4 +81,8 @@ export interface WritableFile<
   writtenContent: TFileContentType | undefined;
 }
 
-export type WrittenFile = Omit<WritableFile, 'preExistingContent' | 'wasWritten'>;
+export type WrittenFile<
+  TFileContentType = string,
+  TConfig extends PluginFileGeneratorConfig<TFileContentType> = PluginFileGeneratorConfig<TFileContentType>,
+  TPlugin extends IPlugin<TFileContentType, TConfig> = IPlugin<TFileContentType, TConfig>,
+> = Omit<WritableFile<TFileContentType, TConfig, TPlugin>, 'preExistingContent' | 'wasWritten'>;
