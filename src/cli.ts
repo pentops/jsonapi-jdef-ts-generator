@@ -7,8 +7,8 @@ import { loadConfig } from './config';
 import { getSource } from './get-source';
 import { Generator } from './generate';
 import { logSuccess } from './internal/helpers';
-import { WrittenFile } from './plugin';
-import { State } from './state';
+import { WrittenFile } from './plugin/file/types';
+import { GeneratedFunctionState, GeneratedSchemaState, State } from './state';
 import { RenameCodemod } from './codemod/rename';
 import { ICodemod } from './codemod/types';
 
@@ -146,26 +146,37 @@ export async function cli({ cwd, args }: Args) {
 
   // Build generator state
   const state: State = {
-    generatedSchemas: Array.from(generator.generatedSchemas.entries()).reduce<State['generatedSchemas']>(
+    generatedSchemas: Array.from(generator.generatedSchemas.entries()).reduce<Record<string, GeneratedSchemaState>>(
       (acc, curr) => ({
         ...acc,
         [curr[0]]: {
           generatedSchemaName: curr[1].generatedName,
           writtenType: curr[1].node.kind,
+          package: curr[1].parentPackage,
         },
       }),
       {},
     ),
-    generatedClientFunctions: generator.generatedClientFunctions.reduce<State['generatedClientFunctions']>(
+    generatedClientFunctions: generator.generatedClientFunctions.reduce<Record<string, GeneratedFunctionState>>(
       (acc, curr) => ({
         ...acc,
         [curr.method.rawMethod.fullGrpcName]: {
           generatedFunctionName: curr.generatedName,
           writtenType: SyntaxKind.FunctionDeclaration,
+          package: curr.method.parentPackage,
         },
       }),
       {},
     ),
+    plugins: (config.plugins || []).reduce<Record<string, unknown>>((acc, curr) => {
+      const pluginState = curr.getState();
+
+      if (pluginState !== undefined) {
+        acc[curr.name] = pluginState;
+      }
+
+      return acc;
+    }, {}),
   };
 
   if (config.state.codemod.source && existsSync(config.state.fileName)) {
@@ -191,15 +202,23 @@ export async function cli({ cwd, args }: Args) {
         }
 
         // Run codemods
-        const codemods: ICodemod[] = [];
+        const generatorCodemods: ICodemod<any>[] = [];
 
         if (config.state.codemod.rename) {
-          codemods.push(new RenameCodemod(project));
+          generatorCodemods.push(new RenameCodemod(project));
         }
 
-        codemods.forEach((codemod) => {
+        generatorCodemods.forEach((codemod) => {
           codemod.process(existingState, state);
         });
+
+        for (const plugin of config.plugins || []) {
+          const codemod = plugin.getCodemod(project);
+
+          if (codemod && existingState.plugins[plugin.name] !== undefined && state.plugins[plugin.name] !== undefined) {
+            codemod.process(existingState.plugins[plugin.name], state.plugins[plugin.name]);
+          }
+        }
 
         await project.save();
       }

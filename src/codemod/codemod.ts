@@ -1,15 +1,14 @@
 import { Project } from 'ts-morph';
-import { State } from '../state';
 import { ICodemod } from './types';
 
-export abstract class Codemod implements ICodemod {
+export abstract class Codemod<T> implements ICodemod<T> {
   protected project: Project;
 
   constructor(project: Project) {
     this.project = project;
   }
 
-  process(oldState: State, newState: State): void {
-    throw new Error(`Prcoess not implemented for codemod ${this.constructor.name}`);
+  process(oldState: T, newState: T): void {
+    throw new Error(`Process not implemented for codemod ${this.constructor.name}`);
   }
 }

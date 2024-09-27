@@ -1,5 +1,5 @@
 import type { InterfaceDeclaration, TypeNode, TypeAliasDeclaration, EnumDeclaration } from 'typescript';
-import { ParsedEnum, ParsedMethod, ParsedObject, ParsedOneOf, ParsedSchema, SortDirection } from './parsed-types';
+import type { ParsedEnum, ParsedMethod, ParsedObject, ParsedOneOf, ParsedSchema, SortDirection } from './parsed-types';
 
 export interface PackageSummary {
   package: string;

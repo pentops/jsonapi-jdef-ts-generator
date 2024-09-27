@@ -2,7 +2,7 @@ import ts from 'ts-morph';
 import { Codemod } from './codemod';
 import { State } from '../state';
 
-export class RenameCodemod extends Codemod {
+export class RenameCodemod extends Codemod<State> {
   private getRenames(existingState: State, newState: State) {
     const renames: { oldName: string; newName: string; writtenType: ts.SyntaxKind }[] = [];
 

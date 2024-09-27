@@ -2,7 +2,7 @@ import ts from 'typescript';
 import { match, P } from 'ts-pattern';
 import type { GenericOverride, GenericOverrideMap, GenericOverrideNodeType } from './config-types';
 import type { ParsedObjectProperty, ParsedRef, ParsedSchema, ParsedSchemaWithRef } from './parsed-types';
-import { GeneratedSchema, PackageSummary } from './generated-types';
+import type { GeneratedSchema, GeneratedSchemaWithNode, PackageSummary } from './generated-types';
 
 const { factory, SyntaxKind } = ts;
 
@@ -51,6 +51,25 @@ export function createPropertyAccessChain(accessor: string, accessorIsOptional: 
   });
 
   return accessChain;
+}
+
+export function findSchemaProperties(
+  schema: ParsedSchemaWithRef,
+  generatedSchemas: Map<string, GeneratedSchemaWithNode>,
+): Map<string, ParsedObjectProperty> {
+  return match(schema)
+    .with({ $ref: P.not(P.nullish) }, (r) => {
+      const refValue = generatedSchemas.get(cleanRefName(r));
+      return refValue
+        ? findSchemaProperties(refValue.rawSchema, generatedSchemas)
+        : new Map<string, ParsedObjectProperty>();
+    })
+    .with({ object: { properties: P.not(P.nullish) } }, (r) => r.object.properties)
+    .with({ oneOf: { properties: P.not(P.nullish) } }, (r) => r.oneOf.properties)
+    .with({ array: { itemSchema: P.not(P.nullish) } }, (r) =>
+      findSchemaProperties(r.array.itemSchema, generatedSchemas),
+    )
+    .otherwise(() => new Map<string, ParsedObjectProperty>());
 }
 
 export function getSchemaName(schema: ParsedSchemaWithRef | undefined, schemas: Map<string, ParsedSchema>): string {

@@ -1,7 +1,7 @@
 import type { TypeNode, TypeReferenceNode } from 'typescript';
 import type { ParsedMethod, ParsedObject, ParsedOneOf, ParsedSchemaWithRef } from './parsed-types';
-import { BuiltMethodSchema } from './generated-types';
-import type { PluginBase } from './plugin';
+import type { BuiltMethodSchema } from './generated-types';
+import type { IPlugin } from './plugin/types';
 
 export type SourceType = 'jdef' | 'api';
 
@@ -108,7 +108,7 @@ export interface Config {
   types: TypeGenerationConfig;
   client: ClientGenerationConfig;
   // plugins is an array of functions, which will be called after types and client functions have been generated, in order to enable additional codegen
-  plugins?: PluginBase[];
+  plugins?: IPlugin[];
   // jdefJsonSource is the source of the jdef.json file. Only one of service or path can be specified.
   jsonSource: JSONSource | JSONSource[];
   state?: StateConfig;

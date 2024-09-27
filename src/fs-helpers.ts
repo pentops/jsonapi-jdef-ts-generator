@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 
 export function getRelativePath(source: string, target: string) {
   const targetArr = target.split('/');
