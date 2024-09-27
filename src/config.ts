@@ -43,6 +43,7 @@ export const defaultConfig: Config = {
     fileName: '.jdef_state.json',
     codemod: {
       rename: true,
+      removeUnusedSchemas: true,
     },
   },
   verbose: false,

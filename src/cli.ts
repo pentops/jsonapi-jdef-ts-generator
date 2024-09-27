@@ -11,6 +11,7 @@ import { WrittenFile } from './plugin/file/types';
 import { GeneratedFunctionState, GeneratedSchemaState, State } from './state';
 import { RenameCodemod } from './codemod/rename';
 import { ICodemod } from './codemod/types';
+import { FixUnusedSchemaIdentifiersCodemod } from './codemod/fix-unused-schema-identifiers';
 
 interface Args {
   cwd: string;
@@ -203,6 +204,10 @@ export async function cli({ cwd, args }: Args) {
 
         // Run codemods
         const generatorCodemods: ICodemod<any>[] = [];
+
+        if (config.state.codemod.removeUnusedSchemas) {
+          generatorCodemods.push(new FixUnusedSchemaIdentifiersCodemod(project));
+        }
 
         if (config.state.codemod.rename) {
           generatorCodemods.push(new RenameCodemod(project));

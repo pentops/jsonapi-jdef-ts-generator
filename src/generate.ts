@@ -43,7 +43,6 @@ import { getImportPath } from './fs-helpers';
 
 const {
   addSyntheticLeadingComment,
-  addSyntheticTrailingComment,
   createPrinter,
   createSourceFile,
   factory,
@@ -65,6 +64,7 @@ const RESPONSE_SUFFIX = 'Response';
 const PATH_PARAMETERS_SUFFIX = 'PathParameters';
 const QUERY_PARAMETERS_SUFFIX = 'QueryParameters';
 const REQUEST_INIT_PARAMETER_NAME = 'requestInit';
+const ONEOF_TYPE_FIELD_NAME = '!type';
 
 const optionalFieldMarker = factory.createToken(SyntaxKind.QuestionToken);
 
@@ -170,12 +170,9 @@ export class Generator {
         [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
         generatedName,
         undefined,
-        ts.factory.createTypeOperatorNode(
-          ts.SyntaxKind.KeyOfKeyword,
-          ts.factory.createTypeReferenceNode(ts.factory.createIdentifier('Exclude'), [
-            ts.factory.createTypeReferenceNode(ts.factory.createIdentifier(oneOfGeneratedName)),
-            factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
-          ]),
+        factory.createIndexedAccessTypeNode(
+          factory.createTypeReferenceNode(oneOfGeneratedName),
+          factory.createLiteralTypeNode(factory.createStringLiteral(ONEOF_TYPE_FIELD_NAME, true)),
         ),
       ),
     };
@@ -347,7 +344,7 @@ export class Generator {
         .with({ oneOf: P.not(P.nullish) }, (s) => {
           const schemaGenerics = this.schemaGenerics.get(fullGrpcName);
 
-          return { node: this.buildOneOf(s, schemaGenerics, genericValues) };
+          return { node: factory.createUnionTypeNode(this.buildOneOfUnionMembers(s, schemaGenerics, genericValues)) };
         })
         .with({ array: P.not(P.nullish) }, (s) => {
           const { node, comment } = this.buildBaseType(s.array.itemSchema, genericValues);
@@ -427,36 +424,28 @@ export class Generator {
     return member;
   }
 
-  private buildOneOf(schema: ParsedOneOf, generics?: GenericOverrideMap, genericValues?: GenericOverrideWithValue[]) {
-    const members: (TypeElement | Identifier)[] = [];
+  private buildOneOfUnionMembers(
+    schema: ParsedOneOf,
+    generics?: GenericOverrideMap,
+    genericValues?: GenericOverrideWithValue[],
+  ) {
+    const literals: ts.TypeLiteralNode[] = [];
 
-    let i = 0;
     for (const [name, property] of schema.oneOf.properties) {
-      let member = this.buildBaseObjectMember(name, property, generics, genericValues);
-
-      // Add a comment before the first member for oneOfs
-      if (i === 0) {
-        member = addSyntheticLeadingComment(member, SyntaxKind.SingleLineCommentTrivia, ' start oneOf', false);
-      }
-
-      members.push(member);
-
-      if (i === schema.oneOf.properties.size - 1) {
-        // A little hack to make a comment actually trail the last member of a oneOf
-        members.push(
-          addSyntheticTrailingComment(
-            factory.createIdentifier(''),
-            SyntaxKind.SingleLineCommentTrivia,
-            ' end oneOf',
-            false,
+      literals.push(
+        factory.createTypeLiteralNode([
+          factory.createPropertySignature(
+            undefined,
+            factory.createStringLiteral(ONEOF_TYPE_FIELD_NAME, true),
+            undefined,
+            factory.createLiteralTypeNode(factory.createStringLiteral(name, true)),
           ),
-        );
-      }
-
-      i += 1;
+          this.buildBaseObjectMember(name, property, generics, genericValues),
+        ]),
+      );
     }
 
-    return factory.createTypeLiteralNode(members as readonly TypeElement[]);
+    return literals;
   }
 
   private buildObject(schema: ParsedObject, generics?: GenericOverrideMap, genericValues?: GenericOverrideWithValue[]) {
@@ -515,12 +504,11 @@ export class Generator {
             rawSchema: s,
             fullGrpcName,
             derivedOneOfTypeEnum: oneOfUnionType,
-            node: factory.createInterfaceDeclaration(
+            node: factory.createTypeAliasDeclaration(
               [factory.createModifier(SyntaxKind.ExportKeyword)],
               factory.createIdentifier(generatedName),
               Generator.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
-              [],
-              this.buildOneOf(s, schemaGenerics, allGenericsWithValues)?.members,
+              factory.createUnionTypeNode(this.buildOneOfUnionMembers(s, schemaGenerics, allGenericsWithValues)),
             ),
           },
           oneOfUnionType,

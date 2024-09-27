@@ -31,6 +31,7 @@ export interface StateConfig {
   codemod: {
     source?: { globs: string[] } | { tsconfigPath: string };
     rename?: boolean;
+    removeUnusedSchemas?: boolean;
   };
 }
 

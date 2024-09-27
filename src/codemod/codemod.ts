@@ -1,7 +1,7 @@
 import { Project } from 'ts-morph';
 import { ICodemod } from './types';
 
-export abstract class Codemod<T> implements ICodemod<T> {
+export abstract class Codemod<T = unknown> implements ICodemod<T> {
   protected project: Project;
 
   constructor(project: Project) {

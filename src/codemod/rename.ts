@@ -42,7 +42,7 @@ export class RenameCodemod extends Codemod<State> {
     return renames;
   }
 
-  process(oldState: State, newState: State) {
+  process(oldState: State, newState: State): void {
     const renames = this.getRenames(oldState, newState);
 
     if (renames.length === 0) {
