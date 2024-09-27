@@ -173,7 +173,7 @@ export async function cli({ cwd, args }: Args) {
         const baseName = path.basename(file, '.ts');
         const ext = path.extname(file);
 
-        if (baseName !== 'index' && ['.ts', '.tsx', '.js', '.jsx', '.mjs'].includes(ext)) {
+        if (baseName !== 'index' && ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'].includes(ext)) {
           return `${indexFile}export * from './${baseName}';\n`;
         }
 

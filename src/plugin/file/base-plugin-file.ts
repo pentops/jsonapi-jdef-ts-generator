@@ -384,17 +384,19 @@ export class BasePluginFile<
 
     this.generator.eventBus?.emit('preBuildFile', { file: this, fileToBuild: this._builtFile });
 
-    this._builtFile.content = this.printer.printList(
-      ListFormat.MultiLine,
-      factory.createNodeArray(this.nodeList),
-      createSourceFile(
-        this.config.fileName,
-        '',
-        ScriptTarget.ESNext,
-        true,
-        this._builtFile.fileName.endsWith('.tsx') ? ScriptKind.TSX : ScriptKind.TS,
-      ),
-    );
+    this._builtFile.content =
+      this._builtFile.content ||
+      this.printer.printList(
+        ListFormat.MultiLine,
+        factory.createNodeArray(this.nodeList),
+        createSourceFile(
+          this.config.fileName,
+          '',
+          ScriptTarget.ESNext,
+          true,
+          this._builtFile.fileName.endsWith('.tsx') ? ScriptKind.TSX : ScriptKind.TS,
+        ),
+      );
 
     this.generator.eventBus?.emit('postBuildFile', { file: this, fileToBuild: this._builtFile });
 
