@@ -86,7 +86,7 @@ export abstract class GeneratorFile<
     this.getExistingFileContent().then().catch();
   }
 
-  protected async pollForExistingFileContent(): Promise<GeneratorFileState<TFileContentType>> {
+  public async pollForExistingFileContent(): Promise<GeneratorFileState<TFileContentType>> {
     return new Promise((resolve) => {
       const startTime = Date.now();
 

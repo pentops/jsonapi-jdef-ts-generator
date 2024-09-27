@@ -1,7 +1,5 @@
-import prettyMs from 'pretty-ms';
 import path from 'node:path';
-import { mkdir, writeFile, rm } from 'node:fs/promises';
-import { PluginFile, IPluginFileConfig, PluginFileExtractFileContentType } from './file/types';
+import { PluginFile, IPluginFileConfig } from './file/types';
 import type { IPlugin, IPluginConfig, IPluginRunOutput } from './types';
 import type { ParsedSource } from '../parsed-types';
 import { Config } from '../config-types';
@@ -12,9 +10,8 @@ import {
   GeneratedSchemaWithNode,
 } from '../generated-types';
 import { Generator } from '../generate';
-import { logSuccess } from '../internal/helpers';
 import { BasePluginFile } from './file/base-plugin-file';
-import { GeneratorFileReader, IGeneratorFileConfig, IWritableFile, WrittenFile } from '../file/types';
+import { GeneratorFileReader, IGeneratorFileConfig, WrittenFile } from '../file/types';
 import { PluginEventBus } from './event-bus';
 
 export class BasePlugin<
