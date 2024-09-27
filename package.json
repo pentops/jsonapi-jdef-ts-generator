@@ -1,7 +1,7 @@
 {
   "name": "@pentops/jsonapi-jdef-ts-generator",
   "version": "0.0.101",
-  "description": "Generate types from a jdef.json or api.json file served by your pentops j5 registry.",
+  "description": "Generate types from an api.json file served by your pentops j5 registry.",
   "main": "dist/index.js",
   "bin": {
     "jdef-ts-generator": "./bin/index.js"

@@ -3,12 +3,12 @@ import type { ParsedMethod, ParsedObject, ParsedOneOf, ParsedSchemaWithRef } fro
 import type { BuiltMethodSchema } from './generated-types';
 import type { IPlugin } from './plugin/types';
 
-export type SourceType = 'jdef' | 'api';
+export type SourceType = 'api';
 
 export interface HostedSource {
-  // url is the url of the hosted jdef.json or api.json file
+  // url is the url of the hosted api.json file
   url: string;
-  // auth is the authentication configuration for the hosted jdef.json or api.json file, if applicable
+  // auth is the authentication configuration for the hosted api.json file, if applicable
   auth?: {
     token?: string;
   };
@@ -108,7 +108,7 @@ export interface Config {
   client: ClientGenerationConfig;
   // plugins is an array of functions, which will be called after types and client functions have been generated, in order to enable additional codegen
   plugins?: IPlugin[];
-  // jdefJsonSource is the source of the jdef.json file. Only one of service or path can be specified.
+  // jsonSource is the source of the api.json file. Only one of service or path can be specified.
   jsonSource: JSONSource | JSONSource[];
   state?: StateConfig;
   verbose: boolean;

@@ -35,7 +35,7 @@ export const defaultConfig: Config = {
         .join(''),
   },
   jsonSource: {
-    path: 'jdef.json',
+    path: 'api.json',
   },
   plugins: [],
   state: {

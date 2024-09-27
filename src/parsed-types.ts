@@ -1,6 +1,7 @@
 import {
   ArrayRules,
   BoolListRules,
+  BoolRules,
   BytesRules,
   EntityObjectSchema,
   EnumListRules,
@@ -16,6 +17,7 @@ import {
   NumberRules,
   ObjectRules,
   OneOfListRules,
+  OneOfRules,
   StateEntityEvent,
   StringListRules,
   StringRules,
@@ -56,6 +58,7 @@ export interface ParsedEnum {
 export interface ParsedBool {
   bool: {
     const?: boolean;
+    rules?: BoolRules;
     listRules?: BoolListRules;
     example?: any;
   };
@@ -92,8 +95,9 @@ export interface ParsedRef {
   $ref: string;
 }
 
-export interface ParsedAny {
+export interface ParsedAny<TFullGrpcNames extends string = string> {
   any: {
+    onlyDefinedTypes?: TFullGrpcNames[];
     example?: any;
   };
 }
@@ -148,6 +152,7 @@ export interface ParsedOneOf<TSchema extends ParsedSchemaWithRef = ParsedSchemaW
     name: string;
     properties: Map<string, ParsedObjectProperty<TSchema>>;
     package?: PackageSummary;
+    rules: OneOfRules;
     listRules?: OneOfListRules;
     example?: any;
   };

@@ -1,6 +1,6 @@
 # jsonapi-jdef-ts-generator
 
-Generate types and API client functionality from a `jdef.json` file served by your [registry](https://github.com/pentops/registry).
+Generate types and API client functionality from a `api.json` file served by your [registry](https://github.com/pentops/registry).
 
 ## Getting Started
 
@@ -43,18 +43,18 @@ export default {
         .join(''),
   },
   jsonSource: {
-    path: 'jdef.json',
+    path: 'api.json',
   },
 };
 ```
 
 #### Source Configuration
 
-You can specify the source of the jdef.json or api.json file using the `jsonSource` property.
+You can specify the source of the api.json file using the `jsonSource` property.
 
-- The `path` property should be the path to a local `jdef.json` or `api.json` file.
-- The `service` property should be set for a remote `jdef.json` or `api.json` file. It should be an object with the following properties:
-  - `url`: The URL of the remote `jdef.json` or `api.json` file.
+- The `path` property should be the path to a local `api.json` file.
+- The `service` property should be set for a remote `api.json` file. It should be an object with the following properties:
+  - `url`: The URL of the remote `api.json` file.
   - `auth`: An optional object containing a `token` if required.
 
 See the [configuration definitions](./src/config.ts) for more information.

@@ -32,6 +32,8 @@ export interface NumberRules {
   multipleOf?: string;
 }
 
+export interface OneOfRules {}
+
 export interface ObjectRules {
   // format: uint64
   minProperties?: string;

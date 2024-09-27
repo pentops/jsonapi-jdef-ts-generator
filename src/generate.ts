@@ -778,9 +778,6 @@ export class Generator {
     const methodSchemas = [
       builtMethod.responseBodySchema?.rawSchema,
       builtMethod.mergedRequestSchema?.rawSchema,
-      builtMethod.requestBodySchema?.rawSchema,
-      builtMethod.pathParametersSchema?.rawSchema,
-      builtMethod.queryParametersSchema?.rawSchema,
     ].filter(Boolean) as ParsedSchema[];
 
     for (const methodSchema of methodSchemas) {
@@ -845,13 +842,7 @@ export class Generator {
     const imports = new Set<string>();
 
     for (const [_, method] of this.builtMethodSchemas) {
-      [
-        method.responseBodySchema,
-        method.mergedRequestSchema,
-        method.requestBodySchema,
-        method.pathParametersSchema,
-        method.queryParametersSchema,
-      ].forEach((schema) => {
+      [method.responseBodySchema, method.mergedRequestSchema].forEach((schema) => {
         if (schema?.generatedName) {
           imports.add(schema.generatedName);
         }
@@ -879,7 +870,7 @@ export class Generator {
     for (const [_, method] of this.builtMethodSchemas) {
       const makeRequestFnTypeNames = [
         method.responseBodySchema?.generatedName,
-        method.mergedRequestSchema?.generatedName || method.requestBodySchema?.generatedName,
+        method.mergedRequestSchema?.generatedName,
       ];
 
       for (let i = makeRequestFnTypeNames.length - 1; i >= 0; i--) {
@@ -998,9 +989,6 @@ export class Generator {
             ...method.method,
             responseBodySchema: getSchemaWithNode(method.method.responseBodySchema),
             mergedRequestSchema: getSchemaWithNode(method.method.mergedRequestSchema),
-            requestBodySchema: getSchemaWithNode(method.method.requestBodySchema),
-            pathParametersSchema: getSchemaWithNode(method.method.pathParametersSchema),
-            queryParametersSchema: getSchemaWithNode(method.method.queryParametersSchema),
             list: method.method.list
               ? {
                   defaultFilters: method.method.list.defaultFilters,
@@ -1072,9 +1060,6 @@ export class Generator {
           const schemas = [
             builtMethod.responseBodySchema?.rawSchema,
             builtMethod.mergedRequestSchema?.rawSchema,
-            builtMethod.requestBodySchema?.rawSchema,
-            builtMethod.pathParametersSchema?.rawSchema,
-            builtMethod.queryParametersSchema?.rawSchema,
           ].filter(Boolean) as ParsedSchemaWithRef[];
 
           for (const schema of schemas) {

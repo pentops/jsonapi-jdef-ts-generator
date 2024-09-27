@@ -42,9 +42,6 @@ export interface BuiltMethodSchema<
 > {
   rawMethod: ParsedMethod;
   mergedRequestSchema?: TGeneratedObject;
-  requestBodySchema?: TGeneratedObject;
-  pathParametersSchema?: TGeneratedObject;
-  queryParametersSchema?: TGeneratedObject;
   responseBodySchema?: TGeneratedObject;
   list?: BuiltMethodListSchema<TGeneratedEnum>;
   relatedEntity?: TGeneratedObject;

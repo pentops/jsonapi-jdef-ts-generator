@@ -18,6 +18,7 @@ import {
   NumberRules,
   ObjectRules,
   OneOfListRules,
+  OneOfRules,
   SortingConstraintValue,
   StateEntityEvent,
   StringListRules,
@@ -54,6 +55,7 @@ export interface APIEnumSchema<TValue = APIEnumValue | APIEnumRefFieldValue> {
 }
 
 export interface APIBoolValue {
+  const?: boolean;
   rules?: BoolRules;
   listRules?: BoolListRules;
 }
@@ -78,7 +80,7 @@ export interface APIOneOfValue {
   name: string;
   description?: string;
   properties: APIObjectProperty[];
-  rules?: {};
+  rules?: OneOfRules;
   listRules?: OneOfListRules;
 }
 
@@ -139,9 +141,26 @@ export interface APIRefValue {
   schema: string;
 }
 
+export interface APIAnyValueBase {
+  onlyDefined?: boolean;
+}
+
+export interface APIAnyValueWithoutDefinedTypes extends APIAnyValueBase {
+  onlyDefined: false;
+}
+
+export interface APIAnyValueWithDefinedTypes<TFullGrpcNames extends string = string> extends APIAnyValueBase {
+  onlyDefined: true;
+  types: TFullGrpcNames[];
+}
+
+export type APIAnyValue<TFullGrpcNames extends string = string> =
+  | APIAnyValueWithoutDefinedTypes
+  | APIAnyValueWithDefinedTypes<TFullGrpcNames>;
+
 export interface APIAnySchema {
   '!type': 'any';
-  'any': {};
+  'any': APIAnyValue;
 }
 
 export interface APIMapExtensions {

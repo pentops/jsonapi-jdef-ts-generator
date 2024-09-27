@@ -1,6 +1,4 @@
 import { match, P } from 'ts-pattern';
-import { constantCase } from 'change-case';
-import { JDEF, JDEFMethod, JDEFObjectProperty, JDEFPackage, JDEFParameter, JDEFSchemaWithRef } from './jdef-types';
 import {
   ParsedAny,
   ParsedArray,
@@ -45,346 +43,6 @@ import {
 import { EntityPart, HTTPMethod, SortingConstraintValue } from './shared-types';
 import { getObjectProperties, JSON_SCHEMA_REFERENCE_PREFIX } from './helpers';
 import { PackageSummary } from './generated-types';
-
-export function jdefParameterToSource(parameter: JDEFParameter): ParsedObjectProperty | undefined {
-  const converted = jdefSchemaToSource(parameter?.schema);
-
-  if (!converted) {
-    return undefined;
-  }
-
-  return {
-    ...parameter,
-    schema: converted,
-  };
-}
-
-export function jdefObjectPropertyToSource(
-  property: JDEFObjectProperty,
-  name: string,
-  parentObjectName: string | undefined,
-): ParsedObjectProperty | undefined {
-  const converted = jdefSchemaToSource(property, parentObjectName);
-
-  if (!converted) {
-    return undefined;
-  }
-
-  return {
-    name,
-    schema: converted,
-    ...property,
-  };
-}
-
-function jdefPackageToSummary(pkg: JDEFPackage | undefined): PackageSummary | undefined {
-  if (!pkg) {
-    return undefined;
-  }
-
-  return {
-    package: pkg.name,
-    label: pkg.label,
-  };
-}
-
-export function jdefSchemaToSource(
-  schema: JDEFSchemaWithRef,
-  schemaName?: string,
-  pkg?: JDEFPackage,
-): ParsedSchemaWithRef | undefined {
-  const typeName = schemaName?.split('.').pop() || schemaName || '';
-  const fullName = schemaName || '';
-
-  return match(schema)
-    .with(
-      { $ref: P.string },
-      (r) =>
-        ({
-          $ref: r.$ref.replace('#/definitions/', JSON_SCHEMA_REFERENCE_PREFIX),
-        }) as ParsedRef,
-    )
-    .with(
-      { type: 'boolean' },
-      (b) =>
-        ({
-          bool: {
-            const: false,
-            example: b.example,
-          },
-        }) as ParsedBool,
-    )
-    .with(
-      { enum: P.array(P.string) },
-      (e) =>
-        ({
-          enum: {
-            fullGrpcName: fullName,
-            name: typeName,
-            prefix: schemaName ? `${constantCase(schemaName)}_` : undefined,
-            example: e.example,
-            rules: {},
-            package: jdefPackageToSummary(pkg),
-            options: e.enum.map((option) => {
-              const matchedMetadata = e['x-enum']?.find((metadata) => metadata.name === option);
-
-              return {
-                name: matchedMetadata?.name || option,
-                description: matchedMetadata?.description,
-                number: matchedMetadata?.number,
-              };
-            }),
-          },
-        }) as ParsedEnum,
-    )
-    .with(
-      { type: 'string' },
-      (s) =>
-        ({
-          string: {
-            example: s.example,
-            format: s.format,
-            rules: {
-              minLength: s.minLength,
-              maxLength: s.maxLength,
-              pattern: s.pattern,
-            },
-          },
-        }) as ParsedString,
-    )
-    .with({ type: 'number' }, (n) => {
-      if (n.format?.startsWith('int')) {
-        return {
-          integer: {
-            example: n.example,
-            format: n.format,
-            rules: {
-              minimum: n.minimum,
-              maximum: n.maximum,
-              exclusiveMaximum: n.exclusiveMaximum,
-              exclusiveMinimum: n.exclusiveMinimum,
-              multipleOf: n.multipleOf,
-            },
-          },
-        } as ParsedInteger;
-      }
-
-      return {
-        float: {
-          example: n.example,
-          format: n.format,
-          rules: {
-            minimum: n.minimum,
-            maximum: n.maximum,
-            exclusiveMaximum: n.exclusiveMaximum,
-            exclusiveMinimum: n.exclusiveMinimum,
-            multipleOf: n.multipleOf,
-          },
-        },
-      } as ParsedFloat;
-    })
-    .with(
-      { type: 'integer' },
-      (i) =>
-        ({
-          integer: {
-            example: i.example,
-            format: i.format,
-            rules: {
-              minimum: i.minimum,
-              maximum: i.maximum,
-              exclusiveMaximum: i.exclusiveMaximum,
-              exclusiveMinimum: i.exclusiveMinimum,
-              multipleOf: i.multipleOf,
-            },
-          },
-        }) as ParsedInteger,
-    )
-    .with({ type: 'object' }, (o) => {
-      if (o.additionalProperties === true) {
-        return { any: { example: o.example } } as ParsedAny;
-      }
-
-      if (o.additionalProperties) {
-        return {
-          map: {
-            example: o.example,
-            itemSchema: jdefSchemaToSource(o.additionalProperties, undefined, pkg),
-            keySchema: o['x-key-property'] ? jdefSchemaToSource(o['x-key-property'], undefined, pkg) : undefined,
-          },
-        } as ParsedMap;
-      }
-
-      const packageSummary = jdefPackageToSummary(pkg);
-
-      function buildParsedProperties(properties: Record<string, JDEFObjectProperty> | undefined) {
-        return Object.entries(properties || {}).reduce<Map<string, ParsedObjectProperty>>(
-          (acc, [propertyName, property]) => {
-            const converted = jdefObjectPropertyToSource(property, propertyName, fullName);
-
-            if (!converted) {
-              return acc;
-            }
-
-            acc.set(converted.name, converted);
-
-            return acc;
-          },
-          new Map(),
-        );
-      }
-
-      if (o['x-is-oneof']) {
-        return {
-          oneOf: {
-            example: o.example,
-            fullGrpcName: fullName,
-            description: o.description,
-            name: o['x-name'] || typeName,
-            properties: buildParsedProperties(o.properties),
-            package: packageSummary,
-          },
-        } as ParsedOneOf;
-      }
-
-      return {
-        object: {
-          example: o.example,
-          fullGrpcName: fullName,
-          description: o.description,
-          name: o['x-name'] || typeName,
-          properties: buildParsedProperties(o.properties),
-          rules: {
-            minProperties: o.minProperties,
-            maxProperties: o.maxProperties,
-          },
-          package: packageSummary,
-        },
-      } as ParsedObject;
-    })
-    .with(
-      { type: 'array' },
-      (a) =>
-        ({
-          array: {
-            example: a.example,
-            itemSchema: jdefSchemaToSource(a.items, undefined, pkg),
-            rules: {
-              minItems: a.minItems,
-              maxItems: a.maxItems,
-              uniqueItems: a.uniqueItems,
-            },
-          },
-        }) as ParsedArray,
-    )
-    .otherwise(() => {
-      console.warn(`[jdef-ts-generator]: unsupported schema type while parsing jdef source: ${schema}`);
-      return undefined;
-    });
-}
-
-function getJdefMethodRequestResponseFullGrpcName(method: JDEFMethod, requestOrResponse: JDEFSchemaWithRef): string {
-  const grpcNameBase = method.fullGrpcName.split('/').slice(0, -1).join('/');
-
-  return match(requestOrResponse)
-    .with({ 'x-name': P.not(P.nullish) }, (o) => `${grpcNameBase}/${o['x-name']}`)
-    .otherwise(() => '');
-}
-
-export function parseJdefSource(source: JDEF): ParsedSource {
-  const metadata: ParsedSource['metadata'] = {
-    builtAt: null,
-    version: undefined,
-  };
-
-  if (source.metadata.built_at) {
-    metadata.builtAt = new Date(source.metadata.built_at.seconds * 1000 + source.metadata.built_at.nanos / 1_000_000);
-  }
-
-  const parsed: ParsedSource = {
-    metadata,
-    packages: [],
-    schemas: new Map(),
-  };
-
-  for (const schemaName in source.definitions) {
-    // TODO: match package
-    const parsedSchema = jdefSchemaToSource(source.definitions[schemaName], schemaName);
-
-    if (parsedSchema) {
-      parsed.schemas.set(schemaName, parsedSchema as ParsedSchema);
-    }
-  }
-
-  for (const pkg of source.packages) {
-    const parsedPackage: ParsedPackage = {
-      name: pkg.name,
-      label: pkg.label,
-      introduction: pkg.introduction,
-      hidden: pkg.hidden,
-      services: [],
-    };
-
-    for (const method of pkg.methods) {
-      function mapParameters(parameters: JDEFParameter[] | undefined) {
-        return parameters?.reduce<Map<string, ParsedObjectProperty>>((acc, parameter) => {
-          const converted = jdefParameterToSource(parameter);
-
-          if (!converted) {
-            return acc;
-          }
-
-          acc.set(converted.name, converted);
-
-          return acc;
-        }, new Map());
-      }
-
-      let service = parsedPackage.services.find((service) => service.name === method.grpcServiceName);
-      if (!service) {
-        service = {
-          name: method.grpcServiceName,
-          methods: [],
-          parentPackage: parsedPackage,
-          fullGrpcName: `${parsedPackage.name}.${method.grpcServiceName}`,
-        };
-
-        parsedPackage.services.push(service);
-      }
-
-      service.methods.push({
-        name: method.grpcMethodName,
-        fullGrpcName: method.fullGrpcName,
-        httpMethod: method.httpMethod,
-        httpPath: method.httpPath,
-        responseBody: method.responseBody
-          ? jdefSchemaToSource(
-              method.responseBody,
-              getJdefMethodRequestResponseFullGrpcName(method, method.responseBody),
-              pkg,
-            )
-          : undefined,
-        requestBody: method.requestBody
-          ? jdefSchemaToSource(
-              method.requestBody,
-              getJdefMethodRequestResponseFullGrpcName(method, method.requestBody),
-              pkg,
-            )
-          : undefined,
-        pathParameters: mapParameters(method.pathParameters),
-        queryParameters: mapParameters(method.queryParameters),
-        parentService: service,
-        auth: undefined,
-      });
-    }
-
-    if (parsedPackage.services.length) {
-      parsed.packages.push(parsedPackage);
-    }
-  }
-
-  return parsed;
-}
 
 export function apiObjectPropertyToSource(
   property: APIObjectProperty,
@@ -517,16 +175,16 @@ export function apiSchemaToSource(
   return match(schema)
     .with({ '!type': 'enum' }, (e) =>
       match(e.enum)
-        .with({ ref: P.not(P.nullish) }, (enumWithRef) => buildApiSchemaRef(enumWithRef.ref))
+        .with({ ref: P.not(P.nullish) }, (enumWithRef): ParsedRef => buildApiSchemaRef(enumWithRef.ref))
         .with(
           P.not(P.nullish),
-          (eWithEnum) =>
+          (eWithEnum): ParsedEnum =>
             ({
               enum: {
-                fullGrpcName,
+                fullGrpcName: fullGrpcName!,
                 name: eWithEnum.name,
                 prefix: eWithEnum.prefix,
-                rules: eWithEnum.rules,
+                rules: eWithEnum.rules || {},
                 listRules: eWithEnum.listRules,
                 docs: eWithEnum.docs,
                 package: apiPackageToSummary(pkg),
@@ -542,50 +200,47 @@ export function apiSchemaToSource(
     )
     .with(
       { '!type': 'bool' },
-      (b) =>
-        ({
-          bool: {
-            rules: b.bool.rules || {},
-            listRules: b.bool.listRules || {},
-          },
-        }) as ParsedBool,
+      (b): ParsedBool => ({
+        bool: {
+          const: b.bool.const,
+          rules: b.bool.rules || {},
+          listRules: b.bool.listRules || {},
+        },
+      }),
     )
     .with(
       { '!type': 'integer' },
-      (i) =>
-        ({
-          integer: {
-            format: i.integer.format,
-            rules: i.integer.rules || {},
-            listRules: i.integer.listRules || {},
-          },
-        }) as ParsedInteger,
+      (i): ParsedInteger => ({
+        integer: {
+          format: i.integer.format,
+          rules: i.integer.rules || {},
+          listRules: i.integer.listRules || {},
+        },
+      }),
     )
     .with(
       { '!type': 'float' },
-      (f) =>
-        ({
-          float: {
-            format: f.float.format,
-            rules: f.float.rules || {},
-            listRules: f.float.listRules || {},
-          },
-        }) as ParsedFloat,
+      (f): ParsedFloat => ({
+        float: {
+          format: f.float.format,
+          rules: f.float.rules || {},
+          listRules: f.float.listRules || {},
+        },
+      }),
     )
     .with(
       { '!type': 'string' },
-      (s) =>
-        ({
-          string: {
-            format: s.string.format,
-            rules: s.string.rules || {},
-            listRules: s.string.listRules || {},
-          },
-        }) as ParsedString,
+      (s): ParsedString => ({
+        string: {
+          format: s.string.format || '',
+          rules: s.string.rules || {},
+          listRules: s.string.listRules || {},
+        },
+      }),
     )
     .with(
       { '!type': 'date' },
-      (s) =>
+      (s): ParsedString =>
         ({
           string: {
             format: 'date',
@@ -596,7 +251,7 @@ export function apiSchemaToSource(
     )
     .with(
       { '!type': 'timestamp' },
-      (s) =>
+      (s): ParsedString =>
         ({
           string: {
             format: 'date-time',
@@ -607,38 +262,36 @@ export function apiSchemaToSource(
     )
     .with(
       { '!type': 'decimal' },
-      (s) =>
-        ({
-          string: {
-            format: 'decimal',
-            rules: s.decimal.rules || {},
-          },
-        }) as ParsedString,
+      (s): ParsedString => ({
+        string: {
+          format: 'decimal',
+          rules: s.decimal.rules || {},
+        },
+      }),
     )
     .with({ '!type': 'oneof' }, (o) =>
       match(o.oneof)
-        .with({ ref: P.not(P.nullish) }, (oneOfWithRef) => buildApiSchemaRef(oneOfWithRef.ref))
+        .with({ ref: P.not(P.nullish) }, (oneOfWithRef): ParsedRef => buildApiSchemaRef(oneOfWithRef.ref))
         .with(
           P.not(P.nullish),
-          (oneOf) =>
-            ({
-              oneOf: {
-                fullGrpcName,
-                description: oneOf.description,
-                name: oneOf.name,
-                properties: mapObjectProperties(oneOf.properties),
-                rules: oneOf.rules,
-                listRules: oneOf.listRules || {},
-                package: apiPackageToSummary(pkg),
-              },
-            }) as ParsedOneOf,
+          (oneOf): ParsedOneOf => ({
+            oneOf: {
+              fullGrpcName: fullGrpcName!,
+              description: oneOf.description,
+              name: oneOf.name,
+              properties: mapObjectProperties(oneOf.properties),
+              rules: oneOf.rules || {},
+              listRules: oneOf.listRules || {},
+              package: apiPackageToSummary(pkg),
+            },
+          }),
         )
         .otherwise(() => undefined),
     )
     .with({ '!type': 'object' }, (o) =>
       match(o.object)
-        .with({ ref: P.not(P.nullish) }, (objectWithRef) => buildApiSchemaRef(objectWithRef.ref))
-        .with(P.not(P.nullish), (obj) => {
+        .with({ ref: P.not(P.nullish) }, (objectWithRef): ParsedRef => buildApiSchemaRef(objectWithRef.ref))
+        .with(P.not(P.nullish), (obj): ParsedObject => {
           const matchingStateEntity = stateEntities.find((entity) => entity.schemaName === fullGrpcName);
           const entity: ParsedEntity | undefined =
             obj.entity || matchingStateEntity
@@ -654,41 +307,50 @@ export function apiSchemaToSource(
 
           return {
             object: {
-              fullGrpcName,
+              fullGrpcName: fullGrpcName!,
               name: obj.name,
               description: obj.description,
               additionalProperties: obj.additionalProperties,
               properties: addEntityDataToApiPrimaryKeys(entity, mappedProperties),
-              rules: obj.rules,
+              rules: obj.rules || {},
               entity,
               package: apiPackageToSummary(pkg),
             },
-          } as ParsedObject;
+          };
         })
         .otherwise(() => undefined),
     )
-    .with({ '!type': 'any' }, () => ({ any: {} }) as ParsedAny)
-    .with({ '!type': 'map' }, (m) => {
+    .with(
+      { '!type': 'any' },
+      (a): ParsedAny => ({
+        any: {
+          onlyDefinedTypes: a.any.onlyDefined ? a.any.types : undefined,
+        },
+      }),
+    )
+    .with({ '!type': 'map' }, (m): ParsedMap | undefined => {
+      const defaultStringSchema: ParsedString = {
+        string: {
+          format: '',
+          rules: {},
+        },
+      };
+
       const convertedItemSchema = apiSchemaToSource(m.map.itemSchema, stateEntities, schemas, undefined, pkg);
 
       if (!convertedItemSchema) {
         return undefined;
       }
 
-      const convertedKeySchema = apiSchemaToSource(m.map.keySchema, stateEntities, schemas, undefined, pkg) || {
-        '!type': 'string',
-        'string': {},
-      };
-
       return {
         map: {
           itemSchema: convertedItemSchema,
-          keySchema: convertedKeySchema,
+          keySchema: apiSchemaToSource(m.map.keySchema, stateEntities, schemas, undefined, pkg) || defaultStringSchema,
           rules: m.map.rules || {},
         },
-      } as ParsedMap;
+      };
     })
-    .with({ '!type': 'array' }, (a) => {
+    .with({ '!type': 'array' }, (a): ParsedArray | undefined => {
       const converted = apiSchemaToSource(a.array.items, stateEntities, schemas, undefined, pkg);
 
       if (!converted) {
@@ -701,21 +363,20 @@ export function apiSchemaToSource(
           singleForm: a.array.ext?.singleForm,
           rules: a.array.rules || {},
         },
-      } as ParsedArray;
+      };
     })
-    .with({ '!type': 'bytes' }, (b) => ({ bytes: { rules: b.bytes.rules } }) as ParsedBytes)
+    .with({ '!type': 'bytes' }, (b): ParsedBytes => ({ bytes: { rules: b.bytes.rules } }))
     .with(
       { '!type': 'key' },
-      (k) =>
-        ({
-          key: {
-            format: k.key.format,
-            primary: k.key.ext?.primaryKey || false,
-            entity: k.key.entity,
-            rules: k.key.rules,
-            listRules: k.key.listRules || {},
-          },
-        }) as ParsedKey,
+      (k): ParsedKey => ({
+        key: {
+          format: k.key.format,
+          primary: k.key.ext?.primaryKey || false,
+          entity: k.key.entity,
+          rules: k.key.rules,
+          listRules: k.key.listRules || {},
+        },
+      }),
     )
     .otherwise(() => {
       console.warn(`[jdef-ts-generator]: unsupported schema type while parsing api source: ${schema}`);

@@ -1,10 +1,9 @@
 import fs from 'fs/promises';
 import { match, P } from 'ts-pattern';
 import { HostedSource, JSONSource, SourceType } from './config-types';
-import { JDEF } from './jdef-types';
 import { APISource } from './api-types';
 import { ParsedSource } from './parsed-types';
-import { parseApiSource, parseJdefSource } from './parse-sources';
+import { parseApiSource } from './parse-sources';
 
 function guessSourceType(path: string, explicitType: SourceType | undefined) {
   if (explicitType) {
@@ -13,10 +12,6 @@ function guessSourceType(path: string, explicitType: SourceType | undefined) {
 
   if (path.toLowerCase().endsWith('api.json')) {
     return 'api';
-  }
-
-  if (path.toLowerCase().endsWith('jdef.json')) {
-    return 'jdef';
   }
 
   throw new Error(
@@ -43,7 +38,6 @@ async function getLocalSource(filePath: string, explicitType: SourceType | undef
 
       return match(sourceType)
         .with('api', () => parseApiSource(fileContentAsObject as APISource))
-        .with('jdef', () => parseJdefSource(fileContentAsObject as JDEF))
         .otherwise(() => undefined);
     } catch (e) {
       throw new Error(`[jdef-ts-generator]: error encountered while parsing custom ${sourceType}.json file: ${e}`);
@@ -55,7 +49,7 @@ async function getLocalSource(filePath: string, explicitType: SourceType | undef
 
 async function getHostedSource(hostedSource: HostedSource) {
   if (!hostedSource.url) {
-    throw new Error(`[jdef-ts-generator]: no url provided for hosted jdef.json source`);
+    throw new Error(`[jdef-ts-generator]: no url provided for hosted api.json source`);
   }
 
   const sourceType = guessSourceType(hostedSource.url, hostedSource.type);
@@ -85,7 +79,6 @@ async function getHostedSource(hostedSource: HostedSource) {
   try {
     return match(sourceType)
       .with('api', () => parseApiSource(json as APISource))
-      .with('jdef', () => parseJdefSource(json as JDEF))
       .otherwise(() => undefined);
   } catch (err) {
     // Add context, re-throw
