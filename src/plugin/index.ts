@@ -1,3 +1,4 @@
+export * from './event-bus';
 export * from './file/types';
 export * from './file/base-plugin-file';
 export * from './types';

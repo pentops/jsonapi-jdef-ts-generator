@@ -1,4 +1,5 @@
-import fs, { existsSync, readFileSync, writeFileSync } from 'fs';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import path from 'path';
 import prettyMs from 'pretty-ms';
 import { Project } from 'ts-morph';
@@ -7,11 +8,12 @@ import { loadConfig } from './config';
 import { getSource } from './get-source';
 import { Generator } from './generate';
 import { logSuccess } from './internal/helpers';
-import { WrittenFile } from './plugin/file/types';
 import { GeneratedFunctionState, GeneratedSchemaState, State } from './state';
 import { RenameCodemod } from './codemod/rename';
 import { ICodemod } from './codemod/types';
 import { FixUnusedSchemaIdentifiersCodemod } from './codemod/fix-unused-schema-identifiers';
+import { IWritableFile } from './file/types';
+import { createPluginEventBus, PluginEvent } from './plugin';
 
 interface Args {
   cwd: string;
@@ -51,11 +53,11 @@ export async function cli({ cwd, args }: Args) {
   const typeOutputDir = path.dirname(typeOutputPath);
 
   if (!config.dryRun) {
-    fs.rmSync(typeOutputDir, { recursive: true, force: true });
+    await rm(typeOutputDir, { recursive: true, force: true });
 
     // Write generated file
-    fs.mkdirSync(typeOutputDir, { recursive: true });
-    fs.writeFileSync(typeOutputPath, typesFile);
+    await mkdir(typeOutputDir, { recursive: true });
+    await writeFile(typeOutputPath, typesFile);
 
     if (config.verbose) {
       logSuccess('[jdef-ts-generator]: interfaces and enums generated and saved to disk');
@@ -75,13 +77,13 @@ export async function cli({ cwd, args }: Args) {
 
     // Clear output directory and recreate if it's not already been written to
     if (!config.dryRun && !builtFilesByDirectory.has(clientOutputDir)) {
-      fs.rmSync(clientOutputDir, { recursive: true, force: true });
-      fs.mkdirSync(clientOutputDir, { recursive: true });
+      await rm(clientOutputDir, { recursive: true, force: true });
+      await mkdir(clientOutputDir, { recursive: true });
     }
 
     if (!config.dryRun) {
       // Write generated file
-      fs.writeFileSync(clientOutputPath, clientFile);
+      await writeFile(clientOutputPath, clientFile);
 
       if (config.verbose) {
         logSuccess('[jdef-ts-generator]: api client generated and saved to disk');
@@ -96,25 +98,70 @@ export async function cli({ cwd, args }: Args) {
   }
 
   if (config.plugins) {
-    const writtenPluginFiles = new Set<WrittenFile>();
+    const priorPluginFiles = new Set<IWritableFile<any, any>>();
+    const directoriesToClear = new Set<string>();
+    const filesToClear = new Set<string>();
 
     for (const plugin of config.plugins) {
-      plugin.prepare(cwd, api, generator, Array.from(writtenPluginFiles));
+      const pluginEventBus = createPluginEventBus<any>();
 
-      await plugin.run();
+      if (plugin.pluginConfig.hooks) {
+        for (const hook in plugin.pluginConfig.hooks) {
+          const eventKey = hook as keyof PluginEvent<any>;
+          (pluginEventBus.on as any)(eventKey, plugin.pluginConfig.hooks[eventKey]);
+        }
+      }
 
-      const output = await plugin.postRun();
+      plugin.prepare(cwd, api, generator, Array.from(priorPluginFiles), pluginEventBus);
 
-      for (const writtenFile of output.writtenFiles) {
-        const { preExistingContent: _, wasWritten, ...rest } = writtenFile;
-
-        if (wasWritten) {
-          writtenPluginFiles.add(rest);
+      const res = await plugin.run();
+      for (const file of res.files) {
+        if (!config.dryRun) {
+          if (file.clearDirectoryBeforeWrite) {
+            directoriesToClear.add(path.dirname(file.writePath));
+          } else {
+            filesToClear.add(file.writePath);
+          }
         }
 
-        if (writtenFile.exportFromIndexFile !== false) {
-          addFileToDirectory(path.dirname(writtenFile.writePath), writtenFile.writePath);
+        priorPluginFiles.add(file);
+      }
+    }
+
+    if (!config.dryRun) {
+      // Remove old files
+      for (const directory of directoriesToClear) {
+        try {
+          await rm(directory, { recursive: true });
+        } catch {}
+      }
+
+      for (const file of filesToClear) {
+        try {
+          await rm(file, { recursive: true, force: true });
+        } catch {}
+      }
+    }
+
+    // Write new files
+    for (const file of priorPluginFiles) {
+      file.writtenBy.eventBus?.emit('preWriteFile', { file });
+
+      if (!config.dryRun) {
+        await mkdir(path.dirname(file.writePath), { recursive: true });
+        await writeFile(file.writePath, file.content);
+
+        if (file.exportFromIndexFile !== false) {
+          addFileToDirectory(path.dirname(file.writePath), file.writePath);
         }
+      }
+
+      file.writtenBy.eventBus?.emit('postWriteFile', { file });
+
+      if (config.dryRun) {
+        console.log(
+          `[jdef-ts-generator]: dry run enabled, file from plugin ${file.writtenBy} (${file.writePath}) not written. Contents:\n${file.content}`,
+        );
       }
     }
   }
@@ -135,7 +182,7 @@ export async function cli({ cwd, args }: Args) {
 
       if (indexContent.trim().length > 0) {
         if (!config.dryRun) {
-          fs.writeFileSync(indexPath, indexContent);
+          await writeFile(indexPath, indexContent);
         }
       }
     }
@@ -184,7 +231,7 @@ export async function cli({ cwd, args }: Args) {
     let existingFile: string | undefined;
 
     try {
-      existingFile = readFileSync(config.state.fileName, { encoding: 'utf-8' });
+      existingFile = await readFile(config.state.fileName, { encoding: 'utf-8' });
     } catch (err) {
       console.error(`[jdef-ts-generator]: unable to read state file: ${err}`);
     }
@@ -237,7 +284,7 @@ export async function cli({ cwd, args }: Args) {
   // Write state file if it's not a dry run
   if (!config.dryRun) {
     try {
-      writeFileSync(config.state.fileName, JSON.stringify(state, null, 2), { encoding: 'utf-8' });
+      await writeFile(config.state.fileName, JSON.stringify(state, null, 2), { encoding: 'utf-8' });
     } catch (err) {
       console.error(`[jdef-ts-generator]: unable to write state file: ${err}`);
     }
