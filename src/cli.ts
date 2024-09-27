@@ -146,8 +146,6 @@ export async function cli({ cwd, args }: Args) {
 
   // Build generator state
   const state: State = {
-    schemaFilePath: typeOutputPath,
-    clientFilePath: clientOutputPath,
     generatedSchemas: Array.from(generator.generatedSchemas.entries()).reduce<State['generatedSchemas']>(
       (acc, curr) => ({
         ...acc,
