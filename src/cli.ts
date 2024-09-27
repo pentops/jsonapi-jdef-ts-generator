@@ -196,8 +196,10 @@ export async function cli({ cwd, args }: Args) {
         const project = new Project();
         project.addSourceFilesAtPaths([typeOutputPath, clientOutputPath, ...builtFilesByDirectory.keys()]);
 
-        if ('tsconfigPath' in config.state.codemod.source) {
-          project.addSourceFilesFromTsConfig(config.state.codemod.source.tsconfigPath);
+        if ('tsconfigPaths' in config.state.codemod.source) {
+          for (const tsconfigPath of config.state.codemod.source.tsconfigPaths) {
+            project.addSourceFilesFromTsConfig(tsconfigPath);
+          }
         } else {
           project.addSourceFilesAtPaths(config.state.codemod.source.globs);
         }

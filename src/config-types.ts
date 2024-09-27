@@ -29,7 +29,7 @@ export type JSONSource = HostedSourceService | LocalSourcePath;
 export interface StateConfig {
   fileName?: `${string}.json`;
   codemod: {
-    source?: { globs: string[] } | { tsconfigPath: string };
+    source?: { globs: string[] } | { tsconfigPaths: string[] };
     rename?: boolean;
     removeUnusedSchemas?: boolean;
   };
