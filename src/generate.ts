@@ -170,10 +170,13 @@ export class Generator {
         [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
         generatedName,
         undefined,
-        factory.createIndexedAccessTypeNode(
-          factory.createTypeReferenceNode(oneOfGeneratedName),
-          factory.createLiteralTypeNode(factory.createStringLiteral(BANG_TYPE_FIELD_NAME, true)),
-        ),
+        factory.createTypeReferenceNode('Exclude', [
+          factory.createIndexedAccessTypeNode(
+            factory.createTypeReferenceNode(oneOfGeneratedName),
+            factory.createLiteralTypeNode(factory.createStringLiteral(BANG_TYPE_FIELD_NAME, true)),
+          ),
+          factory.createKeywordTypeNode(SyntaxKind.UndefinedKeyword),
+        ]),
       ),
     };
   }
@@ -376,7 +379,7 @@ export class Generator {
           factory.createPropertySignature(
             undefined,
             factory.createStringLiteral(BANG_TYPE_FIELD_NAME, true),
-            undefined,
+            optionalFieldMarker, // it's always going to be present, but needs to be optional for request types
             factory.createLiteralTypeNode(factory.createStringLiteral(type, true)),
           ),
           this.buildBaseObjectMember(
@@ -467,7 +470,7 @@ export class Generator {
           factory.createPropertySignature(
             undefined,
             factory.createStringLiteral(BANG_TYPE_FIELD_NAME, true),
-            undefined,
+            optionalFieldMarker, // it's always going to be present, but needs to be optional for request types
             factory.createLiteralTypeNode(factory.createStringLiteral(name, true)),
           ),
           this.buildBaseObjectMember(name, property, generics, genericValues),
