@@ -23,6 +23,7 @@
   "author": "Joshua Slate",
   "license": "MIT",
   "dependencies": {
+    "@pentops/sort-helpers": "^0.0.1",
     "change-case": "^5.4.4",
     "find-up": "^7.0.0",
     "mitt": "^3.0.1",

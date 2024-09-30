@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@pentops/sort-helpers':
+        specifier: ^0.0.1
+        version: 0.0.1
       change-case:
         specifier: ^5.4.4
         version: 5.4.4
@@ -215,6 +218,9 @@ packages:
     peerDependencies:
       qs: '>=6.0.0 < 7.0.0'
       uuid: '>=10.0.0 < 11.0.0'
+
+  '@pentops/sort-helpers@0.0.1':
+    resolution: {integrity: sha512-Hn2eLyvD9wB0maMqnmjDL53gdz93R6NtUnM2C06+3MKH58LD6IKVWjbSsgDsNfHbiTZLGWLL/x/cP9zVcAqN7Q==}
 
   '@rollup/plugin-node-resolve@15.3.0':
     resolution: {integrity: sha512-9eO5McEICxMzJpDW9OnMYSv4Sta3hmt7VtBFz5zR9273suNOydOyq/FrGeGy+KsTRFm8w0SLVhzig2ILFT63Ag==}
@@ -870,6 +876,8 @@ snapshots:
     dependencies:
       qs: 6.13.0
       uuid: 10.0.0
+
+  '@pentops/sort-helpers@0.0.1': {}
 
   '@rollup/plugin-node-resolve@15.3.0(rollup@4.22.5)':
     dependencies:

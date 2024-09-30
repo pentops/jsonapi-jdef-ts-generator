@@ -14,6 +14,7 @@ import { ICodemod } from './codemod/types';
 import { FixUnusedSchemaIdentifiersCodemod } from './codemod/fix-unused-schema-identifiers';
 import { IWritableFile } from './file/types';
 import { createPluginEventBus, PluginEvent } from './plugin';
+import { sortByKey } from '@pentops/sort-helpers';
 
 interface Args {
   cwd: string;
@@ -195,7 +196,9 @@ export async function cli({ cwd, args }: Args) {
 
   // Build generator state
   const state: State = {
-    generatedSchemas: Array.from(generator.generatedSchemas.entries()).reduce<Record<string, GeneratedSchemaState>>(
+    generatedSchemas: sortByKey(Array.from(generator.generatedSchemas.entries()), (x) => x[0]).reduce<
+      Record<string, GeneratedSchemaState>
+    >(
       (acc, curr) => ({
         ...acc,
         [curr[0]]: {
@@ -206,7 +209,10 @@ export async function cli({ cwd, args }: Args) {
       }),
       {},
     ),
-    generatedClientFunctions: generator.generatedClientFunctions.reduce<Record<string, GeneratedFunctionState>>(
+    generatedClientFunctions: sortByKey(
+      generator.generatedClientFunctions,
+      (x) => x.method.rawMethod.fullGrpcName,
+    ).reduce<Record<string, GeneratedFunctionState>>(
       (acc, curr) => ({
         ...acc,
         [curr.method.rawMethod.fullGrpcName]: {
@@ -217,7 +223,7 @@ export async function cli({ cwd, args }: Args) {
       }),
       {},
     ),
-    plugins: (config.plugins || []).reduce<Record<string, unknown>>((acc, curr) => {
+    plugins: sortByKey(config.plugins || [], (x) => x.name).reduce<Record<string, unknown>>((acc, curr) => {
       const pluginState = curr.getState();
 
       if (pluginState !== undefined) {
