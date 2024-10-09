@@ -3,20 +3,16 @@ import { existsSync } from 'node:fs';
 import path from 'path';
 import prettyMs from 'pretty-ms';
 import { Project } from 'ts-morph';
-import { SyntaxKind } from 'typescript';
 import { loadConfig } from './config';
 import { getSource } from './get-source';
 import { Generator } from './generate';
 import { logSuccess } from './internal/helpers';
-import { buildState, GeneratedFunctionState, GeneratedSchemaState, State } from './state';
+import { buildState, State } from './state';
 import { RenameCodemod } from './codemod/rename';
 import { ICodemod } from './codemod/types';
 import { FixUnusedSchemaIdentifiersCodemod } from './codemod/fix-unused-schema-identifiers';
 import { IWritableFile } from './file/types';
 import { createPluginEventBus, PluginEvent } from './plugin';
-import { sortByKey } from '@pentops/sort-helpers';
-import { match, P } from 'ts-pattern';
-import { DerivedEnumHelperType } from './parsed-types';
 
 interface Args {
   cwd: string;
@@ -234,14 +230,14 @@ export async function cli({ cwd, args }: Args) {
         }
 
         generatorCodemods.forEach((codemod) => {
-          codemod.process(existingState, state);
+          codemod.process(existingState, state, existingState, state);
         });
 
         for (const plugin of config.plugins || []) {
           const codemod = plugin.getCodemod(project);
 
           if (codemod && existingState.plugins[plugin.name] !== undefined && state.plugins[plugin.name] !== undefined) {
-            codemod.process(existingState.plugins[plugin.name], state.plugins[plugin.name]);
+            codemod.process(existingState.plugins[plugin.name], state.plugins[plugin.name], existingState, state);
           }
         }
 
