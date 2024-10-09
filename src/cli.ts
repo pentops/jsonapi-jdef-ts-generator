@@ -8,13 +8,15 @@ import { loadConfig } from './config';
 import { getSource } from './get-source';
 import { Generator } from './generate';
 import { logSuccess } from './internal/helpers';
-import { GeneratedFunctionState, GeneratedSchemaState, State } from './state';
+import { buildState, GeneratedFunctionState, GeneratedSchemaState, State } from './state';
 import { RenameCodemod } from './codemod/rename';
 import { ICodemod } from './codemod/types';
 import { FixUnusedSchemaIdentifiersCodemod } from './codemod/fix-unused-schema-identifiers';
 import { IWritableFile } from './file/types';
 import { createPluginEventBus, PluginEvent } from './plugin';
 import { sortByKey } from '@pentops/sort-helpers';
+import { match, P } from 'ts-pattern';
+import { DerivedEnumHelperType } from './parsed-types';
 
 interface Args {
   cwd: string;
@@ -194,45 +196,7 @@ export async function cli({ cwd, args }: Args) {
     return;
   }
 
-  // Build generator state
-  const state: State = {
-    generatedSchemas: sortByKey(Array.from(generator.generatedSchemas.entries()), (x) => x[0]).reduce<
-      Record<string, GeneratedSchemaState>
-    >(
-      (acc, curr) => ({
-        ...acc,
-        [curr[0]]: {
-          generatedSchemaName: curr[1].generatedName,
-          writtenType: curr[1].node.kind,
-          package: curr[1].parentPackage,
-        },
-      }),
-      {},
-    ),
-    generatedClientFunctions: sortByKey(
-      generator.generatedClientFunctions,
-      (x) => x.method.rawMethod.fullGrpcName,
-    ).reduce<Record<string, GeneratedFunctionState>>(
-      (acc, curr) => ({
-        ...acc,
-        [curr.method.rawMethod.fullGrpcName]: {
-          generatedFunctionName: curr.generatedName,
-          writtenType: SyntaxKind.FunctionDeclaration,
-          package: curr.method.parentPackage,
-        },
-      }),
-      {},
-    ),
-    plugins: sortByKey(config.plugins || [], (x) => x.name).reduce<Record<string, unknown>>((acc, curr) => {
-      const pluginState = curr.getState();
-
-      if (pluginState !== undefined) {
-        acc[curr.name] = pluginState;
-      }
-
-      return acc;
-    }, {}),
-  };
+  const state = buildState(generator.generatedSchemas, generator.generatedClientFunctions, config);
 
   if (config.state.codemod.source && existsSync(config.state.fileName)) {
     let existingFile: string | undefined;
