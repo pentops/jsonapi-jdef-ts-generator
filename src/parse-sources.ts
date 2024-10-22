@@ -719,6 +719,7 @@ export function parseApiSource(source: APISource): ParsedSource {
           relatedEntity: mappedRelatedEntity,
           parentService: parsedService,
           auth: mapApiAuth(method.auth),
+          methodType: method.methodType,
         });
       }
 

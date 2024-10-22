@@ -14,6 +14,7 @@ import {
   KeyFormat,
   KeyListRules,
   MapRules,
+  MethodType,
   NumberRules,
   ObjectRules,
   OneOfListRules,
@@ -269,6 +270,7 @@ export interface ParsedMethod<TSchema extends ParsedSchemaWithRef = ParsedSchema
   rootEntitySchema?: TSchema;
   parentService: ParsedService<TSchema>;
   auth: ParsedAuthType | undefined;
+  methodType: MethodType | undefined;
 }
 
 export interface ParsedService<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
