@@ -204,12 +204,17 @@ export interface APIArraySchema<TSchema extends APISchema = APISchema> {
   'array': APIArrayValue<TSchema>;
 }
 
-export interface APIKeyExtensions {
-  primaryKey?: boolean;
+export interface APIKeyExtensions {}
+
+export interface APIEntityRef {
+  package: string;
+  entity: string;
 }
 
+export type APIEntityKey = { primaryKey: boolean } | { foreignKey: APIEntityRef };
+
 export interface APIKeyValue {
-  entity: string;
+  entity?: APIEntityKey;
   rules?: {};
   listRules?: KeyListRules;
   format: KeyFormat;

@@ -179,6 +179,7 @@ export interface ParsedKey {
   key: {
     format: KeyFormat;
     primary: boolean;
+    foreign: boolean;
     entity?: string;
     rules?: {};
     listRules?: KeyListRules;

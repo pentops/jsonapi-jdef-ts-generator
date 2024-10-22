@@ -371,8 +371,16 @@ export function apiSchemaToSource(
       (k): ParsedKey => ({
         key: {
           format: k.key.format,
-          primary: k.key.ext?.primaryKey || false,
-          entity: k.key.entity,
+          primary: match(k.key.entity)
+            .with({ primaryKey: true }, () => true)
+            .otherwise(() => false),
+          foreign: match(k.key.entity)
+            .with({ foreignKey: P.not(P.nullish) }, () => true)
+            .otherwise(() => false),
+          entity: match(k.key.entity)
+            .with({ primaryKey: true }, () => undefined) // added by `addEntityDataToApiPrimaryKeys` because there's no ref upwards here
+            .with({ foreignKey: P.not(P.nullish) }, (f) => `${f.foreignKey.package}/${f.foreignKey.entity}`)
+            .otherwise(() => undefined),
           rules: k.key.rules,
           listRules: k.key.listRules || {},
         },
@@ -529,10 +537,7 @@ export function parseApiSource(source: APISource): ParsedSource {
       services: [],
     };
 
-    function mapListOptions(
-      listOptions: APIRequestListOptions | undefined,
-      keyReplacementMap: Record<string, string> | undefined,
-    ): ParsedMethodListOptions | undefined {
+    function mapListOptions(listOptions: APIRequestListOptions | undefined): ParsedMethodListOptions | undefined {
       if (!listOptions) {
         return undefined;
       }
@@ -542,7 +547,7 @@ export function parseApiSource(source: APISource): ParsedSource {
       if (listOptions.filterableFields) {
         options.filterableFields = listOptions.filterableFields.map((field) => {
           return {
-            name: keyReplacementMap?.[field.name] || field.name,
+            name: field.name,
             defaultValues: field.defaultFilters,
           };
         });
@@ -557,9 +562,7 @@ export function parseApiSource(source: APISource): ParsedSource {
       }
 
       if (listOptions.searchableFields) {
-        options.searchableFields = listOptions.searchableFields.map(
-          (field) => keyReplacementMap?.[field.name] || field.name,
-        );
+        options.searchableFields = listOptions.searchableFields.map((field) => field.name);
       }
 
       if (listOptions.sortableFields) {
@@ -574,7 +577,7 @@ export function parseApiSource(source: APISource): ParsedSource {
         }
 
         options.sortableFields = listOptions.sortableFields.map((field) => ({
-          name: keyReplacementMap?.[field.name] || field.name,
+          name: field.name,
           defaultSort: apiSortDirectionToParsedSortDirection(field.defaultSort),
         }));
 
@@ -590,62 +593,6 @@ export function parseApiSource(source: APISource): ParsedSource {
       }
 
       return options;
-    }
-
-    function getAPIObjectProperties(
-      schema: APISchema,
-      schemas: Map<string, APISchema>,
-    ): APIObjectProperty[] | undefined {
-      return match(schema)
-        .with({ object: { ref: P.not(P.nullish) } }, (o) => {
-          const refValue = schemas.get(getFullGrpcPathForSchemaRef(o.object.ref));
-
-          if (refValue) {
-            return getAPIObjectProperties(refValue, schemas);
-          }
-
-          return undefined;
-        })
-        .with({ object: { properties: P.not(P.nullish) } }, (o) => o.object.properties)
-        .with({ oneof: { ref: P.not(P.nullish) } }, (o) => {
-          const refValue = schemas.get(getFullGrpcPathForSchemaRef(o.oneof.ref));
-
-          if (refValue) {
-            return getAPIObjectProperties(refValue, schemas);
-          }
-
-          return undefined;
-        })
-        .with({ oneof: { properties: P.not(P.nullish) } }, (o) => o.oneof.properties)
-        .with({ array: { items: P.not(P.nullish) } }, (a) => getAPIObjectProperties(a.array.items, schemas))
-        .otherwise(() => undefined);
-    }
-
-    function buildKeyReplacementMap(schema: APIObjectSchema, schemas: Map<string, APISchema>) {
-      const replacementMap: Record<string, string> = {};
-
-      const gather = (properties: APIObjectProperty[] | undefined, path: string = '', replacedPath: string = '') => {
-        for (const property of properties || []) {
-          const subProperties = getAPIObjectProperties(property.schema, schemas);
-
-          const nextPath = `${path}${path ? '.' : ''}${property.name}`;
-
-          if (subProperties) {
-            const nextPart = `${replacedPath}${replacedPath ? '.' : ''}${property.name}`;
-            gather(subProperties, nextPath, nextPart);
-          } else {
-            const fullyReplacedPath = `${replacedPath}${replacedPath ? '.' : ''}${property.name}`;
-
-            if (nextPath !== fullyReplacedPath) {
-              replacementMap[nextPath] = fullyReplacedPath;
-            }
-          }
-        }
-      };
-
-      gather(getAPIObjectProperties(schema, schemas));
-
-      return Object.keys(replacementMap).length ? replacementMap : undefined;
     }
 
     function mapService(service: APIService, schemas: Map<string, APISchema>, relatedEntity?: APIStateEntity) {
@@ -683,7 +630,6 @@ export function parseApiSource(source: APISource): ParsedSource {
         const mappedRelatedEntity = relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined;
         const mappedPathParameters = mapApiParameters(method.request?.pathParameters, stateEntities, schemas, true);
         const mappedQueryParameters = mapApiParameters(method.request?.queryParameters, stateEntities, schemas);
-        const keyReplacementMap = rootEntitySchema ? buildKeyReplacementMap(rootEntitySchema, schemas) : undefined;
 
         parsedService.methods.push({
           name: method.name,
@@ -715,7 +661,7 @@ export function parseApiSource(source: APISource): ParsedSource {
           queryParameters: mappedQueryParameters
             ? addEntityDataToApiPrimaryKeys(mappedRelatedEntity, mappedQueryParameters)
             : undefined,
-          listOptions: mapListOptions(method.request?.list, keyReplacementMap),
+          listOptions: mapListOptions(method.request?.list),
           relatedEntity: mappedRelatedEntity,
           parentService: parsedService,
           auth: mapApiAuth(method.auth),
