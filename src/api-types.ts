@@ -15,6 +15,7 @@ import {
   KeyFormat,
   KeyListRules,
   MapRules,
+  MethodType,
   NumberRules,
   ObjectRules,
   OneOfListRules,
@@ -331,6 +332,7 @@ export interface APIMethod {
   request?: APIRequest;
   responseBody?: APIObjectValue;
   auth?: APIMethodAuthType;
+  methodType?: MethodType;
 }
 
 export interface APIService {

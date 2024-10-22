@@ -91,6 +91,22 @@ export interface EntityObjectSchema {
   part: EntityPart;
 }
 
+export enum QueryPart {
+  List = 'LIST',
+  Get = 'GET',
+  ListEvents = 'LIST_EVENTS',
+}
+
+export interface MethodTypeStateQuery {
+  '!type': 'stateQuery';
+  'stateQuery': {
+    entityName: string;
+    queryPart: QueryPart;
+  };
+}
+
+export type MethodType = MethodTypeStateQuery;
+
 export interface StateEntityEvent {
   name: string;
   fullName: string;
