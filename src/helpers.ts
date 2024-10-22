@@ -1,7 +1,7 @@
 import ts from 'typescript';
 import { match, P } from 'ts-pattern';
 import type { GenericOverride, GenericOverrideMap, GenericOverrideNodeType } from './config-types';
-import type { ParsedObjectProperty, ParsedRef, ParsedSchema, ParsedSchemaWithRef } from './parsed-types';
+import type { ParsedObject, ParsedObjectProperty, ParsedRef, ParsedSchema, ParsedSchemaWithRef } from './parsed-types';
 import type { GeneratedSchema, GeneratedSchemaWithNode, PackageSummary } from './generated-types';
 
 const { factory, SyntaxKind } = ts;
@@ -10,6 +10,17 @@ export const JSON_SCHEMA_REFERENCE_PREFIX = '#/schemas/';
 
 export function cleanRefName(ref: ParsedRef) {
   return ref.$ref.replace(JSON_SCHEMA_REFERENCE_PREFIX, '');
+}
+
+export function findSchemaForEntityName(
+  entityName: string,
+  schemas: Map<string, ParsedSchema>,
+): ParsedObject | undefined {
+  return Array.from(schemas.values()).find((schema) => {
+    if ('object' in schema && schema.object.entity?.stateEntityFullName === entityName) {
+      return true;
+    }
+  }) as ParsedObject | undefined;
 }
 
 export function createLogicalAndChain(expressions: ts.Expression[]) {
