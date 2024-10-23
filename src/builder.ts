@@ -34,6 +34,8 @@ export class Builder {
     const { clientFile, typesFile } = generator.generate(this.source);
     const builtFilesByDirectory = new Map<string, Set<string>>();
 
+    const project = new Project({ useInMemoryFileSystem: true });
+
     function addFileToDirectory(directory: string, fileName: string) {
       if (!builtFilesByDirectory.has(directory)) {
         builtFilesByDirectory.set(directory, new Set());
@@ -59,6 +61,8 @@ export class Builder {
     } else if (this.config.dryRun === true || this.config.dryRun.log) {
       console.info(`[jdef-ts-generator]: dry run enabled, file ${typeOutputPath} not written. Contents:\n${typesFile}`);
     }
+
+    project.createSourceFile(typeOutputPath, typesFile);
 
     addFileToDirectory(typeOutputDir, typeOutputPath);
 
@@ -88,6 +92,7 @@ export class Builder {
         );
       }
 
+      project.createSourceFile(clientOutputPath, clientFile);
       addFileToDirectory(clientOutputDir, clientOutputPath);
     }
 
@@ -152,6 +157,7 @@ export class Builder {
         }
 
         file.writtenBy.eventBus?.emit('postWriteFile', { file });
+        project.createSourceFile(file.writePath, file.content);
 
         if (this.config.dryRun && (this.config.dryRun === true || this.config.dryRun.log)) {
           console.log(
@@ -179,6 +185,8 @@ export class Builder {
           if (!this.config.dryRun) {
             await writeFile(indexPath, indexContent);
           }
+
+          project.createSourceFile(indexPath, indexContent);
         }
       }
     }
@@ -186,9 +194,6 @@ export class Builder {
     if (!this.config.state?.fileName) {
       return;
     }
-
-    const project = new Project();
-    project.addSourceFilesAtPaths([typeOutputPath, clientOutputPath, ...builtFilesByDirectory.keys()]);
 
     const state = buildState(generator.generatedSchemas, generator.generatedClientFunctions, this.config);
 
@@ -206,7 +211,12 @@ export class Builder {
           const existingState = JSON.parse(existingFile) as State;
 
           const codemodProject = new Project();
-          codemodProject.addSourceFilesAtPaths([typeOutputPath, clientOutputPath, ...builtFilesByDirectory.keys()]);
+          // Add generated files to codemod project
+          project
+            .getSourceFiles()
+            .forEach((sourceFile) =>
+              codemodProject.createSourceFile(sourceFile.getFilePath(), sourceFile.getFullText()),
+            );
 
           if ('tsconfigPaths' in this.config.state.codemod.source) {
             for (const tsconfigPath of this.config.state.codemod.source.tsconfigPaths) {
@@ -243,7 +253,17 @@ export class Builder {
             }
           }
 
-          await codemodProject.save();
+          if (!this.config.dryRun) {
+            await codemodProject.save();
+          }
+
+          project.getSourceFiles().forEach((sourceFile) => {
+            const codemodSourceFile = codemodProject.getSourceFile(sourceFile.getFilePath());
+
+            if (codemodSourceFile) {
+              sourceFile.replaceWithText(codemodSourceFile.getFullText());
+            }
+          });
         }
       } catch (e) {
         console.error(`[jdef-ts-generator]: unable to parse existing state file: ${e}`);

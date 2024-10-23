@@ -30,7 +30,7 @@ export const defaultConfig: Config = {
     enumType: 'enum',
     nameWriter: (x) =>
       x
-        .split('.')
+        .split(/[./]/)
         .map((s) => pascalCase(s))
         .join(''),
   },
