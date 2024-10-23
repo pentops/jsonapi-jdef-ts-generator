@@ -40,7 +40,7 @@ import {
   APISource,
   APIStateEntity,
 } from './api-types';
-import { EntityPart, HTTPMethod, SortingConstraintValue } from './shared-types';
+import { EntityPart, HTTPMethod, QueryPart, SortingConstraintValue } from './shared-types';
 import { getObjectProperties, JSON_SCHEMA_REFERENCE_PREFIX } from './helpers';
 import { PackageSummary } from './generated-types';
 
@@ -624,9 +624,29 @@ export function parseApiSource(source: APISource): ParsedSource {
           .with({ object: { name: P.string } }, (o) => o.object)
           .otherwise(() => undefined);
 
-        const rootEntitySchema = responseBodyValue
+        let rootEntitySchema = responseBodyValue
           ? findMethodResponseRootSchema(responseBodyValue, parsedPackage.name, relatedEntity)
           : undefined;
+
+        if (
+          method.methodType?.stateQuery.queryPart === QueryPart.List ||
+          method.methodType?.stateQuery.queryPart === QueryPart.Get
+        ) {
+          const fullStateEntityName = `${pkg.name}/${method.methodType.stateQuery.entityName}`;
+
+          if (fullStateEntityName !== relatedEntity?.fullName) {
+            relatedEntity = stateEntities.find((entity) => entity.fullName === fullStateEntityName);
+
+            if (relatedEntity?.schemaName) {
+              const potentialRoot = schemas.get(relatedEntity.schemaName);
+              if (potentialRoot) {
+                rootEntitySchema = potentialRoot as APIObjectSchema;
+              }
+            }
+          }
+        } else {
+        }
+
         const mappedRelatedEntity = relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined;
         const mappedPathParameters = mapApiParameters(method.request?.pathParameters, stateEntities, schemas, true);
         const mappedQueryParameters = mapApiParameters(method.request?.queryParameters, stateEntities, schemas);
