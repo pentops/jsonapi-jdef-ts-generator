@@ -56,7 +56,7 @@ export class Builder {
       if (this.config.verbose) {
         logSuccess('[jdef-ts-generator]: interfaces and enums generated and saved to disk');
       }
-    } else {
+    } else if (this.config.dryRun === true || this.config.dryRun.log) {
       console.info(`[jdef-ts-generator]: dry run enabled, file ${typeOutputPath} not written. Contents:\n${typesFile}`);
     }
 
@@ -82,7 +82,7 @@ export class Builder {
         if (this.config.verbose) {
           logSuccess('[jdef-ts-generator]: api client generated and saved to disk');
         }
-      } else {
+      } else if (this.config.dryRun === true || this.config.dryRun.log) {
         console.info(
           `[jdef-ts-generator]: dry run enabled, file ${clientOutputPath} not written. Contents:\n${clientFile}`,
         );
@@ -153,7 +153,7 @@ export class Builder {
 
         file.writtenBy.eventBus?.emit('postWriteFile', { file });
 
-        if (this.config.dryRun) {
+        if (this.config.dryRun && (this.config.dryRun === true || this.config.dryRun.log)) {
           console.log(
             `[jdef-ts-generator]: dry run enabled, file from plugin ${file.writtenBy} (${file.writePath}) not written. Contents:\n${file.content}`,
           );
