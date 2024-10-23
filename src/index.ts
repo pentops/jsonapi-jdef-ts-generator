@@ -1,3 +1,4 @@
+export * from './builder';
 export * from './cli';
 export * from './config';
 export * from './config-types';
