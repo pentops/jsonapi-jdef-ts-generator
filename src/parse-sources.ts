@@ -1,6 +1,8 @@
 import { match, P } from 'ts-pattern';
 import {
+  BANG_TYPE_FIELD_NAME,
   ParsedAny,
+  ParsedAnyDefinedProperties,
   ParsedArray,
   ParsedAuthType,
   ParsedBool,
@@ -320,14 +322,40 @@ export function apiSchemaToSource(
         })
         .otherwise(() => undefined),
     )
-    .with(
-      { '!type': 'any' },
-      (a): ParsedAny => ({
+    .with({ '!type': 'any' }, (a): ParsedAny => {
+      const properties: ParsedAnyDefinedProperties = new Map();
+
+      if (a.any.onlyDefined) {
+        for (const type of a.any.types) {
+          const typeProperties = new Map<string, ParsedObjectProperty>();
+
+          typeProperties.set('!type', {
+            name: BANG_TYPE_FIELD_NAME,
+            schema: {
+              string: {
+                format: '',
+                rules: {},
+                literalValue: type,
+              },
+            },
+          });
+
+          typeProperties.set('value', {
+            name: 'value',
+            schema: { $ref: `${JSON_SCHEMA_REFERENCE_PREFIX}${type}` },
+          });
+
+          properties.set(type, typeProperties);
+        }
+      }
+
+      return {
         any: {
           onlyDefinedTypes: a.any.onlyDefined ? a.any.types : undefined,
+          properties: properties.size ? properties : undefined,
         },
-      }),
-    )
+      };
+    })
     .with({ '!type': 'map' }, (m): ParsedMap | undefined => {
       const defaultStringSchema: ParsedString = {
         string: {

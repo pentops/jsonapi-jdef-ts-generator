@@ -18,6 +18,7 @@ import {
   isKeyword,
 } from './helpers';
 import {
+  BANG_TYPE_FIELD_NAME,
   DerivedEnumHelperType,
   ParsedAny,
   ParsedEnum,
@@ -64,7 +65,6 @@ const REQUEST_SUFFIX = 'Request';
 const RESPONSE_SUFFIX = 'Response';
 const REQUEST_INIT_PARAMETER_NAME = 'requestInit';
 const REQUEST_INIT_TYPE_NAME = 'RequestInit';
-const BANG_TYPE_FIELD_NAME = '!type';
 
 const optionalFieldMarker = factory.createToken(SyntaxKind.QuestionToken);
 
@@ -313,7 +313,9 @@ export class Generator {
           };
         })
         .with({ string: P.not(P.nullish) }, (s) => ({
-          node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+          node: s.string.literalValue
+            ? factory.createLiteralTypeNode(factory.createStringLiteral(s.string.literalValue, true))
+            : factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
           comment:
             [
               s.string.format ? `format: ${s.string.format}` : undefined,
@@ -367,31 +369,21 @@ export class Generator {
   }
 
   private buildAnyType(anySchema: ParsedAny, genericValues?: GenericOverrideWithValue[]) {
-    if (!anySchema.any.onlyDefinedTypes) {
+    if (!anySchema.any.properties?.size) {
       return factory.createKeywordTypeNode(SyntaxKind.AnyKeyword);
     }
 
     return factory.createUnionTypeNode(
-      anySchema.any.onlyDefinedTypes.map((type) => {
+      Array.from(anySchema.any.properties.entries()).map(([type, properties]) => {
         const schemaGenerics = this.schemaGenerics.get(type);
 
-        return factory.createTypeLiteralNode([
-          factory.createPropertySignature(
-            undefined,
-            factory.createStringLiteral(BANG_TYPE_FIELD_NAME, true),
-            optionalFieldMarker, // it's always going to be present, but needs to be optional for request types
-            factory.createLiteralTypeNode(factory.createStringLiteral(type, true)),
-          ),
-          this.buildBaseObjectMember(
-            'value',
-            {
-              name: 'value',
-              schema: { $ref: type },
-            },
-            schemaGenerics,
-            genericValues,
-          ),
-        ]);
+        const members: (TypeElement | Identifier)[] = [];
+
+        for (const [name, property] of properties) {
+          members.push(this.buildBaseObjectMember(name, property, schemaGenerics, genericValues));
+        }
+
+        return factory.createTypeLiteralNode(members as readonly TypeElement[]);
       }),
     );
   }
@@ -431,7 +423,7 @@ export class Generator {
 
     const validKeyName = getValidKeyName(name);
 
-    if (validKeyName !== name) {
+    if (validKeyName !== name && name !== BANG_TYPE_FIELD_NAME) {
       console.warn(
         `[jdef-ts-generator]: invalid JavaScript object key name for property ${name}, using ${validKeyName} instead. This may cause issues with generated code.`,
       );

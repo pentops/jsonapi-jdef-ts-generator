@@ -25,6 +25,8 @@ import {
 } from './shared-types';
 import { PackageSummary } from './generated-types';
 
+export const BANG_TYPE_FIELD_NAME = '!type';
+
 export interface ParsedMetadata {
   builtAt: Date | null;
   version: string | undefined;
@@ -88,6 +90,7 @@ export interface ParsedString {
     format: string;
     rules: StringRules;
     listRules?: StringListRules;
+    literalValue?: string;
     example?: any;
   };
 }
@@ -96,9 +99,18 @@ export interface ParsedRef {
   $ref: string;
 }
 
-export interface ParsedAny<TFullGrpcNames extends string = string> {
+export type ParsedAnyDefinedProperties<
+  TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef,
+  TFullGrpcNames extends string = string,
+> = Map<TFullGrpcNames, Map<string, ParsedObjectProperty<TSchema>>>;
+
+export interface ParsedAny<
+  TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef,
+  TFullGrpcNames extends string = string,
+> {
   any: {
     onlyDefinedTypes?: TFullGrpcNames[];
+    properties?: ParsedAnyDefinedProperties<TSchema, TFullGrpcNames>;
     example?: any;
   };
 }
@@ -209,7 +221,7 @@ export type DereferencedParsedSchema =
   | ParsedInteger
   | ParsedFloat
   | ParsedString
-  | ParsedAny
+  | ParsedAny<DereferencedParsedSchema>
   | ParsedMap<DereferencedParsedSchema>
   | ParsedObject<DereferencedParsedSchema>
   | ParsedOneOf<DereferencedParsedSchema>
