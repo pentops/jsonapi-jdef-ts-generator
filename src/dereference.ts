@@ -1,6 +1,7 @@
 import { match, P } from 'ts-pattern';
-import type {
+import {
   DereferencedParsedSchema,
+  ParsedAnyDefinedProperties,
   ParsedMethod,
   ParsedObjectProperty,
   ParsedPackage,
@@ -27,6 +28,20 @@ export function dereferenceObjectProperties(
         schema: dereferencedSchema,
       });
     }
+  }
+
+  return dereferencedProperties;
+}
+
+export function dereferenceAnyDefinedProperties(
+  properties: ParsedAnyDefinedProperties,
+  schemas: Map<string, ParsedSchema>,
+  visited: Map<string, DereferencedParsedSchema> = new Map(),
+) {
+  const dereferencedProperties: ParsedAnyDefinedProperties<DereferencedParsedSchema> = new Map();
+
+  for (const [k, v] of properties) {
+    dereferencedProperties.set(k, dereferenceObjectProperties(v, schemas, visited));
   }
 
   return dereferencedProperties;
@@ -99,6 +114,13 @@ export function dereferenceSchema(
       object: {
         ...s.object,
         properties: dereferenceObjectProperties(s.object.properties, schemas, visited || new Map()),
+      },
+    }))
+    .with({ any: { properties: P.not(P.nullish) } }, (s) => ({
+      ...s,
+      any: {
+        ...s.any,
+        properties: dereferenceAnyDefinedProperties(s.any.properties, schemas, visited || new Map()),
       },
     }))
     .otherwise((s) => s as DereferencedParsedSchema);
