@@ -1,4 +1,4 @@
-import {
+import type {
   ArrayRules,
   BoolListRules,
   BoolRules,
@@ -23,7 +23,7 @@ import {
   StringListRules,
   StringRules,
 } from './shared-types';
-import { PackageSummary } from './generated-types';
+import type { PackageSummary } from './generated-types';
 
 export const BANG_TYPE_FIELD_NAME = '!type';
 

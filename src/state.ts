@@ -1,8 +1,8 @@
 import { SyntaxKind } from 'typescript';
-import type { GeneratedClientFunctionWithNodes, GeneratedSchemaWithNode, PackageSummary } from './generated-types';
 import { sortByKey } from '@pentops/sort-helpers';
 import { match, P } from 'ts-pattern';
-import { Config } from './config-types';
+import type { GeneratedClientFunctionWithNodes, GeneratedSchemaWithNode, PackageSummary } from './generated-types';
+import type { Config } from './config-types';
 
 export interface GeneratedSchemaState {
   generatedSchemaName: string;

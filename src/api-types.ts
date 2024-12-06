@@ -1,4 +1,4 @@
-import {
+import type {
   ArrayRules,
   BoolListRules,
   BoolRules,

@@ -1,4 +1,4 @@
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
 import { match, P } from 'ts-pattern';
 import { HostedSource, JSONSource, SourceType } from './config-types';
 import { APISource } from './api-types';

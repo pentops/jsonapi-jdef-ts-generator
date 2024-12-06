@@ -1,12 +1,18 @@
-import ts, { type Expression, Identifier, type TypeElement, type TypeNode } from 'typescript';
+import ts, {
+  type Node,
+  type Expression,
+  Identifier,
+  type TypeElement,
+  type TypeNode,
+  TypeParameterDeclaration,
+  TypeLiteralNode,
+} from 'typescript';
 import { match, P } from 'ts-pattern';
 import { pascalCase } from 'change-case';
 import { buildMergedRequestInit, makeRequest } from '@pentops/jsonapi-request';
 import type { Config, GenericOverride, GenericOverrideMap, GenericOverrideWithValue } from './config-types';
 import {
-  buildGenericReferenceNode,
   cleanRefName,
-  createImportDeclaration,
   getAllGenericsForChildren,
   getFullGRPCName,
   getObjectProperties,
@@ -20,20 +26,20 @@ import {
 import {
   BANG_TYPE_FIELD_NAME,
   DerivedEnumHelperType,
-  ParsedAny,
-  ParsedEnum,
-  ParsedEnumValueDescription,
-  ParsedMethod,
-  ParsedObject,
-  ParsedObjectProperty,
-  ParsedOneOf,
-  ParsedPackage,
-  ParsedRef,
-  ParsedSchema,
-  ParsedSchemaWithRef,
-  ParsedSource,
+  type ParsedAny,
+  type ParsedEnum,
+  type ParsedEnumValueDescription,
+  type ParsedMethod,
+  type ParsedObject,
+  type ParsedObjectProperty,
+  type ParsedOneOf,
+  type ParsedPackage,
+  type ParsedRef,
+  type ParsedSchema,
+  type ParsedSchemaWithRef,
+  type ParsedSource,
 } from './parsed-types';
-import {
+import type {
   BuiltMethodSchema,
   GeneratedClientFunction,
   GeneratedClientFunctionWithNodes,
@@ -42,6 +48,7 @@ import {
   PackageSummary,
 } from './generated-types';
 import { getImportPath } from './fs-helpers';
+import { buildGenericReferenceNode, createImportDeclaration } from './ts-helpers';
 
 const {
   addSyntheticLeadingComment,
@@ -167,7 +174,7 @@ export class Generator {
         },
       },
       node: factory.createTypeAliasDeclaration(
-        [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+        [factory.createModifier(SyntaxKind.ExportKeyword)],
         generatedName,
         undefined,
         factory.createTypeReferenceNode('Exclude', [
@@ -183,12 +190,12 @@ export class Generator {
 
   private static buildSchemaTypeParameterDeclarations(
     generics: GenericOverrideWithValue[] | undefined,
-  ): ts.TypeParameterDeclaration[] | undefined {
+  ): TypeParameterDeclaration[] | undefined {
     if (!generics?.length) {
       return undefined;
     }
 
-    const declarations: ts.TypeParameterDeclaration[] = [];
+    const declarations: TypeParameterDeclaration[] = [];
 
     for (let i = generics.length - 1; i >= 0; i -= 1) {
       if (generics[i].value === undefined) {
@@ -245,7 +252,7 @@ export class Generator {
   private buildRefNode(schema: ParsedRef, genericValues?: GenericOverrideWithValue[]): BaseTypeOutput {
     const schemaGenerics = this.schemaGenerics.get(getFullGRPCName(schema));
     const refGenerics = getAllGenericsForChildren(schemaGenerics);
-    const typeArguments: ts.TypeNode[] = [];
+    const typeArguments: TypeNode[] = [];
 
     let allTypesArgumentsAreDefault = true;
 
@@ -454,7 +461,7 @@ export class Generator {
     generics?: GenericOverrideMap,
     genericValues?: GenericOverrideWithValue[],
   ) {
-    const literals: ts.TypeLiteralNode[] = [];
+    const literals: TypeLiteralNode[] = [];
 
     for (const [name, property] of schema.oneOf.properties) {
       literals.push(
@@ -822,7 +829,7 @@ export class Generator {
     this.prepareSchemaTypes(source);
     this.prepareMethods(source);
 
-    const nodeList: ts.Node[] = this.config.typeOutput.topOfFileComment
+    const nodeList: Node[] = this.config.typeOutput.topOfFileComment
       ? [factory.createJSDocComment(this.config.typeOutput.topOfFileComment), factory.createIdentifier('\n')]
       : [];
 
@@ -875,7 +882,7 @@ export class Generator {
       });
     }
 
-    const nodeList: ts.Node[] = [createImportDeclaration(REQUEST_LIBRARY_NAME, [requestInitFn, makeRequestFn])];
+    const nodeList: Node[] = [createImportDeclaration(REQUEST_LIBRARY_NAME, [requestInitFn, makeRequestFn])];
 
     if (this.config.clientOutput.topOfFileComment) {
       nodeList.unshift(

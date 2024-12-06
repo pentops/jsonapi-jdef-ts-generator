@@ -3,7 +3,7 @@ import { ts, ScriptKind } from 'ts-morph';
 import { match, P } from 'ts-pattern';
 import { GeneratedImportPath, IPlugin, ManualExport, ManualImport } from '../types';
 import { getImportPath } from '../../fs-helpers';
-import { createImportDeclaration, createNamedExportDeclaration } from '../../helpers';
+import { createImportDeclaration, createNamedExportDeclaration } from '../../ts-helpers';
 import { GeneratedClientFunction, GeneratedSchema } from '../../generated-types';
 import { IPluginFileConfig, PluginFile } from './types';
 import {

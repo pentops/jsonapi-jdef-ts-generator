@@ -7,6 +7,7 @@ export * from './file/types';
 export * from './j5-list';
 export * from './helpers';
 export * from './fs-helpers';
+export * from './ts-helpers';
 export * from './types';
 export * from './parse-sources';
 export * from './plugin';

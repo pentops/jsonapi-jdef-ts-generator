@@ -1,32 +1,32 @@
 import { match, P } from 'ts-pattern';
 import {
   BANG_TYPE_FIELD_NAME,
-  ParsedAny,
-  ParsedAnyDefinedProperties,
-  ParsedArray,
-  ParsedAuthType,
-  ParsedBool,
-  ParsedBytes,
-  ParsedEntity,
-  ParsedEnum,
-  ParsedFloat,
-  ParsedInteger,
-  ParsedKey,
-  ParsedMap,
-  ParsedMethodListOptions,
-  ParsedObject,
-  ParsedObjectProperty,
-  ParsedOneOf,
-  ParsedPackage,
-  ParsedRef,
-  ParsedSchema,
-  ParsedSchemaWithRef,
-  ParsedService,
-  ParsedSource,
-  ParsedString,
-  SortDirection,
+  type ParsedAny,
+  type ParsedAnyDefinedProperties,
+  type ParsedArray,
+  type ParsedAuthType,
+  type ParsedBool,
+  type ParsedBytes,
+  type ParsedEntity,
+  type ParsedEnum,
+  type ParsedFloat,
+  type ParsedInteger,
+  type ParsedKey,
+  type ParsedMap,
+  type ParsedMethodListOptions,
+  type ParsedObject,
+  type ParsedObjectProperty,
+  type ParsedOneOf,
+  type ParsedPackage,
+  type ParsedRef,
+  type ParsedSchema,
+  type ParsedSchemaWithRef,
+  type ParsedService,
+  type ParsedSource,
+  type ParsedString,
+  type SortDirection,
 } from './parsed-types';
-import {
+import type {
   APIArraySchema,
   APIMethod,
   APIMethodAuthType,
@@ -42,9 +42,9 @@ import {
   APISource,
   APIStateEntity,
 } from './api-types';
-import { EntityPart, HTTPMethod, QueryPart, SortingConstraintValue } from './shared-types';
+import { EntityPart, type HTTPMethod, QueryPart, type SortingConstraintValue } from './shared-types';
 import { getObjectProperties, JSON_SCHEMA_REFERENCE_PREFIX } from './helpers';
-import { PackageSummary } from './generated-types';
+import type { PackageSummary } from './generated-types';
 
 export function apiObjectPropertyToSource(
   property: APIObjectProperty,
