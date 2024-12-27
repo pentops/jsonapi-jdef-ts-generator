@@ -4,6 +4,7 @@ import { camelCase, pascalCase } from 'change-case';
 import type { ParsedMethod } from './parsed-types';
 import { DEFAULT_J5_LIST_GENERIC_OVERRIDES, defaultJ5ListGenericValueDeterminer } from './j5-list';
 import type { ClientOutput, Config, TypeOutput } from './config-types';
+import { getValidKeyName } from './helpers';
 
 const defaultTypeOutput: TypeOutput = {
   fileName: 'index.ts',
@@ -28,6 +29,13 @@ export const defaultConfig: Config = {
     genericOverrides: DEFAULT_J5_LIST_GENERIC_OVERRIDES,
     genericValueDeterminer: defaultJ5ListGenericValueDeterminer,
     enumType: 'enum',
+    enumKeyNameWriter: (rawKeyName, enumValue) => {
+      if (`${Number(rawKeyName)}` === rawKeyName) {
+        return `_${Number(rawKeyName)}`;
+      }
+
+      return getValidKeyName(pascalCase(rawKeyName));
+    },
     nameWriter: (x) =>
       x
         .split(/[./]/)

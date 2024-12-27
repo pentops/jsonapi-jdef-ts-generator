@@ -1,5 +1,5 @@
 import type { TypeNode, TypeReferenceNode } from 'typescript';
-import type { ParsedMethod, ParsedObject, ParsedOneOf, ParsedSchemaWithRef } from './parsed-types';
+import type { ParsedEnum, ParsedMethod, ParsedObject, ParsedOneOf, ParsedSchemaWithRef } from './parsed-types';
 import type { BuiltMethodSchema } from './generated-types';
 import type { IPlugin } from './plugin/types';
 
@@ -81,6 +81,8 @@ export type GenericValueDeterminer = (
   parentMethod?: BuiltMethodSchema,
 ) => GenericOverrideWithValue[] | undefined;
 
+export type EnumKeyNameWriter = (rawKeyName: string, enumValue: ParsedEnum) => string;
+
 interface TypeGenerationConfig {
   // genericOverrides is a map of gRPC method names to a map of field names to generic override configurations. This can be used to override the default types of fields in generated types. Defaults to `DEFAULT_J5_LIST_GENERIC_OVERRIDES`
   genericOverrides?: Map<string, GenericOverrideMap>;
@@ -88,6 +90,8 @@ interface TypeGenerationConfig {
   genericValueDeterminer?: GenericValueDeterminer;
   // enumType set to union will generate union types for enums (e.g., 'test' | 'test2'), enum will generate enum types (e.g., enum Test { test = 'test', test2 = 'test2' })
   enumType: 'union' | 'enum';
+  // enumKeyNameWriter is a function that takes the raw key name of an enum and returns the name of the generated enum key. Can be used to change the naming/casing conventions of the generated enum keys. Only used for enumType: 'enum'.
+  enumKeyNameWriter: EnumKeyNameWriter;
   // nameWriter is a function that takes the name of a schema and returns the name of the generated type. Can be used to change the naming/casing conventions of the generated interfaces/enums.
   nameWriter: (name: string) => string;
 }

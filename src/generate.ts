@@ -8,7 +8,6 @@ import ts, {
   TypeLiteralNode,
 } from 'typescript';
 import { match, P } from 'ts-pattern';
-import { pascalCase } from 'change-case';
 import { buildMergedRequestInit, makeRequest } from '@pentops/jsonapi-request';
 import type { Config, GenericOverride, GenericOverrideMap, GenericOverrideWithValue } from './config-types';
 import {
@@ -113,7 +112,7 @@ export class Generator {
 
   private buildEnumKeyValueMap(schema: ParsedEnum, enumType: 'enum' | 'union') {
     return schema.enum.options.reduce<Map<string, string>>((acc, curr) => {
-      acc.set(curr.name, enumType === 'enum' ? getValidKeyName(pascalCase(curr.name)) : curr.name);
+      acc.set(curr.name, enumType === 'enum' ? this.config.types.enumKeyNameWriter(curr.name, schema) : curr.name);
 
       return acc;
     }, new Map());
