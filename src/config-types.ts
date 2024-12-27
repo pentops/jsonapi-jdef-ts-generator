@@ -117,3 +117,10 @@ export interface Config {
   state?: StateConfig;
   verbose: boolean;
 }
+
+export type ConfigInput = Partial<Config> & {
+  clientOutput: Partial<ClientOutput>;
+  client: Partial<ClientGenerationConfig>;
+  typeOutput: Partial<TypeOutput>;
+  types: Partial<TypeGenerationConfig>;
+};

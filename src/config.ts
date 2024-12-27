@@ -3,8 +3,24 @@ import { findUp } from 'find-up';
 import { camelCase, pascalCase } from 'change-case';
 import type { ParsedMethod } from './parsed-types';
 import { DEFAULT_J5_LIST_GENERIC_OVERRIDES, defaultJ5ListGenericValueDeterminer } from './j5-list';
-import type { ClientOutput, Config, TypeOutput } from './config-types';
+import type { ClientOutput, Config, ConfigInput, EnumKeyNameWriter, TypeOutput } from './config-types';
 import { getValidKeyName } from './helpers';
+
+export const defaultEnumKeyNameWriter: EnumKeyNameWriter = (rawKeyName) => {
+  if (`${Number(rawKeyName)}` === rawKeyName) {
+    return `_${Number(rawKeyName)}`;
+  }
+
+  return getValidKeyName(pascalCase(rawKeyName));
+};
+
+export const defaultTypeNameWriter = (x: string) =>
+  x
+    .split(/[./]/)
+    .map((s) => pascalCase(s))
+    .join('');
+
+export const defaultMethodNameWriter = (method: ParsedMethod) => camelCase(method.fullGrpcName);
 
 const defaultTypeOutput: TypeOutput = {
   fileName: 'index.ts',
@@ -23,24 +39,14 @@ export const defaultConfig: Config = {
   generateIndexFiles: true,
   typeOutput: defaultTypeOutput,
   client: {
-    methodNameWriter: (method: ParsedMethod) => camelCase(method.fullGrpcName),
+    methodNameWriter: defaultMethodNameWriter,
   },
   types: {
     genericOverrides: DEFAULT_J5_LIST_GENERIC_OVERRIDES,
     genericValueDeterminer: defaultJ5ListGenericValueDeterminer,
     enumType: 'enum',
-    enumKeyNameWriter: (rawKeyName, enumValue) => {
-      if (`${Number(rawKeyName)}` === rawKeyName) {
-        return `_${Number(rawKeyName)}`;
-      }
-
-      return getValidKeyName(pascalCase(rawKeyName));
-    },
-    nameWriter: (x) =>
-      x
-        .split(/[./]/)
-        .map((s) => pascalCase(s))
-        .join(''),
+    enumKeyNameWriter: defaultEnumKeyNameWriter,
+    nameWriter: defaultTypeNameWriter,
   },
   jsonSource: {
     path: 'api.json',
@@ -56,7 +62,7 @@ export const defaultConfig: Config = {
   verbose: false,
 };
 
-function mergeConfig(userSpecified: Partial<Config>): Config {
+export function mergeConfig(userSpecified: ConfigInput): Config {
   const config: Config = { ...defaultConfig };
 
   if (userSpecified.dryRun) {
