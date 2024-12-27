@@ -32,13 +32,13 @@
     "typescript": "~5.6.3"
   },
   "devDependencies": {
-    "@pentops/jsonapi-request": "^0.0.6",
-    "@rollup/plugin-node-resolve": "^15.3.0",
-    "@rollup/plugin-typescript": "^12.1.1",
-    "@types/node": "^22.10.1",
+    "@pentops/jsonapi-request": "^0.0.7",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/node": "^22.10.2",
     "prettier": "^3.4.2",
-    "rollup": "^4.28.0",
-    "ts-pattern": "^5.5.0",
+    "rollup": "^4.29.1",
+    "ts-pattern": "^5.6.0",
     "tslib": "^2.8.1",
     "vitest": "^2.1.8"
   },
