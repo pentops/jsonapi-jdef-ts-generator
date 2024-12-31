@@ -28,8 +28,8 @@
     "find-up": "^7.0.0",
     "mitt": "^3.0.1",
     "pretty-ms": "^9.2.0",
-    "ts-morph": "^24.0.0",
-    "typescript": "~5.6.3"
+    "ts-morph": "^25.0.0",
+    "typescript": "~5.7.2"
   },
   "devDependencies": {
     "@pentops/jsonapi-request": "^0.0.7",
