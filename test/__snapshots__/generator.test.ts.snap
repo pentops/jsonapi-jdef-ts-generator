@@ -1,0 +1,2452 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Generator > should generate merged request parameter types from an api.json file when configured 1`] = `
+{
+  "clientFile": "import { buildMergedRequestInit, makeRequest } from '@pentops/jsonapi-request';
+import type { O5AwsDeployerV1DeploymentCommandServiceTerminateDeploymentRequest, O5AwsDeployerV1DeploymentCommandServiceTerminateDeploymentResponse, O5AwsDeployerV1DeploymentCommandServiceTriggerDeploymentRequest, O5AwsDeployerV1DeploymentCommandServiceTriggerDeploymentResponse, O5AwsDeployerV1DeploymentCommandServiceUpsertClusterRequest, O5AwsDeployerV1DeploymentCommandServiceUpsertClusterResponse, O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentRequest, O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentResponse, O5AwsDeployerV1DeploymentCommandServiceUpsertStackRequest, O5AwsDeployerV1DeploymentCommandServiceUpsertStackResponse, O5AwsDeployerV1DeploymentQueryServiceGetDeploymentGetDeploymentRequest, O5AwsDeployerV1DeploymentQueryServiceGetDeploymentResponse, O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsRequest, O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsResponse, O5AwsDeployerV1DeploymentQueryServiceListDeploymentsRequest, O5AwsDeployerV1DeploymentQueryServiceListDeploymentsResponse, O5AwsDeployerV1EnvironmentQueryServiceGetEnvironmentGetEnvironmentRequest, O5AwsDeployerV1EnvironmentQueryServiceGetEnvironmentResponse, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsRequest, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsResponse, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsRequest, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsResponse, O5AwsDeployerV1StackQueryServiceGetStackGetStackRequest, O5AwsDeployerV1StackQueryServiceGetStackResponse, O5AwsDeployerV1StackQueryServiceListStackEventsRequest, O5AwsDeployerV1StackQueryServiceListStackEventsResponse, O5AwsDeployerV1StackQueryServiceListStacksRequest, O5AwsDeployerV1StackQueryServiceListStacksResponse } from '../generated/types';
+
+export async function o5AwsDeployerV1StackQueryServiceGetStack(baseUrl: string | undefined, request?: O5AwsDeployerV1StackQueryServiceGetStackGetStackRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1StackQueryServiceGetStackResponse | undefined> { return makeRequest<O5AwsDeployerV1StackQueryServiceGetStackResponse, O5AwsDeployerV1StackQueryServiceGetStackGetStackRequest>(...buildMergedRequestInit('GET', baseUrl || '', '/deployer/v1/q/stack/:stackId', request, requestInit)); }
+
+export async function o5AwsDeployerV1StackQueryServiceListStacks(baseUrl: string | undefined, request?: O5AwsDeployerV1StackQueryServiceListStacksRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1StackQueryServiceListStacksResponse | undefined> { return makeRequest<O5AwsDeployerV1StackQueryServiceListStacksResponse, O5AwsDeployerV1StackQueryServiceListStacksRequest>(...buildMergedRequestInit('POST', baseUrl || '', '/deployer/v1/q/stacks', request, requestInit)); }
+
+export async function o5AwsDeployerV1StackQueryServiceListStackEvents(baseUrl: string | undefined, request?: O5AwsDeployerV1StackQueryServiceListStackEventsRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1StackQueryServiceListStackEventsResponse | undefined> { return makeRequest<O5AwsDeployerV1StackQueryServiceListStackEventsResponse, O5AwsDeployerV1StackQueryServiceListStackEventsRequest>(...buildMergedRequestInit('POST', baseUrl || '', '/deployer/v1/q/stack/:stackId/events', request, requestInit)); }
+
+export async function o5AwsDeployerV1EnvironmentQueryServiceListEnvironments(baseUrl: string | undefined, request?: O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsResponse | undefined> { return makeRequest<O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsResponse, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsRequest>(...buildMergedRequestInit('POST', baseUrl || '', '/deployer/v1/q/environments', request, requestInit)); }
+
+export async function o5AwsDeployerV1EnvironmentQueryServiceGetEnvironment(baseUrl: string | undefined, request?: O5AwsDeployerV1EnvironmentQueryServiceGetEnvironmentGetEnvironmentRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1EnvironmentQueryServiceGetEnvironmentResponse | undefined> { return makeRequest<O5AwsDeployerV1EnvironmentQueryServiceGetEnvironmentResponse, O5AwsDeployerV1EnvironmentQueryServiceGetEnvironmentGetEnvironmentRequest>(...buildMergedRequestInit('GET', baseUrl || '', '/deployer/v1/q/environment/:environmentId', request, requestInit)); }
+
+export async function o5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEvents(baseUrl: string | undefined, request?: O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsResponse | undefined> { return makeRequest<O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsResponse, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsRequest>(...buildMergedRequestInit('POST', baseUrl || '', '/deployer/v1/q/environment/:environmentId/events', request, requestInit)); }
+
+export async function o5AwsDeployerV1DeploymentQueryServiceGetDeployment(baseUrl: string | undefined, request?: O5AwsDeployerV1DeploymentQueryServiceGetDeploymentGetDeploymentRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1DeploymentQueryServiceGetDeploymentResponse | undefined> { return makeRequest<O5AwsDeployerV1DeploymentQueryServiceGetDeploymentResponse, O5AwsDeployerV1DeploymentQueryServiceGetDeploymentGetDeploymentRequest>(...buildMergedRequestInit('GET', baseUrl || '', '/deployer/v1/q/deployment/:deploymentId', request, requestInit)); }
+
+export async function o5AwsDeployerV1DeploymentQueryServiceListDeploymentEvents(baseUrl: string | undefined, request?: O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsResponse | undefined> { return makeRequest<O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsResponse, O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsRequest>(...buildMergedRequestInit('POST', baseUrl || '', '/deployer/v1/q/deployment/:deploymentId/events', request, requestInit)); }
+
+export async function o5AwsDeployerV1DeploymentQueryServiceListDeployments(baseUrl: string | undefined, request?: O5AwsDeployerV1DeploymentQueryServiceListDeploymentsRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1DeploymentQueryServiceListDeploymentsResponse | undefined> { return makeRequest<O5AwsDeployerV1DeploymentQueryServiceListDeploymentsResponse, O5AwsDeployerV1DeploymentQueryServiceListDeploymentsRequest>(...buildMergedRequestInit('POST', baseUrl || '', '/deployer/v1/q/deployments', request, requestInit)); }
+
+export async function o5AwsDeployerV1DeploymentCommandServiceTriggerDeployment(baseUrl: string | undefined, request?: O5AwsDeployerV1DeploymentCommandServiceTriggerDeploymentRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1DeploymentCommandServiceTriggerDeploymentResponse | undefined> { return makeRequest<O5AwsDeployerV1DeploymentCommandServiceTriggerDeploymentResponse, O5AwsDeployerV1DeploymentCommandServiceTriggerDeploymentRequest>(...buildMergedRequestInit('POST', baseUrl || '', '/deployer/v1/c/deployments/:deploymentId', request, requestInit)); }
+
+export async function o5AwsDeployerV1DeploymentCommandServiceTerminateDeployment(baseUrl: string | undefined, request?: O5AwsDeployerV1DeploymentCommandServiceTerminateDeploymentRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1DeploymentCommandServiceTerminateDeploymentResponse | undefined> { return makeRequest<O5AwsDeployerV1DeploymentCommandServiceTerminateDeploymentResponse, O5AwsDeployerV1DeploymentCommandServiceTerminateDeploymentRequest>(...buildMergedRequestInit('DELETE', baseUrl || '', '/deployer/v1/c/deployments/:deploymentId', request, requestInit)); }
+
+export async function o5AwsDeployerV1DeploymentCommandServiceUpsertCluster(baseUrl: string | undefined, request?: O5AwsDeployerV1DeploymentCommandServiceUpsertClusterRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1DeploymentCommandServiceUpsertClusterResponse | undefined> { return makeRequest<O5AwsDeployerV1DeploymentCommandServiceUpsertClusterResponse, O5AwsDeployerV1DeploymentCommandServiceUpsertClusterRequest>(...buildMergedRequestInit('POST', baseUrl || '', '/deployer/v1/c/clusters/config', request, requestInit)); }
+
+export async function o5AwsDeployerV1DeploymentCommandServiceUpsertEnvironment(baseUrl: string | undefined, request?: O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentResponse | undefined> { return makeRequest<O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentResponse, O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentRequest>(...buildMergedRequestInit('POST', baseUrl || '', '/deployer/v1/c/environments/:environmentId/config', request, requestInit)); }
+
+export async function o5AwsDeployerV1DeploymentCommandServiceUpsertStack(baseUrl: string | undefined, request?: O5AwsDeployerV1DeploymentCommandServiceUpsertStackRequest, requestInit?: RequestInit): Promise<O5AwsDeployerV1DeploymentCommandServiceUpsertStackResponse | undefined> { return makeRequest<O5AwsDeployerV1DeploymentCommandServiceUpsertStackResponse, O5AwsDeployerV1DeploymentCommandServiceUpsertStackRequest>(...buildMergedRequestInit('POST', baseUrl || '', '/deployer/v1/c/stacks/:stackId/config', request, requestInit)); }
+
+",
+  "typesFile": "/**
+ * @generated by @pentops/jsonapi-jdef-ts-generator - do not edit */
+
+export interface O5AwsDeployerV1StepRequestTypePgMigrate {
+    spec?: O5AwsDeployerV1PostgresSpec;
+    infraOutputStepId?: string;
+    ecsClusterName?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypePgEvaluate {
+    dbName?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypeCfScale {
+    stackName?: string;
+    // format: INT32
+    desiredCount?: number;
+}
+
+export type O5AwsDeployerV1DeploymentEventType = {
+    '!type'?: 'created';
+    created?: O5AwsDeployerV1DeploymentEventTypeCreated;
+} | {
+    '!type'?: 'triggered';
+    triggered?: O5AwsDeployerV1DeploymentEventTypeTriggered;
+} | {
+    '!type'?: 'stackWait';
+    stackWait?: O5AwsDeployerV1DeploymentEventTypeStackWait;
+} | {
+    '!type'?: 'stackWaitFailure';
+    stackWaitFailure?: O5AwsDeployerV1DeploymentEventTypeStackWaitFailure;
+} | {
+    '!type'?: 'stackAvailable';
+    stackAvailable?: O5AwsDeployerV1DeploymentEventTypeStackAvailable;
+} | {
+    '!type'?: 'runSteps';
+    runSteps?: O5AwsDeployerV1DeploymentEventTypeRunSteps;
+} | {
+    '!type'?: 'stepResult';
+    stepResult?: O5AwsDeployerV1DeploymentEventTypeStepResult;
+} | {
+    '!type'?: 'runStep';
+    runStep?: O5AwsDeployerV1DeploymentEventTypeRunStep;
+} | {
+    '!type'?: 'error';
+    error?: O5AwsDeployerV1DeploymentEventTypeError;
+} | {
+    '!type'?: 'done';
+    done?: O5AwsDeployerV1DeploymentEventTypeDone;
+} | {
+    '!type'?: 'terminated';
+    terminated?: O5AwsDeployerV1DeploymentEventTypeTerminated;
+};
+
+export type O5AwsDeployerV1DeploymentEventTypeOneOfValue = Exclude<O5AwsDeployerV1DeploymentEventType['!type'], undefined>;
+
+export interface O5AwsDeployerV1StackEventTypeDeploymentCompleted {
+    deployment?: O5AwsDeployerV1StackDeployment;
+}
+
+export interface O5AwsDeployerV1StepOutputTypeCfStatus {
+    output?: O5AwsDeployerV1CfStackOutput;
+}
+
+export interface O5AwsDeployerV1DeploymentSpec {
+    // format: informal
+    appName?: string;
+    // format: informal
+    version?: string;
+    // format: informal
+    environmentName?: string;
+    // format: uuid
+    environmentId?: string;
+    template?: O5AwsDeployerV1S3Template;
+    // format: informal
+    ecsCluster?: string;
+    // format: informal
+    cfStackName?: string;
+    flags?: O5AwsDeployerV1DeploymentFlags;
+    databases?: O5AwsDeployerV1PostgresSpec[];
+    parameters?: O5AwsDeployerV1CloudFormationStackParameter[];
+    snsTopics?: string[];
+}
+
+export interface O5AwsDeployerV1StackDeployment {
+    // format: uuid
+    deploymentId?: string;
+    version?: string;
+}
+
+export type O5AwsDeployerV1StepRequestType = {
+    '!type'?: 'evalJoin';
+    evalJoin?: O5AwsDeployerV1StepRequestTypeEvalJoin;
+} | {
+    '!type'?: 'cfCreate';
+    cfCreate?: O5AwsDeployerV1StepRequestTypeCfCreate;
+} | {
+    '!type'?: 'cfPlan';
+    cfPlan?: O5AwsDeployerV1StepRequestTypeCfPlan;
+} | {
+    '!type'?: 'cfUpdate';
+    cfUpdate?: O5AwsDeployerV1StepRequestTypeCfUpdate;
+} | {
+    '!type'?: 'cfScale';
+    cfScale?: O5AwsDeployerV1StepRequestTypeCfScale;
+} | {
+    '!type'?: 'pgUpsert';
+    pgUpsert?: O5AwsDeployerV1StepRequestTypePgUpsert;
+} | {
+    '!type'?: 'pgEvaluate';
+    pgEvaluate?: O5AwsDeployerV1StepRequestTypePgEvaluate;
+} | {
+    '!type'?: 'pgCleanup';
+    pgCleanup?: O5AwsDeployerV1StepRequestTypePgCleanup;
+} | {
+    '!type'?: 'pgMigrate';
+    pgMigrate?: O5AwsDeployerV1StepRequestTypePgMigrate;
+};
+
+export type O5AwsDeployerV1StepRequestTypeOneOfValue = Exclude<O5AwsDeployerV1StepRequestType['!type'], undefined>;
+
+export interface O5AwsDeployerV1DeploymentStep {
+    // format: uuid
+    id?: string;
+    name?: string;
+    status?: O5AwsDeployerV1StepStatus;
+    request?: O5AwsDeployerV1StepRequestType;
+    output?: O5AwsDeployerV1StepOutputType;
+    error?: string;
+    dependsOn?: string[];
+}
+
+export interface O5AwsDeployerV1PostgresSpec {
+    dbName?: string;
+    dbExtensions?: string[];
+    rootSecretName?: string;
+    migrationTaskOutputName?: string;
+    secretOutputName?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypePgCleanup {
+    spec?: O5AwsDeployerV1PostgresSpec;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeStackAvailable {
+    stackOutput?: O5AwsDeployerV1CfStackOutput;
+}
+
+export interface O5AwsDeployerV1EnvironmentState {
+    metadata: J5StateV1StateMetadata;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+    status?: O5AwsDeployerV1EnvironmentStatus;
+    data?: O5AwsDeployerV1EnvironmentStateData;
+}
+
+export interface O5AwsDeployerV1StackKeys {
+    // format: uuid
+    stackId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+}
+
+export type O5AwsDeployerV1ServiceTriggerSource = {
+    '!type'?: 'github';
+    github?: O5AwsDeployerV1ServiceTriggerSourceGithubSource;
+} | {
+    '!type'?: 'inline';
+    inline?: O5AwsDeployerV1ServiceTriggerSourceInlineSource;
+};
+
+export type O5AwsDeployerV1ServiceTriggerSourceOneOfValue = Exclude<O5AwsDeployerV1ServiceTriggerSource['!type'], undefined>;
+
+export enum O5AwsDeployerV1CfLifecycle {
+    Unspecified = 'UNSPECIFIED',
+    Progress = 'PROGRESS',
+    Complete = 'COMPLETE',
+    RollingBack = 'ROLLING_BACK',
+    CreateFailed = 'CREATE_FAILED',
+    Terminal = 'TERMINAL',
+    RolledBack = 'ROLLED_BACK',
+    Missing = 'MISSING'
+}
+
+export interface O5AwsDeployerV1StepRequestTypePgUpsert {
+    spec?: O5AwsDeployerV1PostgresSpec;
+    infraOutputStepId?: string;
+    rotateCredentials?: boolean;
+}
+
+export interface O5AwsDeployerV1ServiceTriggerSourceGithubSource {
+    owner: string;
+    repo: string;
+    branch?: string;
+    tag?: string;
+    commit?: string;
+}
+
+export interface O5AwsDeployerV1StackEvent {
+    metadata: J5StateV1EventMetadata;
+    // format: uuid
+    stackId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+    event: O5AwsDeployerV1StackEventType;
+}
+
+export interface O5AwsDeployerV1KeyValue {
+    name?: string;
+    value?: string;
+}
+
+export interface O5AwsDeployerV1StackState {
+    metadata: J5StateV1StateMetadata;
+    // format: uuid
+    stackId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+    status?: O5AwsDeployerV1StackStatus;
+    data?: O5AwsDeployerV1StackStateData;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeRunSteps {
+    steps?: O5AwsDeployerV1DeploymentStep[];
+}
+
+export enum O5AwsDeployerV1DeploymentStatus {
+    Unspecified = 'UNSPECIFIED',
+    Queued = 'QUEUED',
+    Triggered = 'TRIGGERED',
+    Waiting = 'WAITING',
+    Available = 'AVAILABLE',
+    Running = 'RUNNING',
+    Done = 'DONE',
+    Failed = 'FAILED',
+    Terminated = 'TERMINATED'
+}
+
+export interface O5AwsDeployerV1ServiceTriggerSourceInlineSource {
+    version: string;
+    application: O5ApplicationV1Application;
+}
+
+export interface O5AwsDeployerV1S3Template {
+    bucket?: string;
+    key?: string;
+    region?: string;
+}
+
+export type O5AwsDeployerV1StepOutputType = {
+    '!type'?: 'cfStatus';
+    cfStatus?: O5AwsDeployerV1StepOutputTypeCfStatus;
+} | {
+    '!type'?: 'cfPlanStatus';
+    cfPlanStatus?: O5AwsDeployerV1StepOutputTypeCfPlanStatus;
+};
+
+export type O5AwsDeployerV1StepOutputTypeOneOfValue = Exclude<O5AwsDeployerV1StepOutputType['!type'], undefined>;
+
+export interface O5AwsDeployerV1CloudFormationStackParameterTypeDesiredCount {
+}
+
+export interface O5AwsDeployerV1ClusterKeys {
+    // format: uuid
+    clusterId?: string;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeRunStep {
+    stepId?: string;
+}
+
+export interface O5AwsDeployerV1EnvironmentEventTypeConfigured {
+    config?: O5EnvironmentV1Environment;
+}
+
+export interface O5AwsDeployerV1StackStateData {
+    currentDeployment?: O5AwsDeployerV1StackDeployment;
+    // pattern: ^[a-z][a-z0-9-]+-[a-z][a-z0-9]+$
+    stackName?: string;
+    // pattern: ^[a-z][a-z0-9-]+$
+    applicationName?: string;
+    // pattern: ^[a-z][a-z0-9-]+$
+    environmentName?: string;
+    // format: uuid
+    environmentId?: string;
+    queuedDeployments?: O5AwsDeployerV1StackDeployment[];
+}
+
+export enum O5AwsDeployerV1StepStatus {
+    Unspecified = 'UNSPECIFIED',
+    Blocked = 'BLOCKED',
+    Ready = 'READY',
+    Active = 'ACTIVE',
+    Done = 'DONE',
+    Failed = 'FAILED'
+}
+
+export enum O5AwsDeployerV1CfChangesetLifecycle {
+    Unspecified = 'UNSPECIFIED',
+    Unavailable = 'UNAVAILABLE',
+    Available = 'AVAILABLE',
+    Execution = 'EXECUTION',
+    Terminal = 'TERMINAL'
+}
+
+export interface O5AwsDeployerV1StackEventTypeRunDeployment {
+    deploymentId?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypeCfPlan {
+    spec?: O5AwsDeployerV1CfStackInput;
+    importResources?: boolean;
+}
+
+export interface O5AwsDeployerV1StepRequestTypeEvalJoin {
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeTriggered {
+}
+
+export interface O5AwsDeployerV1DeploymentState {
+    metadata: J5StateV1StateMetadata;
+    // format: uuid
+    deploymentId?: string;
+    // format: uuid
+    stackId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+    status?: O5AwsDeployerV1DeploymentStatus;
+    data?: O5AwsDeployerV1DeploymentStateData;
+}
+
+export interface O5AwsDeployerV1CfChangesetOutput {
+    lifecycle?: O5AwsDeployerV1CfChangesetLifecycle;
+}
+
+export interface O5AwsDeployerV1DeploymentEvent {
+    metadata: J5StateV1EventMetadata;
+    keys: O5AwsDeployerV1DeploymentKeys;
+    event: O5AwsDeployerV1DeploymentEventType;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeDone {
+}
+
+export interface O5AwsDeployerV1ClusterStateData {
+    config?: O5EnvironmentV1Cluster;
+}
+
+export interface O5AwsDeployerV1DeploymentFlags {
+    quickMode?: boolean;
+    rotateCredentials?: boolean;
+    cancelUpdates?: boolean;
+    dbOnly?: boolean;
+    infraOnly?: boolean;
+    importResources?: boolean;
+}
+
+export interface O5AwsDeployerV1CfStackOutput {
+    lifecycle?: O5AwsDeployerV1CfLifecycle;
+    outputs?: O5AwsDeployerV1KeyValue[];
+}
+
+export type O5AwsDeployerV1StackEventType = {
+    '!type'?: 'configured';
+    configured?: O5AwsDeployerV1StackEventTypeConfigured;
+} | {
+    '!type'?: 'deploymentRequested';
+    deploymentRequested?: O5AwsDeployerV1StackEventTypeDeploymentRequested;
+} | {
+    '!type'?: 'deploymentCompleted';
+    deploymentCompleted?: O5AwsDeployerV1StackEventTypeDeploymentCompleted;
+} | {
+    '!type'?: 'deploymentFailed';
+    deploymentFailed?: O5AwsDeployerV1StackEventTypeDeploymentFailed;
+} | {
+    '!type'?: 'runDeployment';
+    runDeployment?: O5AwsDeployerV1StackEventTypeRunDeployment;
+};
+
+export type O5AwsDeployerV1StackEventTypeOneOfValue = Exclude<O5AwsDeployerV1StackEventType['!type'], undefined>;
+
+export interface O5AwsDeployerV1DeploymentKeys {
+    // format: uuid
+    deploymentId?: string;
+    // format: uuid
+    stackId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+}
+
+export interface O5AwsDeployerV1CloudFormationStackParameterTypeRulePriority {
+    routeGroup?: O5ApplicationV1RouteGroup;
+}
+
+export interface O5AwsDeployerV1StackEventTypeConfigured {
+    applicationName?: string;
+    environmentId?: string;
+    environmentName?: string;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeStepResult {
+    stepId?: string;
+    status?: O5AwsDeployerV1StepStatus;
+    output?: O5AwsDeployerV1StepOutputType;
+    error?: string;
+}
+
+export enum O5AwsDeployerV1ClusterStatus {
+    Unspecified = 'UNSPECIFIED',
+    Active = 'ACTIVE'
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeStackWait {
+}
+
+export interface O5AwsDeployerV1EnvironmentKeys {
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypeCfCreate {
+    spec?: O5AwsDeployerV1CfStackInput;
+    output?: O5AwsDeployerV1CfStackOutput;
+    emptyStack?: boolean;
+}
+
+export interface O5AwsDeployerV1ClusterState {
+    metadata: J5StateV1StateMetadata;
+    // format: uuid
+    clusterId?: string;
+    status?: O5AwsDeployerV1ClusterStatus;
+    data?: O5AwsDeployerV1ClusterStateData;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeStackWaitFailure {
+    error?: string;
+}
+
+export enum O5AwsDeployerV1StackStatus {
+    Unspecified = 'UNSPECIFIED',
+    Migrating = 'MIGRATING',
+    Available = 'AVAILABLE'
+}
+
+export interface O5AwsDeployerV1EnvironmentStateData {
+    config?: O5EnvironmentV1Environment;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeCreated {
+    request?: J5MessagingV1RequestMetadata;
+    spec?: O5AwsDeployerV1DeploymentSpec;
+}
+
+export type O5AwsDeployerV1ClusterEventType = {
+    '!type'?: 'configured';
+    configured?: O5AwsDeployerV1ClusterEventTypeConfigured;
+};
+
+export type O5AwsDeployerV1ClusterEventTypeOneOfValue = Exclude<O5AwsDeployerV1ClusterEventType['!type'], undefined>;
+
+export interface O5AwsDeployerV1DeploymentStateData {
+    request?: J5MessagingV1RequestMetadata;
+    spec?: O5AwsDeployerV1DeploymentSpec;
+    steps?: O5AwsDeployerV1DeploymentStep[];
+}
+
+export interface O5AwsDeployerV1EnvironmentEvent {
+    metadata: J5StateV1EventMetadata;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+    event: O5AwsDeployerV1EnvironmentEventType;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeError {
+    error?: string;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeTerminated {
+}
+
+export interface O5AwsDeployerV1StackEventTypeDeploymentFailed {
+    deployment?: O5AwsDeployerV1StackDeployment;
+    error?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypeCfUpdate {
+    spec?: O5AwsDeployerV1CfStackInput;
+    output?: O5AwsDeployerV1CfStackOutput;
+}
+
+export interface O5AwsDeployerV1CloudFormationStackParameter {
+    name?: string;
+    value?: string;
+    resolve?: O5AwsDeployerV1CloudFormationStackParameterType;
+}
+
+export type O5AwsDeployerV1EnvironmentEventType = {
+    '!type'?: 'configured';
+    configured?: O5AwsDeployerV1EnvironmentEventTypeConfigured;
+};
+
+export type O5AwsDeployerV1EnvironmentEventTypeOneOfValue = Exclude<O5AwsDeployerV1EnvironmentEventType['!type'], undefined>;
+
+export type O5AwsDeployerV1CloudFormationStackParameterType = {
+    '!type'?: 'rulePriority';
+    rulePriority?: O5AwsDeployerV1CloudFormationStackParameterTypeRulePriority;
+} | {
+    '!type'?: 'desiredCount';
+    desiredCount?: O5AwsDeployerV1CloudFormationStackParameterTypeDesiredCount;
+};
+
+export type O5AwsDeployerV1CloudFormationStackParameterTypeOneOfValue = Exclude<O5AwsDeployerV1CloudFormationStackParameterType['!type'], undefined>;
+
+export interface O5AwsDeployerV1StepOutputTypeCfPlanStatus {
+    output?: O5AwsDeployerV1CfChangesetOutput;
+}
+
+export interface O5AwsDeployerV1ClusterEventTypeConfigured {
+    config?: O5EnvironmentV1Cluster;
+}
+
+export interface O5AwsDeployerV1StackEventTypeDeploymentRequested {
+    deployment?: O5AwsDeployerV1StackDeployment;
+    applicationName?: string;
+    environmentName?: string;
+    environmentId?: string;
+}
+
+export enum O5AwsDeployerV1EnvironmentStatus {
+    Unspecified = 'UNSPECIFIED',
+    Active = 'ACTIVE'
+}
+
+export interface O5AwsDeployerV1CfStackInput {
+    stackName?: string;
+    s3Template?: O5AwsDeployerV1S3Template;
+    templateBody?: string;
+    emptyStack?: boolean;
+    // format: INT32
+    desiredCount?: number;
+    parameters?: O5AwsDeployerV1CloudFormationStackParameter[];
+    snsTopics?: string[];
+}
+
+export interface J5AuthV1Claim {
+    // format: uuid
+    realmId?: string;
+    // pattern: ^[a-z0-9_]+$
+    tenantType?: string;
+    // format: uuid
+    tenantId?: string;
+    scopes?: string[];
+}
+
+export interface J5AuthV1Actor {
+    // format: uuid
+    subjectId?: string;
+    subjectType?: string;
+    authenticationMethod?: J5AuthV1AuthenticationMethod;
+    claim: J5AuthV1Claim;
+    actorTags?: Record<string, string>;
+}
+
+export interface J5AuthV1AuthenticationMethodExternal {
+    systemName?: string;
+    metadata?: Record<string, string>;
+}
+
+export type J5AuthV1AuthenticationMethod = {
+    '!type'?: 'jwt';
+    jwt?: J5AuthV1AuthenticationMethodJwt;
+} | {
+    '!type'?: 'session';
+    session?: J5AuthV1AuthenticationMethodSession;
+} | {
+    '!type'?: 'external';
+    external?: J5AuthV1AuthenticationMethodExternal;
+};
+
+export type J5AuthV1AuthenticationMethodOneOfValue = Exclude<J5AuthV1AuthenticationMethod['!type'], undefined>;
+
+export interface J5AuthV1AuthenticationMethodJwt {
+    jwtId?: string;
+    issuer?: string;
+    // format: date-time
+    issuedAt?: string;
+}
+
+export interface J5AuthV1Fingerprint {
+    ipAddress?: string;
+    userAgent?: string;
+}
+
+export interface J5AuthV1AuthenticationMethodSession {
+    sessionManager?: string;
+    sessionId?: string;
+    // format: date-time
+    verifiedAt?: string;
+    // format: date-time
+    authenticatedAt?: string;
+}
+
+export interface J5AuthV1Action {
+    method: string;
+    actor: J5AuthV1Actor;
+    fingerprint?: J5AuthV1Fingerprint;
+}
+
+export interface O5ApplicationV1ContainerImage {
+    name?: string;
+    tag?: string;
+    registry?: string;
+}
+
+export interface O5ApplicationV1BlobstoreRef {
+    readPermission?: boolean;
+    writePermission?: boolean;
+    application?: string;
+    bucketName?: string;
+}
+
+export interface O5ApplicationV1WorkerConfig {
+    // format: INT64
+    replayChance?: string;
+    // format: INT64
+    deadletterChance?: string;
+    noDeadletters?: boolean;
+}
+
+export interface O5ApplicationV1MapEnvVar {
+}
+
+export interface O5ApplicationV1Route {
+    prefix?: string;
+    subdomains?: string[];
+    protocol?: O5ApplicationV1RouteProtocol;
+    targetContainer?: string;
+    bypassIngress?: boolean;
+    // format: INT64
+    port?: string;
+    routeGroup?: O5ApplicationV1RouteGroup;
+}
+
+export interface O5ApplicationV1Subscription {
+    name?: string;
+    envName?: string;
+    targetContainer?: string;
+    // format: INT64
+    port?: string;
+    grpcMethod?: string;
+    replyTo?: string;
+    rawMessage?: boolean;
+    metaInfraEvents?: boolean;
+}
+
+export interface O5ApplicationV1Secret {
+    name?: string;
+}
+
+export enum O5ApplicationV1O5Var {
+    Unspecified = 'UNSPECIFIED',
+    AdapterEndpoint = 'ADAPTER_ENDPOINT'
+}
+
+export interface O5ApplicationV1BlobstoreEnvVar {
+    name?: string;
+    subPath?: string;
+    s3Direct?: boolean;
+}
+
+export interface O5ApplicationV1DatabaseEnvVar {
+    databaseName?: string;
+}
+
+export enum O5ApplicationV1RouteProtocol {
+    Unspecified = 'UNSPECIFIED',
+    Http = 'HTTP',
+    Grpc = 'GRPC'
+}
+
+export interface O5ApplicationV1DeploymentConfig {
+    quickMode?: boolean;
+}
+
+export interface O5ApplicationV1Target {
+    name?: string;
+}
+
+export interface O5ApplicationV1Application {
+    // pattern: ^[a-z][a-z0-9]+$
+    name?: string;
+    targets?: O5ApplicationV1Target[];
+    blobstores?: O5ApplicationV1Blobstore[];
+    databases?: O5ApplicationV1Database[];
+    runtimes?: O5ApplicationV1Runtime[];
+    secrets?: O5ApplicationV1Secret[];
+    deploymentConfig?: O5ApplicationV1DeploymentConfig;
+}
+
+export interface O5ApplicationV1Runtime {
+    // pattern: ^[a-z][a-z0-9]+$
+    name?: string;
+    directIngress?: boolean;
+    containers?: O5ApplicationV1Container[];
+    routes?: O5ApplicationV1Route[];
+    subscriptions?: O5ApplicationV1Subscription[];
+    workerConfig?: O5ApplicationV1WorkerConfig;
+    namedEnvPolicies?: string[];
+}
+
+export interface O5ApplicationV1SecretEnvVar {
+    secretName?: string;
+    jsonKey?: string;
+}
+
+export interface O5ApplicationV1EnvironmentVariable {
+    name?: string;
+    value?: string;
+    database?: O5ApplicationV1DatabaseEnvVar;
+    blobstore?: O5ApplicationV1BlobstoreEnvVar;
+    envMap?: O5ApplicationV1MapEnvVar;
+    fromEnv?: O5ApplicationV1FromEnvVar;
+    secret?: O5ApplicationV1SecretEnvVar;
+    o5?: O5ApplicationV1O5Var;
+}
+
+export interface O5ApplicationV1FromEnvVar {
+    name?: string;
+}
+
+export interface O5ApplicationV1Grant {
+    principal?: string;
+}
+
+export interface O5ApplicationV1Blobstore {
+    name?: string;
+    grants?: O5ApplicationV1Grant[];
+    ref?: O5ApplicationV1BlobstoreRef;
+}
+
+export enum O5ApplicationV1Demand {
+    Unspecified = 'UNSPECIFIED',
+    Light = 'LIGHT',
+    Medium = 'MEDIUM',
+    Heavy = 'HEAVY'
+}
+
+export enum O5ApplicationV1RouteGroup {
+    Unspecified = 'UNSPECIFIED',
+    First = 'FIRST',
+    Normal = 'NORMAL',
+    Fallback = 'FALLBACK'
+}
+
+export interface O5ApplicationV1Database {
+    name?: string;
+    postgres?: O5ApplicationV1DatabasePostgres;
+}
+
+export interface O5ApplicationV1DatabasePostgres {
+    dbName?: string;
+    serverGroup?: string;
+    dbExtensions?: string[];
+    migrateContainer?: O5ApplicationV1Container;
+    runOutbox?: boolean;
+}
+
+export interface O5ApplicationV1Container {
+    name?: string;
+    imageUrl?: string;
+    image?: O5ApplicationV1ContainerImage;
+    command?: string[];
+    demand?: O5ApplicationV1Demand;
+    envVars?: O5ApplicationV1EnvironmentVariable[];
+    mountDockerSocket?: boolean;
+}
+
+export interface O5EnvironmentV1CombinedConfig {
+    name?: string;
+    ecsCluster?: O5EnvironmentV1EcsCluster;
+    environments?: O5EnvironmentV1Environment[];
+}
+
+export interface O5EnvironmentV1Environment {
+    // pattern: ^[a-z][a-z0-9-]+$
+    fullName?: string;
+    clusterName?: string;
+    trustJwks?: string[];
+    vars?: O5EnvironmentV1CustomVariable[];
+    corsOrigins?: string[];
+    aws?: O5EnvironmentV1AwsEnvironment;
+}
+
+export interface O5EnvironmentV1AwsEnvironment {
+    hostHeader?: string;
+    environmentLinks?: O5EnvironmentV1AwsLink[];
+    iamPolicies?: O5EnvironmentV1NamedIamPolicy[];
+}
+
+export interface O5EnvironmentV1Cluster {
+    name?: string;
+    ecsCluster?: O5EnvironmentV1EcsCluster;
+}
+
+export interface O5EnvironmentV1AwsLink {
+    lookupName?: string;
+    fullName?: string;
+    snsPrefix?: string;
+}
+
+export interface O5EnvironmentV1RdsHost {
+    serverGroup?: string;
+    secretName?: string;
+}
+
+export interface O5EnvironmentV1CustomVariable {
+    name?: string;
+    value?: string;
+    join?: O5EnvironmentV1CustomVariableJoin;
+}
+
+export interface O5EnvironmentV1EcsCluster {
+    listenerArn?: string;
+    ecsClusterName?: string;
+    ecsRepo?: string;
+    ecsTaskExecutionRole?: string;
+    vpcId?: string;
+    awsAccount?: string;
+    awsRegion?: string;
+    eventBusArn?: string;
+    o5DeployerAssumeRole?: string;
+    o5DeployerGrantRoles?: string[];
+    rdsHosts?: O5EnvironmentV1RdsHost[];
+    sidecarImageVersion?: string;
+    sidecarImageRepo?: string;
+    globalNamespace?: string;
+}
+
+export interface O5EnvironmentV1NamedIamPolicy {
+    name?: string;
+    policyArn?: string;
+}
+
+export interface O5EnvironmentV1CustomVariableJoin {
+    delimiter?: string;
+    values?: string[];
+}
+
+export interface J5ListV1Range {
+    min?: string;
+    max?: string;
+}
+
+export interface J5ListV1Search<TSearchField extends string = never> {
+    field?: TSearchField;
+    value?: string;
+}
+
+export interface J5ListV1QueryRequest<TSearchField extends string = never, TSortField extends string = never, TFilterField extends string = never> {
+    searches?: J5ListV1Search<TSearchField>[];
+    sorts?: J5ListV1Sort<TSortField>[];
+    filters?: J5ListV1Filter<TFilterField>[];
+}
+
+export interface J5ListV1PageResponse {
+    nextToken?: string;
+}
+
+export interface J5ListV1FieldType {
+    value?: string;
+    range?: J5ListV1Range;
+}
+
+export interface J5ListV1Sort<TSortField extends string = never> {
+    field?: TSortField;
+    descending?: boolean;
+}
+
+export interface J5ListV1PageRequest {
+    token?: string;
+    // format: INT64
+    pageSize?: string;
+}
+
+export interface J5ListV1Field<TFilterField extends string = never> {
+    name?: TFilterField;
+    type: J5ListV1FieldType;
+}
+
+export type J5ListV1Filter<TFilterField extends string = never> = {
+    '!type'?: 'field';
+    field?: J5ListV1Field<TFilterField>;
+} | {
+    '!type'?: 'and';
+    and?: J5ListV1And<TFilterField>;
+} | {
+    '!type'?: 'or';
+    or?: J5ListV1Or<TFilterField>;
+};
+
+export type J5ListV1FilterOneOfValue = Exclude<J5ListV1Filter['!type'], undefined>;
+
+export interface J5ListV1And<TFilterField extends string = never> {
+    filters?: J5ListV1Filter<TFilterField>[];
+}
+
+export interface J5ListV1Or<TFilterField extends string = never> {
+    filters?: J5ListV1Filter<TFilterField>[];
+}
+
+export interface J5StateV1StateMetadata {
+    // format: date-time
+    createdAt?: string;
+    // format: date-time
+    updatedAt?: string;
+    // format: UINT64
+    lastSequence?: string;
+}
+
+export interface J5StateV1ReplyCause {
+    request?: J5StateV1PsmEventCause;
+    async?: boolean;
+}
+
+export interface J5StateV1ExternalEventCause {
+    systemName?: string;
+    eventName?: string;
+    externalId?: string;
+}
+
+export type J5StateV1Cause = {
+    '!type'?: 'psmEvent';
+    psmEvent?: J5StateV1PsmEventCause;
+} | {
+    '!type'?: 'command';
+    command?: J5AuthV1Action;
+} | {
+    '!type'?: 'externalEvent';
+    externalEvent?: J5StateV1ExternalEventCause;
+} | {
+    '!type'?: 'reply';
+    reply?: J5StateV1ReplyCause;
+};
+
+export type J5StateV1CauseOneOfValue = Exclude<J5StateV1Cause['!type'], undefined>;
+
+export interface J5StateV1PsmEventCause {
+    // format: uuid
+    eventId?: string;
+    stateMachine?: string;
+}
+
+export interface J5StateV1EventMetadata {
+    // format: uuid
+    eventId?: string;
+    // format: UINT64
+    sequence?: string;
+    // format: date-time
+    timestamp: string;
+    cause?: J5StateV1Cause;
+}
+
+export interface J5MessagingV1RequestMetadata {
+    replyTo?: string;
+    // bytes
+    context?: string;
+}
+
+export enum O5AwsDeployerV1StackQueryServiceListStacksFilterableFields {
+    Status = 'status'
+}
+
+export enum O5AwsDeployerV1StackQueryServiceListStacksSearchableFields {
+    DataStackName = 'data.stackName',
+    DataApplicationName = 'data.applicationName',
+    DataEnvironmentName = 'data.environmentName'
+}
+
+export enum O5AwsDeployerV1StackQueryServiceListStacksSortableFields {
+    MetadataCreatedAt = 'metadata.createdAt',
+    MetadataUpdatedAt = 'metadata.updatedAt'
+}
+
+export enum O5AwsDeployerV1StackQueryServiceListStackEventsSortableFields {
+    MetadataTimestamp = 'metadata.timestamp'
+}
+
+export enum O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsFilterableFields {
+    Status = 'status'
+}
+
+export enum O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsSearchableFields {
+    DataConfigFullName = 'data.config.fullName'
+}
+
+export enum O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsSortableFields {
+    MetadataCreatedAt = 'metadata.createdAt',
+    MetadataUpdatedAt = 'metadata.updatedAt'
+}
+
+export enum O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsSearchableFields {
+    EventConfiguredConfigFullName = 'event.configured.config.fullName'
+}
+
+export enum O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsSortableFields {
+    MetadataTimestamp = 'metadata.timestamp'
+}
+
+export enum O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsFilterableFields {
+    EventCreatedSpecAppName = 'event.created.spec.appName',
+    EventCreatedSpecVersion = 'event.created.spec.version',
+    EventCreatedSpecEnvironmentName = 'event.created.spec.environmentName',
+    EventCreatedSpecEnvironmentId = 'event.created.spec.environmentId',
+    EventCreatedSpecEcsCluster = 'event.created.spec.ecsCluster',
+    EventCreatedSpecCfStackName = 'event.created.spec.cfStackName'
+}
+
+export enum O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsSortableFields {
+    MetadataTimestamp = 'metadata.timestamp'
+}
+
+export enum O5AwsDeployerV1DeploymentQueryServiceListDeploymentsFilterableFields {
+    Status = 'status',
+    DataSpecAppName = 'data.spec.appName',
+    DataSpecVersion = 'data.spec.version',
+    DataSpecEnvironmentName = 'data.spec.environmentName',
+    DataSpecEnvironmentId = 'data.spec.environmentId',
+    DataSpecEcsCluster = 'data.spec.ecsCluster',
+    DataSpecCfStackName = 'data.spec.cfStackName'
+}
+
+export enum O5AwsDeployerV1DeploymentQueryServiceListDeploymentsSortableFields {
+    MetadataCreatedAt = 'metadata.createdAt',
+    MetadataUpdatedAt = 'metadata.updatedAt'
+}
+
+export interface O5AwsDeployerV1StackQueryServiceGetStackResponse {
+    state?: O5AwsDeployerV1StackState;
+    events?: O5AwsDeployerV1StackEvent[];
+}
+
+export interface O5AwsDeployerV1StackQueryServiceGetStackGetStackRequest {
+    stackId: string;
+}
+
+export interface O5AwsDeployerV1StackQueryServiceListStacksResponse {
+    stacks?: O5AwsDeployerV1StackState[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1StackQueryServiceListStacksRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<O5AwsDeployerV1StackQueryServiceListStacksSearchableFields, O5AwsDeployerV1StackQueryServiceListStacksSortableFields, O5AwsDeployerV1StackQueryServiceListStacksFilterableFields>;
+}
+
+export interface O5AwsDeployerV1StackQueryServiceListStackEventsResponse {
+    events?: O5AwsDeployerV1StackEvent[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1StackQueryServiceListStackEventsRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<never, O5AwsDeployerV1StackQueryServiceListStackEventsSortableFields>;
+    stackId: string;
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsResponse {
+    environments?: O5AwsDeployerV1EnvironmentState[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsSearchableFields, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsSortableFields, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsFilterableFields>;
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceGetEnvironmentResponse {
+    state?: O5AwsDeployerV1EnvironmentState;
+    events?: O5AwsDeployerV1EnvironmentEvent[];
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceGetEnvironmentGetEnvironmentRequest {
+    environmentId: string;
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsResponse {
+    events?: O5AwsDeployerV1EnvironmentEvent[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsSearchableFields, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsSortableFields>;
+    environmentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceGetDeploymentResponse {
+    state?: O5AwsDeployerV1DeploymentState;
+    events?: O5AwsDeployerV1DeploymentEvent[];
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceGetDeploymentGetDeploymentRequest {
+    deploymentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsResponse {
+    events?: O5AwsDeployerV1DeploymentEvent[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<never, O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsSortableFields, O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsFilterableFields>;
+    deploymentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceListDeploymentsResponse {
+    deployments?: O5AwsDeployerV1DeploymentState[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceListDeploymentsRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<never, O5AwsDeployerV1DeploymentQueryServiceListDeploymentsSortableFields, O5AwsDeployerV1DeploymentQueryServiceListDeploymentsFilterableFields>;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceTriggerDeploymentResponse {
+    // format: uuid
+    deploymentId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceTriggerDeploymentRequest {
+    environment?: string;
+    source?: O5AwsDeployerV1ServiceTriggerSource;
+    flags?: O5AwsDeployerV1DeploymentFlags;
+    // format: uuid
+    deploymentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceTerminateDeploymentResponse {
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceTerminateDeploymentRequest {
+    // format: uuid
+    deploymentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertClusterResponse {
+    state: O5AwsDeployerV1ClusterState;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertClusterRequest {
+    clusterId?: string;
+    config?: O5EnvironmentV1CombinedConfig;
+    // bytes
+    configYaml?: string;
+    // bytes
+    configJson?: string;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentResponse {
+    state: O5AwsDeployerV1EnvironmentState;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentRequest {
+    clusterId?: string;
+    config?: O5EnvironmentV1Environment;
+    // bytes
+    configYaml?: string;
+    // bytes
+    configJson?: string;
+    environmentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertStackResponse {
+    state: O5AwsDeployerV1StackState;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertStackRequest {
+    stackId: string;
+}
+
+",
+}
+`;
+
+exports[`Generator > should generate types from an api.json file 1`] = `
+{
+  "clientFile": undefined,
+  "typesFile": "/**
+ * @generated by @pentops/jsonapi-jdef-ts-generator - do not edit */
+
+export interface O5AwsDeployerV1StepRequestTypePgMigrate {
+    spec?: O5AwsDeployerV1PostgresSpec;
+    infraOutputStepId?: string;
+    ecsClusterName?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypePgEvaluate {
+    dbName?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypeCfScale {
+    stackName?: string;
+    // format: INT32
+    desiredCount?: number;
+}
+
+export type O5AwsDeployerV1DeploymentEventType = {
+    '!type'?: 'created';
+    created?: O5AwsDeployerV1DeploymentEventTypeCreated;
+} | {
+    '!type'?: 'triggered';
+    triggered?: O5AwsDeployerV1DeploymentEventTypeTriggered;
+} | {
+    '!type'?: 'stackWait';
+    stackWait?: O5AwsDeployerV1DeploymentEventTypeStackWait;
+} | {
+    '!type'?: 'stackWaitFailure';
+    stackWaitFailure?: O5AwsDeployerV1DeploymentEventTypeStackWaitFailure;
+} | {
+    '!type'?: 'stackAvailable';
+    stackAvailable?: O5AwsDeployerV1DeploymentEventTypeStackAvailable;
+} | {
+    '!type'?: 'runSteps';
+    runSteps?: O5AwsDeployerV1DeploymentEventTypeRunSteps;
+} | {
+    '!type'?: 'stepResult';
+    stepResult?: O5AwsDeployerV1DeploymentEventTypeStepResult;
+} | {
+    '!type'?: 'runStep';
+    runStep?: O5AwsDeployerV1DeploymentEventTypeRunStep;
+} | {
+    '!type'?: 'error';
+    error?: O5AwsDeployerV1DeploymentEventTypeError;
+} | {
+    '!type'?: 'done';
+    done?: O5AwsDeployerV1DeploymentEventTypeDone;
+} | {
+    '!type'?: 'terminated';
+    terminated?: O5AwsDeployerV1DeploymentEventTypeTerminated;
+};
+
+export type O5AwsDeployerV1DeploymentEventTypeOneOfValue = Exclude<O5AwsDeployerV1DeploymentEventType['!type'], undefined>;
+
+export interface O5AwsDeployerV1StackEventTypeDeploymentCompleted {
+    deployment?: O5AwsDeployerV1StackDeployment;
+}
+
+export interface O5AwsDeployerV1StepOutputTypeCfStatus {
+    output?: O5AwsDeployerV1CfStackOutput;
+}
+
+export interface O5AwsDeployerV1DeploymentSpec {
+    // format: informal
+    appName?: string;
+    // format: informal
+    version?: string;
+    // format: informal
+    environmentName?: string;
+    // format: uuid
+    environmentId?: string;
+    template?: O5AwsDeployerV1S3Template;
+    // format: informal
+    ecsCluster?: string;
+    // format: informal
+    cfStackName?: string;
+    flags?: O5AwsDeployerV1DeploymentFlags;
+    databases?: O5AwsDeployerV1PostgresSpec[];
+    parameters?: O5AwsDeployerV1CloudFormationStackParameter[];
+    snsTopics?: string[];
+}
+
+export interface O5AwsDeployerV1StackDeployment {
+    // format: uuid
+    deploymentId?: string;
+    version?: string;
+}
+
+export type O5AwsDeployerV1StepRequestType = {
+    '!type'?: 'evalJoin';
+    evalJoin?: O5AwsDeployerV1StepRequestTypeEvalJoin;
+} | {
+    '!type'?: 'cfCreate';
+    cfCreate?: O5AwsDeployerV1StepRequestTypeCfCreate;
+} | {
+    '!type'?: 'cfPlan';
+    cfPlan?: O5AwsDeployerV1StepRequestTypeCfPlan;
+} | {
+    '!type'?: 'cfUpdate';
+    cfUpdate?: O5AwsDeployerV1StepRequestTypeCfUpdate;
+} | {
+    '!type'?: 'cfScale';
+    cfScale?: O5AwsDeployerV1StepRequestTypeCfScale;
+} | {
+    '!type'?: 'pgUpsert';
+    pgUpsert?: O5AwsDeployerV1StepRequestTypePgUpsert;
+} | {
+    '!type'?: 'pgEvaluate';
+    pgEvaluate?: O5AwsDeployerV1StepRequestTypePgEvaluate;
+} | {
+    '!type'?: 'pgCleanup';
+    pgCleanup?: O5AwsDeployerV1StepRequestTypePgCleanup;
+} | {
+    '!type'?: 'pgMigrate';
+    pgMigrate?: O5AwsDeployerV1StepRequestTypePgMigrate;
+};
+
+export type O5AwsDeployerV1StepRequestTypeOneOfValue = Exclude<O5AwsDeployerV1StepRequestType['!type'], undefined>;
+
+export interface O5AwsDeployerV1DeploymentStep {
+    // format: uuid
+    id?: string;
+    name?: string;
+    status?: O5AwsDeployerV1StepStatus;
+    request?: O5AwsDeployerV1StepRequestType;
+    output?: O5AwsDeployerV1StepOutputType;
+    error?: string;
+    dependsOn?: string[];
+}
+
+export interface O5AwsDeployerV1PostgresSpec {
+    dbName?: string;
+    dbExtensions?: string[];
+    rootSecretName?: string;
+    migrationTaskOutputName?: string;
+    secretOutputName?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypePgCleanup {
+    spec?: O5AwsDeployerV1PostgresSpec;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeStackAvailable {
+    stackOutput?: O5AwsDeployerV1CfStackOutput;
+}
+
+export interface O5AwsDeployerV1EnvironmentState {
+    metadata: J5StateV1StateMetadata;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+    status?: O5AwsDeployerV1EnvironmentStatus;
+    data?: O5AwsDeployerV1EnvironmentStateData;
+}
+
+export interface O5AwsDeployerV1StackKeys {
+    // format: uuid
+    stackId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+}
+
+export type O5AwsDeployerV1ServiceTriggerSource = {
+    '!type'?: 'github';
+    github?: O5AwsDeployerV1ServiceTriggerSourceGithubSource;
+} | {
+    '!type'?: 'inline';
+    inline?: O5AwsDeployerV1ServiceTriggerSourceInlineSource;
+};
+
+export type O5AwsDeployerV1ServiceTriggerSourceOneOfValue = Exclude<O5AwsDeployerV1ServiceTriggerSource['!type'], undefined>;
+
+export enum O5AwsDeployerV1CfLifecycle {
+    Unspecified = 'UNSPECIFIED',
+    Progress = 'PROGRESS',
+    Complete = 'COMPLETE',
+    RollingBack = 'ROLLING_BACK',
+    CreateFailed = 'CREATE_FAILED',
+    Terminal = 'TERMINAL',
+    RolledBack = 'ROLLED_BACK',
+    Missing = 'MISSING'
+}
+
+export interface O5AwsDeployerV1StepRequestTypePgUpsert {
+    spec?: O5AwsDeployerV1PostgresSpec;
+    infraOutputStepId?: string;
+    rotateCredentials?: boolean;
+}
+
+export interface O5AwsDeployerV1ServiceTriggerSourceGithubSource {
+    owner: string;
+    repo: string;
+    branch?: string;
+    tag?: string;
+    commit?: string;
+}
+
+export interface O5AwsDeployerV1StackEvent {
+    metadata: J5StateV1EventMetadata;
+    // format: uuid
+    stackId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+    event: O5AwsDeployerV1StackEventType;
+}
+
+export interface O5AwsDeployerV1KeyValue {
+    name?: string;
+    value?: string;
+}
+
+export interface O5AwsDeployerV1StackState {
+    metadata: J5StateV1StateMetadata;
+    // format: uuid
+    stackId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+    status?: O5AwsDeployerV1StackStatus;
+    data?: O5AwsDeployerV1StackStateData;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeRunSteps {
+    steps?: O5AwsDeployerV1DeploymentStep[];
+}
+
+export enum O5AwsDeployerV1DeploymentStatus {
+    Unspecified = 'UNSPECIFIED',
+    Queued = 'QUEUED',
+    Triggered = 'TRIGGERED',
+    Waiting = 'WAITING',
+    Available = 'AVAILABLE',
+    Running = 'RUNNING',
+    Done = 'DONE',
+    Failed = 'FAILED',
+    Terminated = 'TERMINATED'
+}
+
+export interface O5AwsDeployerV1ServiceTriggerSourceInlineSource {
+    version: string;
+    application: O5ApplicationV1Application;
+}
+
+export interface O5AwsDeployerV1S3Template {
+    bucket?: string;
+    key?: string;
+    region?: string;
+}
+
+export type O5AwsDeployerV1StepOutputType = {
+    '!type'?: 'cfStatus';
+    cfStatus?: O5AwsDeployerV1StepOutputTypeCfStatus;
+} | {
+    '!type'?: 'cfPlanStatus';
+    cfPlanStatus?: O5AwsDeployerV1StepOutputTypeCfPlanStatus;
+};
+
+export type O5AwsDeployerV1StepOutputTypeOneOfValue = Exclude<O5AwsDeployerV1StepOutputType['!type'], undefined>;
+
+export interface O5AwsDeployerV1CloudFormationStackParameterTypeDesiredCount {
+}
+
+export interface O5AwsDeployerV1ClusterKeys {
+    // format: uuid
+    clusterId?: string;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeRunStep {
+    stepId?: string;
+}
+
+export interface O5AwsDeployerV1EnvironmentEventTypeConfigured {
+    config?: O5EnvironmentV1Environment;
+}
+
+export interface O5AwsDeployerV1StackStateData {
+    currentDeployment?: O5AwsDeployerV1StackDeployment;
+    // pattern: ^[a-z][a-z0-9-]+-[a-z][a-z0-9]+$
+    stackName?: string;
+    // pattern: ^[a-z][a-z0-9-]+$
+    applicationName?: string;
+    // pattern: ^[a-z][a-z0-9-]+$
+    environmentName?: string;
+    // format: uuid
+    environmentId?: string;
+    queuedDeployments?: O5AwsDeployerV1StackDeployment[];
+}
+
+export enum O5AwsDeployerV1StepStatus {
+    Unspecified = 'UNSPECIFIED',
+    Blocked = 'BLOCKED',
+    Ready = 'READY',
+    Active = 'ACTIVE',
+    Done = 'DONE',
+    Failed = 'FAILED'
+}
+
+export enum O5AwsDeployerV1CfChangesetLifecycle {
+    Unspecified = 'UNSPECIFIED',
+    Unavailable = 'UNAVAILABLE',
+    Available = 'AVAILABLE',
+    Execution = 'EXECUTION',
+    Terminal = 'TERMINAL'
+}
+
+export interface O5AwsDeployerV1StackEventTypeRunDeployment {
+    deploymentId?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypeCfPlan {
+    spec?: O5AwsDeployerV1CfStackInput;
+    importResources?: boolean;
+}
+
+export interface O5AwsDeployerV1StepRequestTypeEvalJoin {
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeTriggered {
+}
+
+export interface O5AwsDeployerV1DeploymentState {
+    metadata: J5StateV1StateMetadata;
+    // format: uuid
+    deploymentId?: string;
+    // format: uuid
+    stackId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+    status?: O5AwsDeployerV1DeploymentStatus;
+    data?: O5AwsDeployerV1DeploymentStateData;
+}
+
+export interface O5AwsDeployerV1CfChangesetOutput {
+    lifecycle?: O5AwsDeployerV1CfChangesetLifecycle;
+}
+
+export interface O5AwsDeployerV1DeploymentEvent {
+    metadata: J5StateV1EventMetadata;
+    keys: O5AwsDeployerV1DeploymentKeys;
+    event: O5AwsDeployerV1DeploymentEventType;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeDone {
+}
+
+export interface O5AwsDeployerV1ClusterStateData {
+    config?: O5EnvironmentV1Cluster;
+}
+
+export interface O5AwsDeployerV1DeploymentFlags {
+    quickMode?: boolean;
+    rotateCredentials?: boolean;
+    cancelUpdates?: boolean;
+    dbOnly?: boolean;
+    infraOnly?: boolean;
+    importResources?: boolean;
+}
+
+export interface O5AwsDeployerV1CfStackOutput {
+    lifecycle?: O5AwsDeployerV1CfLifecycle;
+    outputs?: O5AwsDeployerV1KeyValue[];
+}
+
+export type O5AwsDeployerV1StackEventType = {
+    '!type'?: 'configured';
+    configured?: O5AwsDeployerV1StackEventTypeConfigured;
+} | {
+    '!type'?: 'deploymentRequested';
+    deploymentRequested?: O5AwsDeployerV1StackEventTypeDeploymentRequested;
+} | {
+    '!type'?: 'deploymentCompleted';
+    deploymentCompleted?: O5AwsDeployerV1StackEventTypeDeploymentCompleted;
+} | {
+    '!type'?: 'deploymentFailed';
+    deploymentFailed?: O5AwsDeployerV1StackEventTypeDeploymentFailed;
+} | {
+    '!type'?: 'runDeployment';
+    runDeployment?: O5AwsDeployerV1StackEventTypeRunDeployment;
+};
+
+export type O5AwsDeployerV1StackEventTypeOneOfValue = Exclude<O5AwsDeployerV1StackEventType['!type'], undefined>;
+
+export interface O5AwsDeployerV1DeploymentKeys {
+    // format: uuid
+    deploymentId?: string;
+    // format: uuid
+    stackId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+}
+
+export interface O5AwsDeployerV1CloudFormationStackParameterTypeRulePriority {
+    routeGroup?: O5ApplicationV1RouteGroup;
+}
+
+export interface O5AwsDeployerV1StackEventTypeConfigured {
+    applicationName?: string;
+    environmentId?: string;
+    environmentName?: string;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeStepResult {
+    stepId?: string;
+    status?: O5AwsDeployerV1StepStatus;
+    output?: O5AwsDeployerV1StepOutputType;
+    error?: string;
+}
+
+export enum O5AwsDeployerV1ClusterStatus {
+    Unspecified = 'UNSPECIFIED',
+    Active = 'ACTIVE'
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeStackWait {
+}
+
+export interface O5AwsDeployerV1EnvironmentKeys {
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypeCfCreate {
+    spec?: O5AwsDeployerV1CfStackInput;
+    output?: O5AwsDeployerV1CfStackOutput;
+    emptyStack?: boolean;
+}
+
+export interface O5AwsDeployerV1ClusterState {
+    metadata: J5StateV1StateMetadata;
+    // format: uuid
+    clusterId?: string;
+    status?: O5AwsDeployerV1ClusterStatus;
+    data?: O5AwsDeployerV1ClusterStateData;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeStackWaitFailure {
+    error?: string;
+}
+
+export enum O5AwsDeployerV1StackStatus {
+    Unspecified = 'UNSPECIFIED',
+    Migrating = 'MIGRATING',
+    Available = 'AVAILABLE'
+}
+
+export interface O5AwsDeployerV1EnvironmentStateData {
+    config?: O5EnvironmentV1Environment;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeCreated {
+    request?: J5MessagingV1RequestMetadata;
+    spec?: O5AwsDeployerV1DeploymentSpec;
+}
+
+export type O5AwsDeployerV1ClusterEventType = {
+    '!type'?: 'configured';
+    configured?: O5AwsDeployerV1ClusterEventTypeConfigured;
+};
+
+export type O5AwsDeployerV1ClusterEventTypeOneOfValue = Exclude<O5AwsDeployerV1ClusterEventType['!type'], undefined>;
+
+export interface O5AwsDeployerV1DeploymentStateData {
+    request?: J5MessagingV1RequestMetadata;
+    spec?: O5AwsDeployerV1DeploymentSpec;
+    steps?: O5AwsDeployerV1DeploymentStep[];
+}
+
+export interface O5AwsDeployerV1EnvironmentEvent {
+    metadata: J5StateV1EventMetadata;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+    event: O5AwsDeployerV1EnvironmentEventType;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeError {
+    error?: string;
+}
+
+export interface O5AwsDeployerV1DeploymentEventTypeTerminated {
+}
+
+export interface O5AwsDeployerV1StackEventTypeDeploymentFailed {
+    deployment?: O5AwsDeployerV1StackDeployment;
+    error?: string;
+}
+
+export interface O5AwsDeployerV1StepRequestTypeCfUpdate {
+    spec?: O5AwsDeployerV1CfStackInput;
+    output?: O5AwsDeployerV1CfStackOutput;
+}
+
+export interface O5AwsDeployerV1CloudFormationStackParameter {
+    name?: string;
+    value?: string;
+    resolve?: O5AwsDeployerV1CloudFormationStackParameterType;
+}
+
+export type O5AwsDeployerV1EnvironmentEventType = {
+    '!type'?: 'configured';
+    configured?: O5AwsDeployerV1EnvironmentEventTypeConfigured;
+};
+
+export type O5AwsDeployerV1EnvironmentEventTypeOneOfValue = Exclude<O5AwsDeployerV1EnvironmentEventType['!type'], undefined>;
+
+export type O5AwsDeployerV1CloudFormationStackParameterType = {
+    '!type'?: 'rulePriority';
+    rulePriority?: O5AwsDeployerV1CloudFormationStackParameterTypeRulePriority;
+} | {
+    '!type'?: 'desiredCount';
+    desiredCount?: O5AwsDeployerV1CloudFormationStackParameterTypeDesiredCount;
+};
+
+export type O5AwsDeployerV1CloudFormationStackParameterTypeOneOfValue = Exclude<O5AwsDeployerV1CloudFormationStackParameterType['!type'], undefined>;
+
+export interface O5AwsDeployerV1StepOutputTypeCfPlanStatus {
+    output?: O5AwsDeployerV1CfChangesetOutput;
+}
+
+export interface O5AwsDeployerV1ClusterEventTypeConfigured {
+    config?: O5EnvironmentV1Cluster;
+}
+
+export interface O5AwsDeployerV1StackEventTypeDeploymentRequested {
+    deployment?: O5AwsDeployerV1StackDeployment;
+    applicationName?: string;
+    environmentName?: string;
+    environmentId?: string;
+}
+
+export enum O5AwsDeployerV1EnvironmentStatus {
+    Unspecified = 'UNSPECIFIED',
+    Active = 'ACTIVE'
+}
+
+export interface O5AwsDeployerV1CfStackInput {
+    stackName?: string;
+    s3Template?: O5AwsDeployerV1S3Template;
+    templateBody?: string;
+    emptyStack?: boolean;
+    // format: INT32
+    desiredCount?: number;
+    parameters?: O5AwsDeployerV1CloudFormationStackParameter[];
+    snsTopics?: string[];
+}
+
+export interface J5AuthV1Claim {
+    // format: uuid
+    realmId?: string;
+    // pattern: ^[a-z0-9_]+$
+    tenantType?: string;
+    // format: uuid
+    tenantId?: string;
+    scopes?: string[];
+}
+
+export interface J5AuthV1Actor {
+    // format: uuid
+    subjectId?: string;
+    subjectType?: string;
+    authenticationMethod?: J5AuthV1AuthenticationMethod;
+    claim: J5AuthV1Claim;
+    actorTags?: Record<string, string>;
+}
+
+export interface J5AuthV1AuthenticationMethodExternal {
+    systemName?: string;
+    metadata?: Record<string, string>;
+}
+
+export type J5AuthV1AuthenticationMethod = {
+    '!type'?: 'jwt';
+    jwt?: J5AuthV1AuthenticationMethodJwt;
+} | {
+    '!type'?: 'session';
+    session?: J5AuthV1AuthenticationMethodSession;
+} | {
+    '!type'?: 'external';
+    external?: J5AuthV1AuthenticationMethodExternal;
+};
+
+export type J5AuthV1AuthenticationMethodOneOfValue = Exclude<J5AuthV1AuthenticationMethod['!type'], undefined>;
+
+export interface J5AuthV1AuthenticationMethodJwt {
+    jwtId?: string;
+    issuer?: string;
+    // format: date-time
+    issuedAt?: string;
+}
+
+export interface J5AuthV1Fingerprint {
+    ipAddress?: string;
+    userAgent?: string;
+}
+
+export interface J5AuthV1AuthenticationMethodSession {
+    sessionManager?: string;
+    sessionId?: string;
+    // format: date-time
+    verifiedAt?: string;
+    // format: date-time
+    authenticatedAt?: string;
+}
+
+export interface J5AuthV1Action {
+    method: string;
+    actor: J5AuthV1Actor;
+    fingerprint?: J5AuthV1Fingerprint;
+}
+
+export interface O5ApplicationV1ContainerImage {
+    name?: string;
+    tag?: string;
+    registry?: string;
+}
+
+export interface O5ApplicationV1BlobstoreRef {
+    readPermission?: boolean;
+    writePermission?: boolean;
+    application?: string;
+    bucketName?: string;
+}
+
+export interface O5ApplicationV1WorkerConfig {
+    // format: INT64
+    replayChance?: string;
+    // format: INT64
+    deadletterChance?: string;
+    noDeadletters?: boolean;
+}
+
+export interface O5ApplicationV1MapEnvVar {
+}
+
+export interface O5ApplicationV1Route {
+    prefix?: string;
+    subdomains?: string[];
+    protocol?: O5ApplicationV1RouteProtocol;
+    targetContainer?: string;
+    bypassIngress?: boolean;
+    // format: INT64
+    port?: string;
+    routeGroup?: O5ApplicationV1RouteGroup;
+}
+
+export interface O5ApplicationV1Subscription {
+    name?: string;
+    envName?: string;
+    targetContainer?: string;
+    // format: INT64
+    port?: string;
+    grpcMethod?: string;
+    replyTo?: string;
+    rawMessage?: boolean;
+    metaInfraEvents?: boolean;
+}
+
+export interface O5ApplicationV1Secret {
+    name?: string;
+}
+
+export enum O5ApplicationV1O5Var {
+    Unspecified = 'UNSPECIFIED',
+    AdapterEndpoint = 'ADAPTER_ENDPOINT'
+}
+
+export interface O5ApplicationV1BlobstoreEnvVar {
+    name?: string;
+    subPath?: string;
+    s3Direct?: boolean;
+}
+
+export interface O5ApplicationV1DatabaseEnvVar {
+    databaseName?: string;
+}
+
+export enum O5ApplicationV1RouteProtocol {
+    Unspecified = 'UNSPECIFIED',
+    Http = 'HTTP',
+    Grpc = 'GRPC'
+}
+
+export interface O5ApplicationV1DeploymentConfig {
+    quickMode?: boolean;
+}
+
+export interface O5ApplicationV1Target {
+    name?: string;
+}
+
+export interface O5ApplicationV1Application {
+    // pattern: ^[a-z][a-z0-9]+$
+    name?: string;
+    targets?: O5ApplicationV1Target[];
+    blobstores?: O5ApplicationV1Blobstore[];
+    databases?: O5ApplicationV1Database[];
+    runtimes?: O5ApplicationV1Runtime[];
+    secrets?: O5ApplicationV1Secret[];
+    deploymentConfig?: O5ApplicationV1DeploymentConfig;
+}
+
+export interface O5ApplicationV1Runtime {
+    // pattern: ^[a-z][a-z0-9]+$
+    name?: string;
+    directIngress?: boolean;
+    containers?: O5ApplicationV1Container[];
+    routes?: O5ApplicationV1Route[];
+    subscriptions?: O5ApplicationV1Subscription[];
+    workerConfig?: O5ApplicationV1WorkerConfig;
+    namedEnvPolicies?: string[];
+}
+
+export interface O5ApplicationV1SecretEnvVar {
+    secretName?: string;
+    jsonKey?: string;
+}
+
+export interface O5ApplicationV1EnvironmentVariable {
+    name?: string;
+    value?: string;
+    database?: O5ApplicationV1DatabaseEnvVar;
+    blobstore?: O5ApplicationV1BlobstoreEnvVar;
+    envMap?: O5ApplicationV1MapEnvVar;
+    fromEnv?: O5ApplicationV1FromEnvVar;
+    secret?: O5ApplicationV1SecretEnvVar;
+    o5?: O5ApplicationV1O5Var;
+}
+
+export interface O5ApplicationV1FromEnvVar {
+    name?: string;
+}
+
+export interface O5ApplicationV1Grant {
+    principal?: string;
+}
+
+export interface O5ApplicationV1Blobstore {
+    name?: string;
+    grants?: O5ApplicationV1Grant[];
+    ref?: O5ApplicationV1BlobstoreRef;
+}
+
+export enum O5ApplicationV1Demand {
+    Unspecified = 'UNSPECIFIED',
+    Light = 'LIGHT',
+    Medium = 'MEDIUM',
+    Heavy = 'HEAVY'
+}
+
+export enum O5ApplicationV1RouteGroup {
+    Unspecified = 'UNSPECIFIED',
+    First = 'FIRST',
+    Normal = 'NORMAL',
+    Fallback = 'FALLBACK'
+}
+
+export interface O5ApplicationV1Database {
+    name?: string;
+    postgres?: O5ApplicationV1DatabasePostgres;
+}
+
+export interface O5ApplicationV1DatabasePostgres {
+    dbName?: string;
+    serverGroup?: string;
+    dbExtensions?: string[];
+    migrateContainer?: O5ApplicationV1Container;
+    runOutbox?: boolean;
+}
+
+export interface O5ApplicationV1Container {
+    name?: string;
+    imageUrl?: string;
+    image?: O5ApplicationV1ContainerImage;
+    command?: string[];
+    demand?: O5ApplicationV1Demand;
+    envVars?: O5ApplicationV1EnvironmentVariable[];
+    mountDockerSocket?: boolean;
+}
+
+export interface O5EnvironmentV1CombinedConfig {
+    name?: string;
+    ecsCluster?: O5EnvironmentV1EcsCluster;
+    environments?: O5EnvironmentV1Environment[];
+}
+
+export interface O5EnvironmentV1Environment {
+    // pattern: ^[a-z][a-z0-9-]+$
+    fullName?: string;
+    clusterName?: string;
+    trustJwks?: string[];
+    vars?: O5EnvironmentV1CustomVariable[];
+    corsOrigins?: string[];
+    aws?: O5EnvironmentV1AwsEnvironment;
+}
+
+export interface O5EnvironmentV1AwsEnvironment {
+    hostHeader?: string;
+    environmentLinks?: O5EnvironmentV1AwsLink[];
+    iamPolicies?: O5EnvironmentV1NamedIamPolicy[];
+}
+
+export interface O5EnvironmentV1Cluster {
+    name?: string;
+    ecsCluster?: O5EnvironmentV1EcsCluster;
+}
+
+export interface O5EnvironmentV1AwsLink {
+    lookupName?: string;
+    fullName?: string;
+    snsPrefix?: string;
+}
+
+export interface O5EnvironmentV1RdsHost {
+    serverGroup?: string;
+    secretName?: string;
+}
+
+export interface O5EnvironmentV1CustomVariable {
+    name?: string;
+    value?: string;
+    join?: O5EnvironmentV1CustomVariableJoin;
+}
+
+export interface O5EnvironmentV1EcsCluster {
+    listenerArn?: string;
+    ecsClusterName?: string;
+    ecsRepo?: string;
+    ecsTaskExecutionRole?: string;
+    vpcId?: string;
+    awsAccount?: string;
+    awsRegion?: string;
+    eventBusArn?: string;
+    o5DeployerAssumeRole?: string;
+    o5DeployerGrantRoles?: string[];
+    rdsHosts?: O5EnvironmentV1RdsHost[];
+    sidecarImageVersion?: string;
+    sidecarImageRepo?: string;
+    globalNamespace?: string;
+}
+
+export interface O5EnvironmentV1NamedIamPolicy {
+    name?: string;
+    policyArn?: string;
+}
+
+export interface O5EnvironmentV1CustomVariableJoin {
+    delimiter?: string;
+    values?: string[];
+}
+
+export interface J5ListV1Range {
+    min?: string;
+    max?: string;
+}
+
+export interface J5ListV1Search<TSearchField extends string = never> {
+    field?: TSearchField;
+    value?: string;
+}
+
+export interface J5ListV1QueryRequest<TSearchField extends string = never, TSortField extends string = never, TFilterField extends string = never> {
+    searches?: J5ListV1Search<TSearchField>[];
+    sorts?: J5ListV1Sort<TSortField>[];
+    filters?: J5ListV1Filter<TFilterField>[];
+}
+
+export interface J5ListV1PageResponse {
+    nextToken?: string;
+}
+
+export interface J5ListV1FieldType {
+    value?: string;
+    range?: J5ListV1Range;
+}
+
+export interface J5ListV1Sort<TSortField extends string = never> {
+    field?: TSortField;
+    descending?: boolean;
+}
+
+export interface J5ListV1PageRequest {
+    token?: string;
+    // format: INT64
+    pageSize?: string;
+}
+
+export interface J5ListV1Field<TFilterField extends string = never> {
+    name?: TFilterField;
+    type: J5ListV1FieldType;
+}
+
+export type J5ListV1Filter<TFilterField extends string = never> = {
+    '!type'?: 'field';
+    field?: J5ListV1Field<TFilterField>;
+} | {
+    '!type'?: 'and';
+    and?: J5ListV1And<TFilterField>;
+} | {
+    '!type'?: 'or';
+    or?: J5ListV1Or<TFilterField>;
+};
+
+export type J5ListV1FilterOneOfValue = Exclude<J5ListV1Filter['!type'], undefined>;
+
+export interface J5ListV1And<TFilterField extends string = never> {
+    filters?: J5ListV1Filter<TFilterField>[];
+}
+
+export interface J5ListV1Or<TFilterField extends string = never> {
+    filters?: J5ListV1Filter<TFilterField>[];
+}
+
+export interface J5StateV1StateMetadata {
+    // format: date-time
+    createdAt?: string;
+    // format: date-time
+    updatedAt?: string;
+    // format: UINT64
+    lastSequence?: string;
+}
+
+export interface J5StateV1ReplyCause {
+    request?: J5StateV1PsmEventCause;
+    async?: boolean;
+}
+
+export interface J5StateV1ExternalEventCause {
+    systemName?: string;
+    eventName?: string;
+    externalId?: string;
+}
+
+export type J5StateV1Cause = {
+    '!type'?: 'psmEvent';
+    psmEvent?: J5StateV1PsmEventCause;
+} | {
+    '!type'?: 'command';
+    command?: J5AuthV1Action;
+} | {
+    '!type'?: 'externalEvent';
+    externalEvent?: J5StateV1ExternalEventCause;
+} | {
+    '!type'?: 'reply';
+    reply?: J5StateV1ReplyCause;
+};
+
+export type J5StateV1CauseOneOfValue = Exclude<J5StateV1Cause['!type'], undefined>;
+
+export interface J5StateV1PsmEventCause {
+    // format: uuid
+    eventId?: string;
+    stateMachine?: string;
+}
+
+export interface J5StateV1EventMetadata {
+    // format: uuid
+    eventId?: string;
+    // format: UINT64
+    sequence?: string;
+    // format: date-time
+    timestamp: string;
+    cause?: J5StateV1Cause;
+}
+
+export interface J5MessagingV1RequestMetadata {
+    replyTo?: string;
+    // bytes
+    context?: string;
+}
+
+export enum O5AwsDeployerV1StackQueryServiceListStacksFilterableFields {
+    Status = 'status'
+}
+
+export enum O5AwsDeployerV1StackQueryServiceListStacksSearchableFields {
+    DataStackName = 'data.stackName',
+    DataApplicationName = 'data.applicationName',
+    DataEnvironmentName = 'data.environmentName'
+}
+
+export enum O5AwsDeployerV1StackQueryServiceListStacksSortableFields {
+    MetadataCreatedAt = 'metadata.createdAt',
+    MetadataUpdatedAt = 'metadata.updatedAt'
+}
+
+export enum O5AwsDeployerV1StackQueryServiceListStackEventsSortableFields {
+    MetadataTimestamp = 'metadata.timestamp'
+}
+
+export enum O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsFilterableFields {
+    Status = 'status'
+}
+
+export enum O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsSearchableFields {
+    DataConfigFullName = 'data.config.fullName'
+}
+
+export enum O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsSortableFields {
+    MetadataCreatedAt = 'metadata.createdAt',
+    MetadataUpdatedAt = 'metadata.updatedAt'
+}
+
+export enum O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsSearchableFields {
+    EventConfiguredConfigFullName = 'event.configured.config.fullName'
+}
+
+export enum O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsSortableFields {
+    MetadataTimestamp = 'metadata.timestamp'
+}
+
+export enum O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsFilterableFields {
+    EventCreatedSpecAppName = 'event.created.spec.appName',
+    EventCreatedSpecVersion = 'event.created.spec.version',
+    EventCreatedSpecEnvironmentName = 'event.created.spec.environmentName',
+    EventCreatedSpecEnvironmentId = 'event.created.spec.environmentId',
+    EventCreatedSpecEcsCluster = 'event.created.spec.ecsCluster',
+    EventCreatedSpecCfStackName = 'event.created.spec.cfStackName'
+}
+
+export enum O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsSortableFields {
+    MetadataTimestamp = 'metadata.timestamp'
+}
+
+export enum O5AwsDeployerV1DeploymentQueryServiceListDeploymentsFilterableFields {
+    Status = 'status',
+    DataSpecAppName = 'data.spec.appName',
+    DataSpecVersion = 'data.spec.version',
+    DataSpecEnvironmentName = 'data.spec.environmentName',
+    DataSpecEnvironmentId = 'data.spec.environmentId',
+    DataSpecEcsCluster = 'data.spec.ecsCluster',
+    DataSpecCfStackName = 'data.spec.cfStackName'
+}
+
+export enum O5AwsDeployerV1DeploymentQueryServiceListDeploymentsSortableFields {
+    MetadataCreatedAt = 'metadata.createdAt',
+    MetadataUpdatedAt = 'metadata.updatedAt'
+}
+
+export interface O5AwsDeployerV1StackQueryServiceGetStackResponse {
+    state?: O5AwsDeployerV1StackState;
+    events?: O5AwsDeployerV1StackEvent[];
+}
+
+export interface O5AwsDeployerV1StackQueryServiceGetStackGetStackRequest {
+    stackId: string;
+}
+
+export interface O5AwsDeployerV1StackQueryServiceListStacksResponse {
+    stacks?: O5AwsDeployerV1StackState[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1StackQueryServiceListStacksRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<O5AwsDeployerV1StackQueryServiceListStacksSearchableFields, O5AwsDeployerV1StackQueryServiceListStacksSortableFields, O5AwsDeployerV1StackQueryServiceListStacksFilterableFields>;
+}
+
+export interface O5AwsDeployerV1StackQueryServiceListStackEventsResponse {
+    events?: O5AwsDeployerV1StackEvent[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1StackQueryServiceListStackEventsRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<never, O5AwsDeployerV1StackQueryServiceListStackEventsSortableFields>;
+    stackId: string;
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsResponse {
+    environments?: O5AwsDeployerV1EnvironmentState[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsSearchableFields, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsSortableFields, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentsFilterableFields>;
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceGetEnvironmentResponse {
+    state?: O5AwsDeployerV1EnvironmentState;
+    events?: O5AwsDeployerV1EnvironmentEvent[];
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceGetEnvironmentGetEnvironmentRequest {
+    environmentId: string;
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsResponse {
+    events?: O5AwsDeployerV1EnvironmentEvent[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsSearchableFields, O5AwsDeployerV1EnvironmentQueryServiceListEnvironmentEventsSortableFields>;
+    environmentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceGetDeploymentResponse {
+    state?: O5AwsDeployerV1DeploymentState;
+    events?: O5AwsDeployerV1DeploymentEvent[];
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceGetDeploymentGetDeploymentRequest {
+    deploymentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsResponse {
+    events?: O5AwsDeployerV1DeploymentEvent[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<never, O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsSortableFields, O5AwsDeployerV1DeploymentQueryServiceListDeploymentEventsFilterableFields>;
+    deploymentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceListDeploymentsResponse {
+    deployments?: O5AwsDeployerV1DeploymentState[];
+    page?: J5ListV1PageResponse;
+}
+
+export interface O5AwsDeployerV1DeploymentQueryServiceListDeploymentsRequest {
+    page?: J5ListV1PageRequest;
+    query?: J5ListV1QueryRequest<never, O5AwsDeployerV1DeploymentQueryServiceListDeploymentsSortableFields, O5AwsDeployerV1DeploymentQueryServiceListDeploymentsFilterableFields>;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceTriggerDeploymentResponse {
+    // format: uuid
+    deploymentId?: string;
+    // format: uuid
+    environmentId?: string;
+    // format: uuid
+    clusterId?: string;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceTriggerDeploymentRequest {
+    environment?: string;
+    source?: O5AwsDeployerV1ServiceTriggerSource;
+    flags?: O5AwsDeployerV1DeploymentFlags;
+    // format: uuid
+    deploymentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceTerminateDeploymentResponse {
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceTerminateDeploymentRequest {
+    // format: uuid
+    deploymentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertClusterResponse {
+    state: O5AwsDeployerV1ClusterState;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertClusterRequest {
+    clusterId?: string;
+    config?: O5EnvironmentV1CombinedConfig;
+    // bytes
+    configYaml?: string;
+    // bytes
+    configJson?: string;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentResponse {
+    state: O5AwsDeployerV1EnvironmentState;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentRequest {
+    clusterId?: string;
+    config?: O5EnvironmentV1Environment;
+    // bytes
+    configYaml?: string;
+    // bytes
+    configJson?: string;
+    environmentId: string;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertStackResponse {
+    state: O5AwsDeployerV1StackState;
+}
+
+export interface O5AwsDeployerV1DeploymentCommandServiceUpsertStackRequest {
+    stackId: string;
+}
+
+",
+}
+`;
