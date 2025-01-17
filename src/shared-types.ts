@@ -68,6 +68,27 @@ export interface BytesRules {
   maxLength?: number;
 }
 
+export interface DateRules {
+  minimum?: string;
+  maximum?: string;
+  exclusiveMinimum?: boolean;
+  exclusiveMaximum?: boolean;
+}
+
+export interface DecimalRules {
+  minimum?: string;
+  maximum?: string;
+  exclusiveMinimum?: boolean;
+  exclusiveMaximum?: boolean;
+}
+
+export interface TimestampRules {
+  minimum?: string;
+  maximum?: string;
+  exclusiveMinimum?: boolean;
+  exclusiveMaximum?: boolean;
+}
+
 export interface EnumDocs {
   table?: boolean;
 }
@@ -84,6 +105,8 @@ export enum EntityPart {
   State = 'STATE',
   Event = 'EVENT',
   Data = 'DATA',
+  References = 'REFERENCES',
+  Derived = 'DERIVED',
 }
 
 export interface EntityObjectSchema {
@@ -157,6 +180,15 @@ export interface EnumListRules {
 }
 
 export interface TimestampListRules {
+  filtering?: FilteringConstraint;
+  sorting?: SortingConstraint;
+}
+
+export interface AnyListRules {
+  filtering?: FilteringConstraint;
+}
+
+export interface DecimalListRules {
   filtering?: FilteringConstraint;
   sorting?: SortingConstraint;
 }

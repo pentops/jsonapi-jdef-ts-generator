@@ -1,9 +1,13 @@
 import type {
+  AnyListRules,
   ArrayRules,
   BoolListRules,
   BoolRules,
   BytesRules,
   DateListRules,
+  DateRules,
+  DecimalListRules,
+  DecimalRules,
   EntityObjectSchema,
   EnumDocs,
   EnumListRules,
@@ -25,6 +29,7 @@ import type {
   StringListRules,
   StringRules,
   TimestampListRules,
+  TimestampRules,
 } from './shared-types';
 
 export interface APIMetadata {
@@ -144,6 +149,7 @@ export interface APIRefValue {
 
 export interface APIAnyValueBase {
   onlyDefined?: boolean;
+  listRules?: AnyListRules;
 }
 
 export interface APIAnyValueWithoutDefinedTypes extends APIAnyValueBase {
@@ -227,7 +233,8 @@ export interface APIKeySchema {
 }
 
 export interface APIDecimalValue {
-  rules?: {};
+  rules?: DecimalRules;
+  listRules?: DecimalListRules;
 }
 
 export interface APIDecimalSchema {
@@ -236,7 +243,7 @@ export interface APIDecimalSchema {
 }
 
 export interface APITimestampValue {
-  rules?: {};
+  rules?: TimestampRules;
   listRules?: TimestampListRules;
 }
 
@@ -246,7 +253,7 @@ export interface APITimestampSchema {
 }
 
 export interface APIDateValue {
-  rules?: {};
+  rules?: DateRules;
   listRules?: DateListRules;
 }
 

@@ -7,6 +7,8 @@ import {
   type ParsedAuthType,
   type ParsedBool,
   type ParsedBytes,
+  ParsedDate,
+  ParsedDecimal,
   type ParsedEntity,
   type ParsedEnum,
   type ParsedFloat,
@@ -24,6 +26,7 @@ import {
   type ParsedService,
   type ParsedSource,
   type ParsedString,
+  ParsedTimestamp,
   type SortDirection,
 } from './parsed-types';
 import type {
@@ -242,32 +245,28 @@ export function apiSchemaToSource(
     )
     .with(
       { '!type': 'date' },
-      (s): ParsedString =>
-        ({
-          string: {
-            format: 'date',
-            rules: s.date.rules || {},
-            listRules: s.date.listRules || {},
-          },
-        }) as ParsedString,
+      (s): ParsedDate => ({
+        date: {
+          rules: s.date.rules || {},
+          listRules: s.date.listRules || {},
+        },
+      }),
     )
     .with(
       { '!type': 'timestamp' },
-      (s): ParsedString =>
-        ({
-          string: {
-            format: 'date-time',
-            rules: s.timestamp.rules || {},
-            listRules: s.timestamp.listRules || {},
-          },
-        }) as ParsedString,
+      (s): ParsedTimestamp => ({
+        timestamp: {
+          rules: s.timestamp.rules || {},
+          listRules: s.timestamp.listRules || {},
+        },
+      }),
     )
     .with(
       { '!type': 'decimal' },
-      (s): ParsedString => ({
-        string: {
-          format: 'decimal',
+      (s): ParsedDecimal => ({
+        decimal: {
           rules: s.decimal.rules || {},
+          listRules: s.decimal.listRules || {},
         },
       }),
     )
@@ -353,6 +352,7 @@ export function apiSchemaToSource(
         any: {
           onlyDefinedTypes: a.any.onlyDefined ? a.any.types : undefined,
           properties: properties.size ? properties : undefined,
+          listRules: a.any.listRules || {},
         },
       };
     })

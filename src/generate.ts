@@ -330,6 +330,18 @@ export class Generator {
               .filter(Boolean)
               .join(', ') || undefined,
         }))
+        .with({ date: P.not(P.nullish) }, () => ({
+          node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+          comment: 'format: YYYY-MM-DD',
+        }))
+        .with({ timestamp: P.not(P.nullish) }, () => ({
+          node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+          comment: 'format: date-time',
+        }))
+        .with({ decimal: P.not(P.nullish) }, () => ({
+          node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+          comment: 'format: decimal',
+        }))
         .with({ integer: P.not(P.nullish) }, (s) => ({
           node: s.integer.format?.endsWith('64')
             ? factory.createKeywordTypeNode(SyntaxKind.StringKeyword)

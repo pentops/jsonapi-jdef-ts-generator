@@ -1,8 +1,13 @@
 import type {
+  AnyListRules,
   ArrayRules,
   BoolListRules,
   BoolRules,
   BytesRules,
+  DateListRules,
+  DateRules,
+  DecimalListRules,
+  DecimalRules,
   EntityObjectSchema,
   EnumListRules,
   EnumRules,
@@ -22,6 +27,8 @@ import type {
   StateEntityEvent,
   StringListRules,
   StringRules,
+  TimestampListRules,
+  TimestampRules,
 } from './shared-types';
 import type { PackageSummary } from './generated-types';
 
@@ -95,6 +102,30 @@ export interface ParsedString {
   };
 }
 
+export interface ParsedDate {
+  date: {
+    rules: DateRules;
+    listRules?: DateListRules;
+    example?: any;
+  };
+}
+
+export interface ParsedTimestamp {
+  timestamp: {
+    rules: TimestampRules;
+    listRules?: TimestampListRules;
+    example?: any;
+  };
+}
+
+export interface ParsedDecimal {
+  decimal: {
+    rules: DecimalRules;
+    listRules?: DecimalListRules;
+    example?: any;
+  };
+}
+
 export interface ParsedRef {
   $ref: string;
 }
@@ -111,6 +142,7 @@ export interface ParsedAny<
   any: {
     onlyDefinedTypes?: TFullGrpcNames[];
     properties?: ParsedAnyDefinedProperties<TSchema, TFullGrpcNames>;
+    listRules?: AnyListRules;
     example?: any;
   };
 }
@@ -211,7 +243,10 @@ export type ParsedSchema =
   | ParsedOneOf
   | ParsedArray
   | ParsedBytes
-  | ParsedKey;
+  | ParsedKey
+  | ParsedDate
+  | ParsedTimestamp
+  | ParsedDecimal;
 
 export type ParsedSchemaWithRef = ParsedSchema | ParsedRef;
 
@@ -227,7 +262,10 @@ export type DereferencedParsedSchema =
   | ParsedOneOf<DereferencedParsedSchema>
   | ParsedArray<DereferencedParsedSchema>
   | ParsedBytes
-  | ParsedKey;
+  | ParsedKey
+  | ParsedDate
+  | ParsedTimestamp
+  | ParsedDecimal;
 
 export interface FilterableField {
   name: string;
