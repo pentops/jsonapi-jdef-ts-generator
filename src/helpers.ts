@@ -5,6 +5,22 @@ import type { GeneratedSchema, GeneratedSchemaWithNode, PackageSummary } from '.
 
 export const JSON_SCHEMA_REFERENCE_PREFIX = '#/schemas/';
 
+// As per https://github.com/pentops/j5 in the section about data type encoding
+export function getScalarTypeForSchema(schema: ParsedSchema) {
+  return match(schema)
+    .with({ string: P.not(P.nullish) }, () => 'string' as const)
+    .with({ bool: P.not(P.nullish) }, () => 'boolean' as const)
+    .with({ float: P.not(P.nullish) }, () => 'number' as const)
+    .with({ decimal: P.not(P.nullish) }, () => 'string' as const)
+    .with({ bytes: P.not(P.nullish) }, () => 'string' as const)
+    .with({ date: P.not(P.nullish) }, () => 'string' as const)
+    .with({ timestamp: P.not(P.nullish) }, () => 'string' as const)
+    .with({ key: P.not(P.nullish) }, () => 'string' as const)
+    .with({ integer: { format: P.string.endsWith('64') } }, () => 'string' as const)
+    .with({ integer: P.not(P.nullish) }, () => 'number' as const)
+    .otherwise(() => undefined);
+}
+
 export function cleanRefName(ref: ParsedRef) {
   return ref.$ref.replace(JSON_SCHEMA_REFERENCE_PREFIX, '');
 }

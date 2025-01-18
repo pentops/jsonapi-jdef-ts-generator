@@ -17,6 +17,7 @@ import {
   getObjectProperties,
   getPackageSummary,
   getPropertyByPath,
+  getScalarTypeForSchema,
   getSchemaName,
   getValidKeyName,
   isCharacterSafeForName,
@@ -73,6 +74,12 @@ const REQUEST_INIT_PARAMETER_NAME = 'requestInit';
 const REQUEST_INIT_TYPE_NAME = 'RequestInit';
 
 const optionalFieldMarker = factory.createToken(SyntaxKind.QuestionToken);
+
+const SCALAR_TYPE_TO_SYNTAX_KIND = {
+  string: SyntaxKind.StringKeyword,
+  boolean: SyntaxKind.BooleanKeyword,
+  number: SyntaxKind.NumberKeyword,
+} as const;
 
 export class Generator {
   public config: Config;
@@ -297,7 +304,9 @@ export class Generator {
 
     return (
       match(schema)
-        .with({ bool: P.not(P.nullish) }, () => ({ node: factory.createKeywordTypeNode(SyntaxKind.BooleanKeyword) }))
+        .with({ bool: P.not(P.nullish) }, (s) => ({
+          node: factory.createKeywordTypeNode(SCALAR_TYPE_TO_SYNTAX_KIND[getScalarTypeForSchema(s) || 'boolean']),
+        }))
         // all nested enums are union types
         .with({ enum: P.not(P.nullish) }, (s) => {
           return { node: Generator.buildUnionEnum(Array.from(this.buildEnumKeyValueMap(s, 'union').keys())) };
@@ -314,14 +323,14 @@ export class Generator {
             .otherwise(() => undefined);
 
           return {
-            node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+            node: factory.createKeywordTypeNode(SCALAR_TYPE_TO_SYNTAX_KIND[getScalarTypeForSchema(s) || 'string']),
             comment: format ? `format: ${format}` : undefined,
           };
         })
         .with({ string: P.not(P.nullish) }, (s) => ({
           node: s.string.literalValue
             ? factory.createLiteralTypeNode(factory.createStringLiteral(s.string.literalValue, true))
-            : factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+            : factory.createKeywordTypeNode(SCALAR_TYPE_TO_SYNTAX_KIND[getScalarTypeForSchema(s) || 'string']),
           comment:
             [
               s.string.format ? `format: ${s.string.format}` : undefined,
@@ -330,28 +339,24 @@ export class Generator {
               .filter(Boolean)
               .join(', ') || undefined,
         }))
-        .with({ date: P.not(P.nullish) }, () => ({
-          node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+        .with({ date: P.not(P.nullish) }, (s) => ({
+          node: factory.createKeywordTypeNode(SCALAR_TYPE_TO_SYNTAX_KIND[getScalarTypeForSchema(s) || 'string']),
           comment: 'format: YYYY-MM-DD',
         }))
-        .with({ timestamp: P.not(P.nullish) }, () => ({
-          node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+        .with({ timestamp: P.not(P.nullish) }, (s) => ({
+          node: factory.createKeywordTypeNode(SCALAR_TYPE_TO_SYNTAX_KIND[getScalarTypeForSchema(s) || 'string']),
           comment: 'format: date-time',
         }))
-        .with({ decimal: P.not(P.nullish) }, () => ({
-          node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
+        .with({ decimal: P.not(P.nullish) }, (s) => ({
+          node: factory.createKeywordTypeNode(SCALAR_TYPE_TO_SYNTAX_KIND[getScalarTypeForSchema(s) || 'string']),
           comment: 'format: decimal',
         }))
         .with({ integer: P.not(P.nullish) }, (s) => ({
-          node: s.integer.format?.endsWith('64')
-            ? factory.createKeywordTypeNode(SyntaxKind.StringKeyword)
-            : factory.createKeywordTypeNode(SyntaxKind.NumberKeyword),
+          node: factory.createKeywordTypeNode(SCALAR_TYPE_TO_SYNTAX_KIND[getScalarTypeForSchema(s) || 'number']),
           comment: s.integer.format ? `format: ${s.integer.format}` : undefined,
         }))
         .with({ float: P.not(P.nullish) }, (s) => ({
-          node: s.float.format?.endsWith('64')
-            ? factory.createKeywordTypeNode(SyntaxKind.StringKeyword)
-            : factory.createKeywordTypeNode(SyntaxKind.NumberKeyword),
+          node: factory.createKeywordTypeNode(SCALAR_TYPE_TO_SYNTAX_KIND[getScalarTypeForSchema(s) || 'number']),
           comment: s.float.format ? `format: ${s.float.format}` : undefined,
         }))
         .with({ $ref: P.not(P.nullish) }, (s) => this.buildRefNode(s, genericValues))
@@ -374,9 +379,9 @@ export class Generator {
 
           return { node: factory.createArrayTypeNode(node), comment };
         })
-        .with({ bytes: P.not(P.nullish) }, () => ({
-          node: factory.createKeywordTypeNode(SyntaxKind.StringKeyword),
-          comment: 'bytes',
+        .with({ bytes: P.not(P.nullish) }, (s) => ({
+          node: factory.createKeywordTypeNode(SCALAR_TYPE_TO_SYNTAX_KIND[getScalarTypeForSchema(s) || 'string']),
+          comment: 'bytes (base64-encoded)',
         }))
         .with({ any: P.not(P.nullish) }, (s) => ({ node: this.buildAnyType(s, genericValues) }))
         .otherwise(() => {
