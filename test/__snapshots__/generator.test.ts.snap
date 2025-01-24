@@ -659,6 +659,19 @@ export interface J5AuthV1Action {
     fingerprint?: J5AuthV1Fingerprint;
 }
 
+export interface J5AuthV1AuthenticationDetails {
+    method?: {
+        '!type'?: 'j5.auth.v1.AuthenticationMethod_Session';
+        value?: J5AuthV1AuthenticationMethodSession;
+    } | {
+        '!type'?: 'j5.auth.v1.AuthenticationMethod_JWT';
+        value?: J5AuthV1AuthenticationMethodJwt;
+    } | {
+        '!type'?: 'j5.auth.v1.AuthenticationMethod_External';
+        value?: J5AuthV1AuthenticationMethodExternal;
+    };
+}
+
 export interface O5ApplicationV1ContainerImage {
     name?: string;
     tag?: string;
@@ -1015,7 +1028,7 @@ export interface J5StateV1EventMetadata {
 
 export interface J5MessagingV1RequestMetadata {
     replyTo?: string;
-    // bytes
+    // bytes (base64-encoded)
     context?: string;
 }
 
@@ -1209,9 +1222,9 @@ export interface O5AwsDeployerV1DeploymentCommandServiceUpsertClusterResponse {
 export interface O5AwsDeployerV1DeploymentCommandServiceUpsertClusterRequest {
     clusterId?: string;
     config?: O5EnvironmentV1CombinedConfig;
-    // bytes
+    // bytes (base64-encoded)
     configYaml?: string;
-    // bytes
+    // bytes (base64-encoded)
     configJson?: string;
 }
 
@@ -1222,9 +1235,9 @@ export interface O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentRespons
 export interface O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentRequest {
     clusterId?: string;
     config?: O5EnvironmentV1Environment;
-    // bytes
+    // bytes (base64-encoded)
     configYaml?: string;
-    // bytes
+    // bytes (base64-encoded)
     configJson?: string;
     environmentId: string;
 }
@@ -1869,6 +1882,19 @@ export interface J5AuthV1Action {
     fingerprint?: J5AuthV1Fingerprint;
 }
 
+export interface J5AuthV1AuthenticationDetails {
+    method?: {
+        '!type'?: 'j5.auth.v1.AuthenticationMethod_Session';
+        value?: J5AuthV1AuthenticationMethodSession;
+    } | {
+        '!type'?: 'j5.auth.v1.AuthenticationMethod_JWT';
+        value?: J5AuthV1AuthenticationMethodJwt;
+    } | {
+        '!type'?: 'j5.auth.v1.AuthenticationMethod_External';
+        value?: J5AuthV1AuthenticationMethodExternal;
+    };
+}
+
 export interface O5ApplicationV1ContainerImage {
     name?: string;
     tag?: string;
@@ -2225,7 +2251,7 @@ export interface J5StateV1EventMetadata {
 
 export interface J5MessagingV1RequestMetadata {
     replyTo?: string;
-    // bytes
+    // bytes (base64-encoded)
     context?: string;
 }
 
@@ -2419,9 +2445,9 @@ export interface O5AwsDeployerV1DeploymentCommandServiceUpsertClusterResponse {
 export interface O5AwsDeployerV1DeploymentCommandServiceUpsertClusterRequest {
     clusterId?: string;
     config?: O5EnvironmentV1CombinedConfig;
-    // bytes
+    // bytes (base64-encoded)
     configYaml?: string;
-    // bytes
+    // bytes (base64-encoded)
     configJson?: string;
 }
 
@@ -2432,9 +2458,9 @@ export interface O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentRespons
 export interface O5AwsDeployerV1DeploymentCommandServiceUpsertEnvironmentRequest {
     clusterId?: string;
     config?: O5EnvironmentV1Environment;
-    // bytes
+    // bytes (base64-encoded)
     configYaml?: string;
-    // bytes
+    // bytes (base64-encoded)
     configJson?: string;
     environmentId: string;
 }

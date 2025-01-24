@@ -87,6 +87,7 @@ export class Generator {
   public builtMethodSchemas: Map<string, BuiltMethodSchema> = new Map();
   public generatedSchemas: Map<string, GeneratedSchemaWithNode> = new Map();
   public generatedClientFunctions: GeneratedClientFunctionWithNodes[] = [];
+  public definedAnySchemas: Set<string> = new Set();
   public schemaGenerics: Map<string, GenericOverrideMap>;
 
   constructor(config: Config) {
@@ -405,6 +406,8 @@ export class Generator {
         for (const [name, property] of properties) {
           members.push(this.buildBaseObjectMember(name, property, schemaGenerics, genericValues));
         }
+
+        this.definedAnySchemas.add(type);
 
         return factory.createTypeLiteralNode(members as readonly TypeElement[]);
       }),
@@ -1123,9 +1126,6 @@ export class Generator {
     const typesFile = this.generateTypesFile(source);
     const clientFile = this.generateClient();
 
-    return {
-      typesFile,
-      clientFile,
-    };
+    return { typesFile, clientFile };
   }
 }
