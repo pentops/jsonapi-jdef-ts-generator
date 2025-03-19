@@ -266,8 +266,8 @@ export class BasePluginFile<
     }
 
     importNodes.sort((a, b) => {
-      const aIdText = ts.isStringLiteral(a.moduleSpecifier) ? a.moduleSpecifier.text : '';
-      const bIdText = ts.isStringLiteral(b.moduleSpecifier) ? b.moduleSpecifier.text : '';
+      const aIdText = ts.isStringLiteral(a.moduleSpecifier as any) ? (a.moduleSpecifier as any).text : '';
+      const bIdText = ts.isStringLiteral(b.moduleSpecifier as any) ? (b.moduleSpecifier as any).text : '';
 
       if (aIdText.startsWith('.') && !bIdText.startsWith('.')) {
         return 1;
@@ -390,7 +390,7 @@ export class BasePluginFile<
       this._builtFile.content ||
       this.printer.printList(
         ListFormat.MultiLine,
-        factory.createNodeArray(this.nodeList),
+        factory.createNodeArray(this.nodeList as any),
         createSourceFile(
           this.config.fileName,
           '',

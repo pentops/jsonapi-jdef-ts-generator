@@ -28,21 +28,26 @@
     "find-up": "^7.0.0",
     "mitt": "^3.0.1",
     "pretty-ms": "^9.2.0",
-    "ts-morph": "^25.0.0",
-    "typescript": "~5.7.3"
+    "ts-morph": "^25.0.1",
+    "typescript": "^5.8.2"
   },
   "devDependencies": {
     "@pentops/jsonapi-request": "^0.0.7",
-    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.2",
-    "@types/node": "^22.10.10",
-    "prettier": "^3.4.2",
-    "rollup": "^4.32.0",
+    "@types/node": "^22.13.10",
+    "prettier": "^3.5.3",
+    "rollup": "^4.36.0",
     "ts-pattern": "^5.6.2",
     "tslib": "^2.8.1",
-    "vitest": "^3.0.4"
+    "vitest": "^3.0.9"
   },
   "peerDependencies": {
     "@pentops/jsonapi-request": ">=0.0.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
