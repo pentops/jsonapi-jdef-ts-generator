@@ -202,6 +202,7 @@ export interface ParsedObject<TSchema extends ParsedSchemaWithRef = ParsedSchema
     fullGrpcName: string;
     name: string;
     entity?: ParsedEntity;
+    polymorphMember?: string[];
     properties: Map<string, ParsedObjectProperty<TSchema>>;
     rules: ObjectRules;
     example?: any;

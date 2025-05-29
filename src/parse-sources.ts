@@ -317,6 +317,7 @@ export function apiSchemaToSource(
               properties: addEntityDataToApiPrimaryKeys(entity, mappedProperties),
               rules: obj.rules || {},
               entity,
+              polymorphMember: obj.polymorphMember,
               package: apiPackageToSummary(pkg),
             },
           };

@@ -226,6 +226,7 @@ export class Generator {
       .with({ object: P.not(P.nullish) }, (s) => s.object.fullGrpcName || s.object.name || '')
       .with({ enum: P.not(P.nullish) }, (s) => s.enum.fullGrpcName || s.enum.name || '')
       .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.fullGrpcName || s.oneOf.name || '')
+      .with({ polymorph: P.not(P.nullish) }, (s) => s.polymorph.fullGrpcName || s.polymorph.name || '')
       .with({ $ref: P.not(P.nullish) }, (s) => cleanRefName(s))
       .otherwise(() => '');
 
