@@ -160,23 +160,9 @@ export interface APIRefValue {
   schema: string;
 }
 
-export interface APIAnyValueBase {
-  onlyDefined?: boolean;
+export interface APIAnyValue {
   listRules?: AnyListRules;
 }
-
-export interface APIAnyValueWithoutDefinedTypes extends APIAnyValueBase {
-  onlyDefined: false;
-}
-
-export interface APIAnyValueWithDefinedTypes<TFullGrpcNames extends string = string> extends APIAnyValueBase {
-  onlyDefined: true;
-  types: TFullGrpcNames[];
-}
-
-export type APIAnyValue<TFullGrpcNames extends string = string> =
-  | APIAnyValueWithoutDefinedTypes
-  | APIAnyValueWithDefinedTypes<TFullGrpcNames>;
 
 export interface APIAnySchema {
   '!type': 'any';

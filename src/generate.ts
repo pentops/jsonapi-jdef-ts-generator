@@ -26,7 +26,6 @@ import {
 import {
   BANG_TYPE_FIELD_NAME,
   DerivedEnumHelperType,
-  type ParsedAny,
   type ParsedEnum,
   type ParsedEnumValueDescription,
   type ParsedMethod,
@@ -386,7 +385,7 @@ export class Generator {
           node: factory.createKeywordTypeNode(SCALAR_TYPE_TO_SYNTAX_KIND[getScalarTypeForSchema(s) || 'string']),
           comment: 'bytes (base64-encoded)',
         }))
-        .with({ any: P.not(P.nullish) }, (s) => ({ node: this.buildAnyType(s, genericValues) }))
+        .with({ any: P.not(P.nullish) }, (s) => ({ node: factory.createKeywordTypeNode(SyntaxKind.AnyKeyword) }))
         .with({ polymorph: P.not(P.nullish) }, (s) => ({ node: this.buildPolymorphType(s, genericValues) }))
         .otherwise(() => {
           console.log('Unknown schema type', schema);
@@ -409,28 +408,6 @@ export class Generator {
         for (const [name, property] of properties) {
           members.push(this.buildBaseObjectMember(name, property, schemaGenerics, genericValues));
         }
-
-        return factory.createTypeLiteralNode(members as readonly TypeElement[]);
-      }),
-    );
-  }
-
-  private buildAnyType(anySchema: ParsedAny, genericValues?: GenericOverrideWithValue[]) {
-    if (!anySchema.any.properties?.size) {
-      return factory.createKeywordTypeNode(SyntaxKind.AnyKeyword);
-    }
-
-    return factory.createUnionTypeNode(
-      Array.from(anySchema.any.properties.entries()).map(([type, properties]) => {
-        const schemaGenerics = this.schemaGenerics.get(type);
-
-        const members: (TypeElement | Identifier)[] = [];
-
-        for (const [name, property] of properties) {
-          members.push(this.buildBaseObjectMember(name, property, schemaGenerics, genericValues));
-        }
-
-        this.definedAnySchemas.add(type);
 
         return factory.createTypeLiteralNode(members as readonly TypeElement[]);
       }),

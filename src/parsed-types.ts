@@ -130,18 +130,8 @@ export interface ParsedRef {
   $ref: string;
 }
 
-export type ParsedAnyDefinedProperties<
-  TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef,
-  TFullGrpcNames extends string = string,
-> = Map<TFullGrpcNames, Map<string, ParsedObjectProperty<TSchema>>>;
-
-export interface ParsedAny<
-  TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef,
-  TFullGrpcNames extends string = string,
-> {
+export interface ParsedAny {
   any: {
-    onlyDefinedTypes?: TFullGrpcNames[];
-    properties?: ParsedAnyDefinedProperties<TSchema, TFullGrpcNames>;
     listRules?: AnyListRules;
     example?: any;
   };
@@ -278,7 +268,7 @@ export type DereferencedParsedSchema =
   | ParsedInteger
   | ParsedFloat
   | ParsedString
-  | ParsedAny<DereferencedParsedSchema>
+  | ParsedAny
   | ParsedPolymorph<DereferencedParsedSchema>
   | ParsedMap<DereferencedParsedSchema>
   | ParsedObject<DereferencedParsedSchema>

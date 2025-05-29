@@ -2,7 +2,6 @@ import { match, P } from 'ts-pattern';
 import {
   BANG_TYPE_FIELD_NAME,
   type ParsedAny,
-  type ParsedAnyDefinedProperties,
   type ParsedArray,
   type ParsedAuthType,
   type ParsedBool,
@@ -324,42 +323,7 @@ export function apiSchemaToSource(
         })
         .otherwise(() => undefined),
     )
-    .with({ '!type': 'any' }, (a): ParsedAny => {
-      const properties: ParsedAnyDefinedProperties = new Map();
-
-      if (a.any.onlyDefined) {
-        for (const type of a.any.types) {
-          const typeProperties = new Map<string, ParsedObjectProperty>();
-
-          typeProperties.set('!type', {
-            name: BANG_TYPE_FIELD_NAME,
-            schema: {
-              string: {
-                format: '',
-                rules: {},
-                literalValue: type,
-              },
-            },
-          });
-
-          typeProperties.set('value', {
-            name: 'value',
-            schema: { $ref: `${JSON_SCHEMA_REFERENCE_PREFIX}${type}` },
-            required: true,
-          });
-
-          properties.set(type, typeProperties);
-        }
-      }
-
-      return {
-        any: {
-          onlyDefinedTypes: a.any.onlyDefined ? a.any.types : undefined,
-          properties: properties.size ? properties : undefined,
-          listRules: a.any.listRules || {},
-        },
-      };
-    })
+    .with({ '!type': 'any' }, (a): ParsedAny => ({ any: { listRules: a.any.listRules || {} } }))
     .with({ '!type': 'polymorph' }, (p) => {
       return match(p.polymorph)
         .with({ ref: P.not(P.nullish) }, (polymorphWithRef): ParsedRef => buildApiSchemaRef(polymorphWithRef.ref))
