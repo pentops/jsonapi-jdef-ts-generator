@@ -62,6 +62,7 @@ export function getSchemaName(schema: ParsedSchemaWithRef | undefined, schemas: 
     .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.name)
     .with({ $ref: P.not(P.nullish) }, (s) => getSchemaName(schemas.get(cleanRefName(s)), schemas))
     .with({ array: P.not(P.nullish) }, (s) => getSchemaName(s.array.itemSchema, schemas))
+    .with({ polymorph: P.not(P.nullish) }, (s) => s.polymorph.name)
     .otherwise(() => '');
 }
 
@@ -80,6 +81,7 @@ export function getPackageSummary(schema: ParsedSchemaWithRef | undefined): Pack
     .with({ object: P.not(P.nullish) }, (s) => s.object.package)
     .with({ enum: P.not(P.nullish) }, (s) => s.enum.package)
     .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.package)
+    .with({ polymorph: P.not(P.nullish) }, (s) => s.polymorph.package)
     .with({ array: P.not(P.nullish) }, (s) => getPackageSummary(s.array.itemSchema))
     .otherwise(() => undefined);
 }

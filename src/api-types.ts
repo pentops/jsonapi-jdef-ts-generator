@@ -101,12 +101,25 @@ export interface APIObjectValue {
   entity?: EntityObjectSchema;
   name: string;
   properties: APIObjectProperty[];
+  // The names of any Polymorph types this object is a member of.
+  polymorphMember?: string[];
   rules?: ObjectRules;
 }
 
 export interface APIObjectSchema<TValue = APIObjectValue | APIObjectRefFieldValue> {
   '!type': 'object';
   'object': TValue;
+}
+
+export interface APIPolymorphValue {
+  name: string;
+  description?: string;
+  members?: string[];
+}
+
+export interface APIPolymorphSchema<TValue = APIPolymorphValue | APIRefFieldValue> {
+  '!type': 'polymorph';
+  'polymorph': TValue;
 }
 
 export interface APIIntegerValue {
@@ -267,6 +280,7 @@ export type APISchema =
   | APIEnumSchema
   | APIOneOfSchema
   | APIAnySchema
+  | APIPolymorphSchema
   | APIBoolSchema
   | APIMapSchema
   | APIArraySchema

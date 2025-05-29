@@ -20,6 +20,8 @@ import {
   type ParsedObjectProperty,
   type ParsedOneOf,
   type ParsedPackage,
+  ParsedPolymorph,
+  ParsedPolymorphProperties,
   type ParsedRef,
   type ParsedSchema,
   type ParsedSchemaWithRef,
@@ -342,6 +344,7 @@ export function apiSchemaToSource(
           typeProperties.set('value', {
             name: 'value',
             schema: { $ref: `${JSON_SCHEMA_REFERENCE_PREFIX}${type}` },
+            required: true,
           });
 
           properties.set(type, typeProperties);
@@ -355,6 +358,50 @@ export function apiSchemaToSource(
           listRules: a.any.listRules || {},
         },
       };
+    })
+    .with({ '!type': 'polymorph' }, (p) => {
+      return match(p.polymorph)
+        .with({ ref: P.not(P.nullish) }, (polymorphWithRef): ParsedRef => buildApiSchemaRef(polymorphWithRef.ref))
+        .with(P.not(P.nullish), (pm): ParsedPolymorph => {
+          const properties: ParsedPolymorphProperties = new Map();
+
+          if (pm.members) {
+            for (const member of pm.members) {
+              const memberProperties = new Map<string, ParsedObjectProperty>();
+
+              memberProperties.set('!type', {
+                name: BANG_TYPE_FIELD_NAME,
+                schema: {
+                  string: {
+                    format: '',
+                    rules: {},
+                    literalValue: member,
+                  },
+                },
+              });
+
+              memberProperties.set('value', {
+                name: 'value',
+                schema: { $ref: `${JSON_SCHEMA_REFERENCE_PREFIX}${member}` },
+                required: true,
+              });
+
+              properties.set(member, memberProperties);
+            }
+          }
+
+          return {
+            polymorph: {
+              fullGrpcName: fullGrpcName!,
+              name: pm.name,
+              description: pm.description,
+              package: apiPackageToSummary(pkg),
+              members: pm.members,
+              properties: properties.size ? properties : undefined,
+            },
+          };
+        })
+        .otherwise(() => undefined);
     })
     .with({ '!type': 'map' }, (m): ParsedMap | undefined => {
       const defaultStringSchema: ParsedString = {

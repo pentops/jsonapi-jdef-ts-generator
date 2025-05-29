@@ -34,6 +34,7 @@ import {
   type ParsedObjectProperty,
   type ParsedOneOf,
   type ParsedPackage,
+  ParsedPolymorph,
   type ParsedRef,
   type ParsedSchema,
   type ParsedSchemaWithRef,
@@ -385,10 +386,31 @@ export class Generator {
           comment: 'bytes (base64-encoded)',
         }))
         .with({ any: P.not(P.nullish) }, (s) => ({ node: this.buildAnyType(s, genericValues) }))
+        .with({ polymorph: P.not(P.nullish) }, (s) => ({ node: this.buildPolymorphType(s, genericValues) }))
         .otherwise(() => {
           console.log('Unknown schema type', schema);
           return { node: factory.createKeywordTypeNode(SyntaxKind.AnyKeyword) };
         })
+    );
+  }
+
+  private buildPolymorphType(polymorphSchema: ParsedPolymorph, genericValues?: GenericOverrideWithValue[]) {
+    if (!polymorphSchema.polymorph.properties?.size) {
+      return factory.createKeywordTypeNode(SyntaxKind.AnyKeyword);
+    }
+
+    return factory.createUnionTypeNode(
+      Array.from(polymorphSchema.polymorph.properties.entries()).map(([type, properties]) => {
+        const schemaGenerics = this.schemaGenerics.get(type);
+
+        const members: (TypeElement | Identifier)[] = [];
+
+        for (const [name, property] of properties) {
+          members.push(this.buildBaseObjectMember(name, property, schemaGenerics, genericValues));
+        }
+
+        return factory.createTypeLiteralNode(members as readonly TypeElement[]);
+      }),
     );
   }
 
@@ -491,7 +513,8 @@ export class Generator {
             optionalFieldMarker, // it's always going to be present, but needs to be optional for request types
             factory.createLiteralTypeNode(factory.createStringLiteral(name, true)),
           ),
-          this.buildBaseObjectMember(name, property, generics, genericValues),
+          // The oneOf property itself should be required
+          this.buildBaseObjectMember(name, { ...property, required: true }, generics, genericValues),
         ]),
       );
     }

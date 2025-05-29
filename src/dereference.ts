@@ -5,6 +5,7 @@ import type {
   ParsedMethod,
   ParsedObjectProperty,
   ParsedPackage,
+  ParsedPolymorphProperties,
   ParsedSchema,
   ParsedSchemaWithRef,
   ParsedService,
@@ -28,6 +29,20 @@ export function dereferenceObjectProperties(
         schema: dereferencedSchema,
       });
     }
+  }
+
+  return dereferencedProperties;
+}
+
+export function dereferencePolymorphProperties(
+  properties: ParsedPolymorphProperties,
+  schemas: Map<string, ParsedSchema>,
+  visited: Map<string, DereferencedParsedSchema> = new Map(),
+) {
+  const dereferencedProperties: ParsedPolymorphProperties<DereferencedParsedSchema> = new Map();
+
+  for (const [k, v] of properties) {
+    dereferencedProperties.set(k, dereferenceObjectProperties(v, schemas, visited));
   }
 
   return dereferencedProperties;
@@ -121,6 +136,13 @@ export function dereferenceSchema(
       any: {
         ...s.any,
         properties: dereferenceAnyDefinedProperties(s.any.properties, schemas, visited || new Map()),
+      },
+    }))
+    .with({ polymorph: { properties: P.not(P.nullish) } }, (s) => ({
+      ...s,
+      polymorph: {
+        ...s.polymorph,
+        properties: dereferencePolymorphProperties(s.polymorph.properties, schemas, visited || new Map()),
       },
     }))
     .otherwise((s) => s as DereferencedParsedSchema);

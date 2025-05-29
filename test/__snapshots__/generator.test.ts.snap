@@ -55,37 +55,37 @@ export interface O5AwsDeployerV1StepRequestTypeCfScale {
 
 export type O5AwsDeployerV1DeploymentEventType = {
     '!type'?: 'created';
-    created?: O5AwsDeployerV1DeploymentEventTypeCreated;
+    created: O5AwsDeployerV1DeploymentEventTypeCreated;
 } | {
     '!type'?: 'triggered';
-    triggered?: O5AwsDeployerV1DeploymentEventTypeTriggered;
+    triggered: O5AwsDeployerV1DeploymentEventTypeTriggered;
 } | {
     '!type'?: 'stackWait';
-    stackWait?: O5AwsDeployerV1DeploymentEventTypeStackWait;
+    stackWait: O5AwsDeployerV1DeploymentEventTypeStackWait;
 } | {
     '!type'?: 'stackWaitFailure';
-    stackWaitFailure?: O5AwsDeployerV1DeploymentEventTypeStackWaitFailure;
+    stackWaitFailure: O5AwsDeployerV1DeploymentEventTypeStackWaitFailure;
 } | {
     '!type'?: 'stackAvailable';
-    stackAvailable?: O5AwsDeployerV1DeploymentEventTypeStackAvailable;
+    stackAvailable: O5AwsDeployerV1DeploymentEventTypeStackAvailable;
 } | {
     '!type'?: 'runSteps';
-    runSteps?: O5AwsDeployerV1DeploymentEventTypeRunSteps;
+    runSteps: O5AwsDeployerV1DeploymentEventTypeRunSteps;
 } | {
     '!type'?: 'stepResult';
-    stepResult?: O5AwsDeployerV1DeploymentEventTypeStepResult;
+    stepResult: O5AwsDeployerV1DeploymentEventTypeStepResult;
 } | {
     '!type'?: 'runStep';
-    runStep?: O5AwsDeployerV1DeploymentEventTypeRunStep;
+    runStep: O5AwsDeployerV1DeploymentEventTypeRunStep;
 } | {
     '!type'?: 'error';
-    error?: O5AwsDeployerV1DeploymentEventTypeError;
+    error: O5AwsDeployerV1DeploymentEventTypeError;
 } | {
     '!type'?: 'done';
-    done?: O5AwsDeployerV1DeploymentEventTypeDone;
+    done: O5AwsDeployerV1DeploymentEventTypeDone;
 } | {
     '!type'?: 'terminated';
-    terminated?: O5AwsDeployerV1DeploymentEventTypeTerminated;
+    terminated: O5AwsDeployerV1DeploymentEventTypeTerminated;
 };
 
 export type O5AwsDeployerV1DeploymentEventTypeOneOfValue = Exclude<O5AwsDeployerV1DeploymentEventType['!type'], undefined>;
@@ -126,31 +126,31 @@ export interface O5AwsDeployerV1StackDeployment {
 
 export type O5AwsDeployerV1StepRequestType = {
     '!type'?: 'evalJoin';
-    evalJoin?: O5AwsDeployerV1StepRequestTypeEvalJoin;
+    evalJoin: O5AwsDeployerV1StepRequestTypeEvalJoin;
 } | {
     '!type'?: 'cfCreate';
-    cfCreate?: O5AwsDeployerV1StepRequestTypeCfCreate;
+    cfCreate: O5AwsDeployerV1StepRequestTypeCfCreate;
 } | {
     '!type'?: 'cfPlan';
-    cfPlan?: O5AwsDeployerV1StepRequestTypeCfPlan;
+    cfPlan: O5AwsDeployerV1StepRequestTypeCfPlan;
 } | {
     '!type'?: 'cfUpdate';
-    cfUpdate?: O5AwsDeployerV1StepRequestTypeCfUpdate;
+    cfUpdate: O5AwsDeployerV1StepRequestTypeCfUpdate;
 } | {
     '!type'?: 'cfScale';
-    cfScale?: O5AwsDeployerV1StepRequestTypeCfScale;
+    cfScale: O5AwsDeployerV1StepRequestTypeCfScale;
 } | {
     '!type'?: 'pgUpsert';
-    pgUpsert?: O5AwsDeployerV1StepRequestTypePgUpsert;
+    pgUpsert: O5AwsDeployerV1StepRequestTypePgUpsert;
 } | {
     '!type'?: 'pgEvaluate';
-    pgEvaluate?: O5AwsDeployerV1StepRequestTypePgEvaluate;
+    pgEvaluate: O5AwsDeployerV1StepRequestTypePgEvaluate;
 } | {
     '!type'?: 'pgCleanup';
-    pgCleanup?: O5AwsDeployerV1StepRequestTypePgCleanup;
+    pgCleanup: O5AwsDeployerV1StepRequestTypePgCleanup;
 } | {
     '!type'?: 'pgMigrate';
-    pgMigrate?: O5AwsDeployerV1StepRequestTypePgMigrate;
+    pgMigrate: O5AwsDeployerV1StepRequestTypePgMigrate;
 };
 
 export type O5AwsDeployerV1StepRequestTypeOneOfValue = Exclude<O5AwsDeployerV1StepRequestType['!type'], undefined>;
@@ -203,10 +203,10 @@ export interface O5AwsDeployerV1StackKeys {
 
 export type O5AwsDeployerV1ServiceTriggerSource = {
     '!type'?: 'github';
-    github?: O5AwsDeployerV1ServiceTriggerSourceGithubSource;
+    github: O5AwsDeployerV1ServiceTriggerSourceGithubSource;
 } | {
     '!type'?: 'inline';
-    inline?: O5AwsDeployerV1ServiceTriggerSourceInlineSource;
+    inline: O5AwsDeployerV1ServiceTriggerSourceInlineSource;
 };
 
 export type O5AwsDeployerV1ServiceTriggerSourceOneOfValue = Exclude<O5AwsDeployerV1ServiceTriggerSource['!type'], undefined>;
@@ -293,10 +293,10 @@ export interface O5AwsDeployerV1S3Template {
 
 export type O5AwsDeployerV1StepOutputType = {
     '!type'?: 'cfStatus';
-    cfStatus?: O5AwsDeployerV1StepOutputTypeCfStatus;
+    cfStatus: O5AwsDeployerV1StepOutputTypeCfStatus;
 } | {
     '!type'?: 'cfPlanStatus';
-    cfPlanStatus?: O5AwsDeployerV1StepOutputTypeCfPlanStatus;
+    cfPlanStatus: O5AwsDeployerV1StepOutputTypeCfPlanStatus;
 };
 
 export type O5AwsDeployerV1StepOutputTypeOneOfValue = Exclude<O5AwsDeployerV1StepOutputType['!type'], undefined>;
@@ -409,19 +409,19 @@ export interface O5AwsDeployerV1CfStackOutput {
 
 export type O5AwsDeployerV1StackEventType = {
     '!type'?: 'configured';
-    configured?: O5AwsDeployerV1StackEventTypeConfigured;
+    configured: O5AwsDeployerV1StackEventTypeConfigured;
 } | {
     '!type'?: 'deploymentRequested';
-    deploymentRequested?: O5AwsDeployerV1StackEventTypeDeploymentRequested;
+    deploymentRequested: O5AwsDeployerV1StackEventTypeDeploymentRequested;
 } | {
     '!type'?: 'deploymentCompleted';
-    deploymentCompleted?: O5AwsDeployerV1StackEventTypeDeploymentCompleted;
+    deploymentCompleted: O5AwsDeployerV1StackEventTypeDeploymentCompleted;
 } | {
     '!type'?: 'deploymentFailed';
-    deploymentFailed?: O5AwsDeployerV1StackEventTypeDeploymentFailed;
+    deploymentFailed: O5AwsDeployerV1StackEventTypeDeploymentFailed;
 } | {
     '!type'?: 'runDeployment';
-    runDeployment?: O5AwsDeployerV1StackEventTypeRunDeployment;
+    runDeployment: O5AwsDeployerV1StackEventTypeRunDeployment;
 };
 
 export type O5AwsDeployerV1StackEventTypeOneOfValue = Exclude<O5AwsDeployerV1StackEventType['!type'], undefined>;
@@ -504,7 +504,7 @@ export interface O5AwsDeployerV1DeploymentEventTypeCreated {
 
 export type O5AwsDeployerV1ClusterEventType = {
     '!type'?: 'configured';
-    configured?: O5AwsDeployerV1ClusterEventTypeConfigured;
+    configured: O5AwsDeployerV1ClusterEventTypeConfigured;
 };
 
 export type O5AwsDeployerV1ClusterEventTypeOneOfValue = Exclude<O5AwsDeployerV1ClusterEventType['!type'], undefined>;
@@ -549,17 +549,17 @@ export interface O5AwsDeployerV1CloudFormationStackParameter {
 
 export type O5AwsDeployerV1EnvironmentEventType = {
     '!type'?: 'configured';
-    configured?: O5AwsDeployerV1EnvironmentEventTypeConfigured;
+    configured: O5AwsDeployerV1EnvironmentEventTypeConfigured;
 };
 
 export type O5AwsDeployerV1EnvironmentEventTypeOneOfValue = Exclude<O5AwsDeployerV1EnvironmentEventType['!type'], undefined>;
 
 export type O5AwsDeployerV1CloudFormationStackParameterType = {
     '!type'?: 'rulePriority';
-    rulePriority?: O5AwsDeployerV1CloudFormationStackParameterTypeRulePriority;
+    rulePriority: O5AwsDeployerV1CloudFormationStackParameterTypeRulePriority;
 } | {
     '!type'?: 'desiredCount';
-    desiredCount?: O5AwsDeployerV1CloudFormationStackParameterTypeDesiredCount;
+    desiredCount: O5AwsDeployerV1CloudFormationStackParameterTypeDesiredCount;
 };
 
 export type O5AwsDeployerV1CloudFormationStackParameterTypeOneOfValue = Exclude<O5AwsDeployerV1CloudFormationStackParameterType['!type'], undefined>;
@@ -621,13 +621,13 @@ export interface J5AuthV1AuthenticationMethodExternal {
 
 export type J5AuthV1AuthenticationMethod = {
     '!type'?: 'jwt';
-    jwt?: J5AuthV1AuthenticationMethodJwt;
+    jwt: J5AuthV1AuthenticationMethodJwt;
 } | {
     '!type'?: 'session';
-    session?: J5AuthV1AuthenticationMethodSession;
+    session: J5AuthV1AuthenticationMethodSession;
 } | {
     '!type'?: 'external';
-    external?: J5AuthV1AuthenticationMethodExternal;
+    external: J5AuthV1AuthenticationMethodExternal;
 };
 
 export type J5AuthV1AuthenticationMethodOneOfValue = Exclude<J5AuthV1AuthenticationMethod['!type'], undefined>;
@@ -662,13 +662,13 @@ export interface J5AuthV1Action {
 export interface J5AuthV1AuthenticationDetails {
     method?: {
         '!type'?: 'j5.auth.v1.AuthenticationMethod_Session';
-        value?: J5AuthV1AuthenticationMethodSession;
+        value: J5AuthV1AuthenticationMethodSession;
     } | {
         '!type'?: 'j5.auth.v1.AuthenticationMethod_JWT';
-        value?: J5AuthV1AuthenticationMethodJwt;
+        value: J5AuthV1AuthenticationMethodJwt;
     } | {
         '!type'?: 'j5.auth.v1.AuthenticationMethod_External';
-        value?: J5AuthV1AuthenticationMethodExternal;
+        value: J5AuthV1AuthenticationMethodExternal;
     };
 }
 
@@ -955,13 +955,13 @@ export interface J5ListV1Field<TFilterField extends string = never> {
 
 export type J5ListV1Filter<TFilterField extends string = never> = {
     '!type'?: 'field';
-    field?: J5ListV1Field<TFilterField>;
+    field: J5ListV1Field<TFilterField>;
 } | {
     '!type'?: 'and';
-    and?: J5ListV1And<TFilterField>;
+    and: J5ListV1And<TFilterField>;
 } | {
     '!type'?: 'or';
-    or?: J5ListV1Or<TFilterField>;
+    or: J5ListV1Or<TFilterField>;
 };
 
 export type J5ListV1FilterOneOfValue = Exclude<J5ListV1Filter['!type'], undefined>;
@@ -996,16 +996,16 @@ export interface J5StateV1ExternalEventCause {
 
 export type J5StateV1Cause = {
     '!type'?: 'psmEvent';
-    psmEvent?: J5StateV1PsmEventCause;
+    psmEvent: J5StateV1PsmEventCause;
 } | {
     '!type'?: 'command';
-    command?: J5AuthV1Action;
+    command: J5AuthV1Action;
 } | {
     '!type'?: 'externalEvent';
-    externalEvent?: J5StateV1ExternalEventCause;
+    externalEvent: J5StateV1ExternalEventCause;
 } | {
     '!type'?: 'reply';
-    reply?: J5StateV1ReplyCause;
+    reply: J5StateV1ReplyCause;
 };
 
 export type J5StateV1CauseOneOfValue = Exclude<J5StateV1Cause['!type'], undefined>;
@@ -1278,37 +1278,37 @@ export interface O5AwsDeployerV1StepRequestTypeCfScale {
 
 export type O5AwsDeployerV1DeploymentEventType = {
     '!type'?: 'created';
-    created?: O5AwsDeployerV1DeploymentEventTypeCreated;
+    created: O5AwsDeployerV1DeploymentEventTypeCreated;
 } | {
     '!type'?: 'triggered';
-    triggered?: O5AwsDeployerV1DeploymentEventTypeTriggered;
+    triggered: O5AwsDeployerV1DeploymentEventTypeTriggered;
 } | {
     '!type'?: 'stackWait';
-    stackWait?: O5AwsDeployerV1DeploymentEventTypeStackWait;
+    stackWait: O5AwsDeployerV1DeploymentEventTypeStackWait;
 } | {
     '!type'?: 'stackWaitFailure';
-    stackWaitFailure?: O5AwsDeployerV1DeploymentEventTypeStackWaitFailure;
+    stackWaitFailure: O5AwsDeployerV1DeploymentEventTypeStackWaitFailure;
 } | {
     '!type'?: 'stackAvailable';
-    stackAvailable?: O5AwsDeployerV1DeploymentEventTypeStackAvailable;
+    stackAvailable: O5AwsDeployerV1DeploymentEventTypeStackAvailable;
 } | {
     '!type'?: 'runSteps';
-    runSteps?: O5AwsDeployerV1DeploymentEventTypeRunSteps;
+    runSteps: O5AwsDeployerV1DeploymentEventTypeRunSteps;
 } | {
     '!type'?: 'stepResult';
-    stepResult?: O5AwsDeployerV1DeploymentEventTypeStepResult;
+    stepResult: O5AwsDeployerV1DeploymentEventTypeStepResult;
 } | {
     '!type'?: 'runStep';
-    runStep?: O5AwsDeployerV1DeploymentEventTypeRunStep;
+    runStep: O5AwsDeployerV1DeploymentEventTypeRunStep;
 } | {
     '!type'?: 'error';
-    error?: O5AwsDeployerV1DeploymentEventTypeError;
+    error: O5AwsDeployerV1DeploymentEventTypeError;
 } | {
     '!type'?: 'done';
-    done?: O5AwsDeployerV1DeploymentEventTypeDone;
+    done: O5AwsDeployerV1DeploymentEventTypeDone;
 } | {
     '!type'?: 'terminated';
-    terminated?: O5AwsDeployerV1DeploymentEventTypeTerminated;
+    terminated: O5AwsDeployerV1DeploymentEventTypeTerminated;
 };
 
 export type O5AwsDeployerV1DeploymentEventTypeOneOfValue = Exclude<O5AwsDeployerV1DeploymentEventType['!type'], undefined>;
@@ -1349,31 +1349,31 @@ export interface O5AwsDeployerV1StackDeployment {
 
 export type O5AwsDeployerV1StepRequestType = {
     '!type'?: 'evalJoin';
-    evalJoin?: O5AwsDeployerV1StepRequestTypeEvalJoin;
+    evalJoin: O5AwsDeployerV1StepRequestTypeEvalJoin;
 } | {
     '!type'?: 'cfCreate';
-    cfCreate?: O5AwsDeployerV1StepRequestTypeCfCreate;
+    cfCreate: O5AwsDeployerV1StepRequestTypeCfCreate;
 } | {
     '!type'?: 'cfPlan';
-    cfPlan?: O5AwsDeployerV1StepRequestTypeCfPlan;
+    cfPlan: O5AwsDeployerV1StepRequestTypeCfPlan;
 } | {
     '!type'?: 'cfUpdate';
-    cfUpdate?: O5AwsDeployerV1StepRequestTypeCfUpdate;
+    cfUpdate: O5AwsDeployerV1StepRequestTypeCfUpdate;
 } | {
     '!type'?: 'cfScale';
-    cfScale?: O5AwsDeployerV1StepRequestTypeCfScale;
+    cfScale: O5AwsDeployerV1StepRequestTypeCfScale;
 } | {
     '!type'?: 'pgUpsert';
-    pgUpsert?: O5AwsDeployerV1StepRequestTypePgUpsert;
+    pgUpsert: O5AwsDeployerV1StepRequestTypePgUpsert;
 } | {
     '!type'?: 'pgEvaluate';
-    pgEvaluate?: O5AwsDeployerV1StepRequestTypePgEvaluate;
+    pgEvaluate: O5AwsDeployerV1StepRequestTypePgEvaluate;
 } | {
     '!type'?: 'pgCleanup';
-    pgCleanup?: O5AwsDeployerV1StepRequestTypePgCleanup;
+    pgCleanup: O5AwsDeployerV1StepRequestTypePgCleanup;
 } | {
     '!type'?: 'pgMigrate';
-    pgMigrate?: O5AwsDeployerV1StepRequestTypePgMigrate;
+    pgMigrate: O5AwsDeployerV1StepRequestTypePgMigrate;
 };
 
 export type O5AwsDeployerV1StepRequestTypeOneOfValue = Exclude<O5AwsDeployerV1StepRequestType['!type'], undefined>;
@@ -1426,10 +1426,10 @@ export interface O5AwsDeployerV1StackKeys {
 
 export type O5AwsDeployerV1ServiceTriggerSource = {
     '!type'?: 'github';
-    github?: O5AwsDeployerV1ServiceTriggerSourceGithubSource;
+    github: O5AwsDeployerV1ServiceTriggerSourceGithubSource;
 } | {
     '!type'?: 'inline';
-    inline?: O5AwsDeployerV1ServiceTriggerSourceInlineSource;
+    inline: O5AwsDeployerV1ServiceTriggerSourceInlineSource;
 };
 
 export type O5AwsDeployerV1ServiceTriggerSourceOneOfValue = Exclude<O5AwsDeployerV1ServiceTriggerSource['!type'], undefined>;
@@ -1516,10 +1516,10 @@ export interface O5AwsDeployerV1S3Template {
 
 export type O5AwsDeployerV1StepOutputType = {
     '!type'?: 'cfStatus';
-    cfStatus?: O5AwsDeployerV1StepOutputTypeCfStatus;
+    cfStatus: O5AwsDeployerV1StepOutputTypeCfStatus;
 } | {
     '!type'?: 'cfPlanStatus';
-    cfPlanStatus?: O5AwsDeployerV1StepOutputTypeCfPlanStatus;
+    cfPlanStatus: O5AwsDeployerV1StepOutputTypeCfPlanStatus;
 };
 
 export type O5AwsDeployerV1StepOutputTypeOneOfValue = Exclude<O5AwsDeployerV1StepOutputType['!type'], undefined>;
@@ -1632,19 +1632,19 @@ export interface O5AwsDeployerV1CfStackOutput {
 
 export type O5AwsDeployerV1StackEventType = {
     '!type'?: 'configured';
-    configured?: O5AwsDeployerV1StackEventTypeConfigured;
+    configured: O5AwsDeployerV1StackEventTypeConfigured;
 } | {
     '!type'?: 'deploymentRequested';
-    deploymentRequested?: O5AwsDeployerV1StackEventTypeDeploymentRequested;
+    deploymentRequested: O5AwsDeployerV1StackEventTypeDeploymentRequested;
 } | {
     '!type'?: 'deploymentCompleted';
-    deploymentCompleted?: O5AwsDeployerV1StackEventTypeDeploymentCompleted;
+    deploymentCompleted: O5AwsDeployerV1StackEventTypeDeploymentCompleted;
 } | {
     '!type'?: 'deploymentFailed';
-    deploymentFailed?: O5AwsDeployerV1StackEventTypeDeploymentFailed;
+    deploymentFailed: O5AwsDeployerV1StackEventTypeDeploymentFailed;
 } | {
     '!type'?: 'runDeployment';
-    runDeployment?: O5AwsDeployerV1StackEventTypeRunDeployment;
+    runDeployment: O5AwsDeployerV1StackEventTypeRunDeployment;
 };
 
 export type O5AwsDeployerV1StackEventTypeOneOfValue = Exclude<O5AwsDeployerV1StackEventType['!type'], undefined>;
@@ -1727,7 +1727,7 @@ export interface O5AwsDeployerV1DeploymentEventTypeCreated {
 
 export type O5AwsDeployerV1ClusterEventType = {
     '!type'?: 'configured';
-    configured?: O5AwsDeployerV1ClusterEventTypeConfigured;
+    configured: O5AwsDeployerV1ClusterEventTypeConfigured;
 };
 
 export type O5AwsDeployerV1ClusterEventTypeOneOfValue = Exclude<O5AwsDeployerV1ClusterEventType['!type'], undefined>;
@@ -1772,17 +1772,17 @@ export interface O5AwsDeployerV1CloudFormationStackParameter {
 
 export type O5AwsDeployerV1EnvironmentEventType = {
     '!type'?: 'configured';
-    configured?: O5AwsDeployerV1EnvironmentEventTypeConfigured;
+    configured: O5AwsDeployerV1EnvironmentEventTypeConfigured;
 };
 
 export type O5AwsDeployerV1EnvironmentEventTypeOneOfValue = Exclude<O5AwsDeployerV1EnvironmentEventType['!type'], undefined>;
 
 export type O5AwsDeployerV1CloudFormationStackParameterType = {
     '!type'?: 'rulePriority';
-    rulePriority?: O5AwsDeployerV1CloudFormationStackParameterTypeRulePriority;
+    rulePriority: O5AwsDeployerV1CloudFormationStackParameterTypeRulePriority;
 } | {
     '!type'?: 'desiredCount';
-    desiredCount?: O5AwsDeployerV1CloudFormationStackParameterTypeDesiredCount;
+    desiredCount: O5AwsDeployerV1CloudFormationStackParameterTypeDesiredCount;
 };
 
 export type O5AwsDeployerV1CloudFormationStackParameterTypeOneOfValue = Exclude<O5AwsDeployerV1CloudFormationStackParameterType['!type'], undefined>;
@@ -1844,13 +1844,13 @@ export interface J5AuthV1AuthenticationMethodExternal {
 
 export type J5AuthV1AuthenticationMethod = {
     '!type'?: 'jwt';
-    jwt?: J5AuthV1AuthenticationMethodJwt;
+    jwt: J5AuthV1AuthenticationMethodJwt;
 } | {
     '!type'?: 'session';
-    session?: J5AuthV1AuthenticationMethodSession;
+    session: J5AuthV1AuthenticationMethodSession;
 } | {
     '!type'?: 'external';
-    external?: J5AuthV1AuthenticationMethodExternal;
+    external: J5AuthV1AuthenticationMethodExternal;
 };
 
 export type J5AuthV1AuthenticationMethodOneOfValue = Exclude<J5AuthV1AuthenticationMethod['!type'], undefined>;
@@ -1885,13 +1885,13 @@ export interface J5AuthV1Action {
 export interface J5AuthV1AuthenticationDetails {
     method?: {
         '!type'?: 'j5.auth.v1.AuthenticationMethod_Session';
-        value?: J5AuthV1AuthenticationMethodSession;
+        value: J5AuthV1AuthenticationMethodSession;
     } | {
         '!type'?: 'j5.auth.v1.AuthenticationMethod_JWT';
-        value?: J5AuthV1AuthenticationMethodJwt;
+        value: J5AuthV1AuthenticationMethodJwt;
     } | {
         '!type'?: 'j5.auth.v1.AuthenticationMethod_External';
-        value?: J5AuthV1AuthenticationMethodExternal;
+        value: J5AuthV1AuthenticationMethodExternal;
     };
 }
 
@@ -2178,13 +2178,13 @@ export interface J5ListV1Field<TFilterField extends string = never> {
 
 export type J5ListV1Filter<TFilterField extends string = never> = {
     '!type'?: 'field';
-    field?: J5ListV1Field<TFilterField>;
+    field: J5ListV1Field<TFilterField>;
 } | {
     '!type'?: 'and';
-    and?: J5ListV1And<TFilterField>;
+    and: J5ListV1And<TFilterField>;
 } | {
     '!type'?: 'or';
-    or?: J5ListV1Or<TFilterField>;
+    or: J5ListV1Or<TFilterField>;
 };
 
 export type J5ListV1FilterOneOfValue = Exclude<J5ListV1Filter['!type'], undefined>;
@@ -2219,16 +2219,16 @@ export interface J5StateV1ExternalEventCause {
 
 export type J5StateV1Cause = {
     '!type'?: 'psmEvent';
-    psmEvent?: J5StateV1PsmEventCause;
+    psmEvent: J5StateV1PsmEventCause;
 } | {
     '!type'?: 'command';
-    command?: J5AuthV1Action;
+    command: J5AuthV1Action;
 } | {
     '!type'?: 'externalEvent';
-    externalEvent?: J5StateV1ExternalEventCause;
+    externalEvent: J5StateV1ExternalEventCause;
 } | {
     '!type'?: 'reply';
-    reply?: J5StateV1ReplyCause;
+    reply: J5StateV1ReplyCause;
 };
 
 export type J5StateV1CauseOneOfValue = Exclude<J5StateV1Cause['!type'], undefined>;

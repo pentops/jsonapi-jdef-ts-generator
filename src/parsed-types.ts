@@ -147,6 +147,26 @@ export interface ParsedAny<
   };
 }
 
+export type ParsedPolymorphProperties<
+  TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef,
+  TFullGrpcNames extends string = string,
+> = Map<TFullGrpcNames, Map<string, ParsedObjectProperty<TSchema>>>;
+
+export interface ParsedPolymorph<
+  TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef,
+  TFullGrpcNames extends string = string,
+> {
+  polymorph: {
+    description?: string;
+    fullGrpcName: string;
+    name: string;
+    package?: PackageSummary;
+    members?: TFullGrpcNames[];
+    properties?: ParsedPolymorphProperties<TSchema, TFullGrpcNames>;
+    example?: any;
+  };
+}
+
 export interface ParsedMap<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   map: {
     itemSchema: TSchema;
@@ -238,6 +258,7 @@ export type ParsedSchema =
   | ParsedFloat
   | ParsedString
   | ParsedAny
+  | ParsedPolymorph
   | ParsedMap
   | ParsedObject
   | ParsedOneOf
@@ -257,6 +278,7 @@ export type DereferencedParsedSchema =
   | ParsedFloat
   | ParsedString
   | ParsedAny<DereferencedParsedSchema>
+  | ParsedPolymorph<DereferencedParsedSchema>
   | ParsedMap<DereferencedParsedSchema>
   | ParsedObject<DereferencedParsedSchema>
   | ParsedOneOf<DereferencedParsedSchema>
