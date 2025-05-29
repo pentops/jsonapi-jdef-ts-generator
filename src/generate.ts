@@ -601,6 +601,19 @@ export class Generator {
           },
         ];
       })
+      .with({ polymorph: P.not(P.nullish) }, (s) => [
+        {
+          generatedName,
+          rawSchema: s,
+          fullGrpcName,
+          node: factory.createTypeAliasDeclaration(
+            [factory.createModifier(SyntaxKind.ExportKeyword)],
+            factory.createIdentifier(generatedName),
+            Generator.buildSchemaTypeParameterDeclarations(allGenericsWithValues),
+            this.buildPolymorphType(s),
+          ),
+        },
+      ])
       .otherwise(() => {
         const builtNode = this.buildBaseType(schema).node;
 

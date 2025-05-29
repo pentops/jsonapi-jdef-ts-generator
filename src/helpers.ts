@@ -71,6 +71,7 @@ export function getFullGRPCName(schema: ParsedSchemaWithRef | undefined): string
     .with({ object: P.not(P.nullish) }, (s) => s.object.fullGrpcName)
     .with({ enum: P.not(P.nullish) }, (s) => s.enum.fullGrpcName)
     .with({ oneOf: P.not(P.nullish) }, (s) => s.oneOf.fullGrpcName)
+    .with({ polymorph: P.not(P.nullish) }, (s) => s.polymorph.fullGrpcName)
     .with({ array: P.not(P.nullish) }, (s) => getFullGRPCName(s.array.itemSchema))
     .with({ $ref: P.not(P.nullish) }, (s) => cleanRefName(s))
     .otherwise(() => '');

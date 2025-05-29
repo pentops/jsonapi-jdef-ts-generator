@@ -659,18 +659,16 @@ export interface J5AuthV1Action {
     fingerprint?: J5AuthV1Fingerprint;
 }
 
-export interface J5AuthV1AuthenticationDetails {
-    method?: {
-        '!type'?: 'j5.auth.v1.AuthenticationMethod_Session';
-        value: J5AuthV1AuthenticationMethodSession;
-    } | {
-        '!type'?: 'j5.auth.v1.AuthenticationMethod_JWT';
-        value: J5AuthV1AuthenticationMethodJwt;
-    } | {
-        '!type'?: 'j5.auth.v1.AuthenticationMethod_External';
-        value: J5AuthV1AuthenticationMethodExternal;
-    };
-}
+export type AuthenticationDetails = {
+    '!type'?: 'j5.auth.v1.AuthenticationMethod_Session';
+    value: J5AuthV1AuthenticationMethodSession;
+} | {
+    '!type'?: 'j5.auth.v1.AuthenticationMethod_JWT';
+    value: J5AuthV1AuthenticationMethodJwt;
+} | {
+    '!type'?: 'j5.auth.v1.AuthenticationMethod_External';
+    value: J5AuthV1AuthenticationMethodExternal;
+};
 
 export interface O5ApplicationV1ContainerImage {
     name?: string;
@@ -1882,18 +1880,16 @@ export interface J5AuthV1Action {
     fingerprint?: J5AuthV1Fingerprint;
 }
 
-export interface J5AuthV1AuthenticationDetails {
-    method?: {
-        '!type'?: 'j5.auth.v1.AuthenticationMethod_Session';
-        value: J5AuthV1AuthenticationMethodSession;
-    } | {
-        '!type'?: 'j5.auth.v1.AuthenticationMethod_JWT';
-        value: J5AuthV1AuthenticationMethodJwt;
-    } | {
-        '!type'?: 'j5.auth.v1.AuthenticationMethod_External';
-        value: J5AuthV1AuthenticationMethodExternal;
-    };
-}
+export type AuthenticationDetails = {
+    '!type'?: 'j5.auth.v1.AuthenticationMethod_Session';
+    value: J5AuthV1AuthenticationMethodSession;
+} | {
+    '!type'?: 'j5.auth.v1.AuthenticationMethod_JWT';
+    value: J5AuthV1AuthenticationMethodJwt;
+} | {
+    '!type'?: 'j5.auth.v1.AuthenticationMethod_External';
+    value: J5AuthV1AuthenticationMethodExternal;
+};
 
 export interface O5ApplicationV1ContainerImage {
     name?: string;

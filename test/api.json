@@ -5010,25 +5010,13 @@
             }
           },
           "AuthenticationDetails": {
-            "!type": "object",
-            "object": {
+            "!type": "polymorph",
+            "polymorph": {
               "name": "AuthenticationDetails",
-              "properties": [
-                {
-                  "schema": {
-                    "!type": "any",
-                    "any": {
-                      "onlyDefined": true,
-                      "types": [
-                        "j5.auth.v1.AuthenticationMethod_Session",
-                        "j5.auth.v1.AuthenticationMethod_JWT",
-                        "j5.auth.v1.AuthenticationMethod_External"
-                      ]
-                    }
-                  },
-                  "name": "method",
-                  "protoField": [1]
-                }
+              "members": [
+                "j5.auth.v1.AuthenticationMethod_Session",
+                "j5.auth.v1.AuthenticationMethod_JWT",
+                "j5.auth.v1.AuthenticationMethod_External"
               ]
             }
           }
