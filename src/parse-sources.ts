@@ -336,6 +336,7 @@ export function apiSchemaToSource(
 
               memberProperties.set('!type', {
                 name: BANG_TYPE_FIELD_NAME,
+                required: true,
                 schema: {
                   string: {
                     format: '',
