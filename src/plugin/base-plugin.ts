@@ -36,7 +36,6 @@ export class BasePlugin<
   files: TFile[] = [];
   protected generatedClientFunctions: GeneratedClientFunctionWithNodes[] = [];
   protected generatedSchemas: Map<string, GeneratedSchemaWithNode> = new Map();
-  protected definedAnySchemas: Set<string> = new Set();
   eventBus: PluginEventBus<TFile> | undefined;
 
   constructor(pluginConfig: TConfig) {
@@ -60,7 +59,6 @@ export class BasePlugin<
     this.config = generator.config;
     this.generatedClientFunctions = generator.generatedClientFunctions;
     this.generatedSchemas = generator.generatedSchemas;
-    this.definedAnySchemas = generator.definedAnySchemas;
     this.cwd = cwd;
     this.previouslyWrittenPluginFiles = previouslyWrittenPluginFiles;
 
