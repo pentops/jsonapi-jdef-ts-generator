@@ -276,6 +276,7 @@ export function apiSchemaToSource(
                   stateEntityFullName: matchingStateEntity?.fullName,
                   name: matchingStateEntity?.name || obj.entity?.entity || '',
                   schemaFullGrpcName: fullGrpcName,
+                  part: obj.entity?.part,
                   ...mapApiStateEntity(matchingStateEntity, obj.entity?.part || EntityPart.Unspecified),
                 } as ParsedEntity)
               : undefined;
