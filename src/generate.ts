@@ -87,7 +87,6 @@ export class Generator {
   public builtMethodSchemas: Map<string, BuiltMethodSchema> = new Map();
   public generatedSchemas: Map<string, GeneratedSchemaWithNode> = new Map();
   public generatedClientFunctions: GeneratedClientFunctionWithNodes[] = [];
-  public definedAnySchemas: Set<string> = new Set();
   public schemaGenerics: Map<string, GenericOverrideMap>;
 
   constructor(config: Config) {

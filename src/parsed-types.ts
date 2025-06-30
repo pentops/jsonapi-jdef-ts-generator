@@ -168,21 +168,13 @@ export interface ParsedMap<TSchema extends ParsedSchemaWithRef = ParsedSchemaWit
   };
 }
 
-export interface ParsedObjectPropertyEntityKeyBase {
+export interface ParsedObjectPropertyEntityKey {
   shardKey?: boolean;
   tenant?: string;
   entity?: string;
+  foreign?: string;
+  primary?: string;
 }
-
-export interface ParsedObjectPropertyEntityKeyPrimary extends ParsedObjectPropertyEntityKeyBase {
-  primary: boolean;
-}
-
-export interface ParsedObjectPropertyEntityKeyForeign extends ParsedObjectPropertyEntityKeyBase {
-  foreign: EntityRef;
-}
-
-export type ParsedObjectPropertyEntityKey = ParsedObjectPropertyEntityKeyPrimary | ParsedObjectPropertyEntityKeyForeign;
 
 export interface ParsedObjectProperty<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   description?: string;

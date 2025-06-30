@@ -18,7 +18,7 @@ import {
   type ParsedMethodListOptions,
   type ParsedObject,
   type ParsedObjectProperty,
-  ParsedObjectPropertyEntityKeyBase,
+  ParsedObjectPropertyEntityKey,
   type ParsedOneOf,
   type ParsedPackage,
   ParsedPolymorph,
@@ -53,6 +53,7 @@ import { JSON_SCHEMA_REFERENCE_PREFIX } from './helpers';
 import type { PackageSummary } from './generated-types';
 
 export function apiObjectPropertyToSource(
+  parentEntity: APIStateEntity | undefined,
   property: APIObjectProperty,
   stateEntities: APIStateEntity[],
   schemas: Map<string, APISchema>,
@@ -65,21 +66,20 @@ export function apiObjectPropertyToSource(
   const baseEntityKey = {
     shardKey: property.entityKey?.shardKey,
     tenant: property.entityKey?.tenant,
-  } as const satisfies ParsedObjectPropertyEntityKeyBase;
+  } as const satisfies ParsedObjectPropertyEntityKey;
 
   return {
     ...property,
     schema: converted,
     entityKey: match(property)
-      .with({ entityKey: { primary: true } }, () => ({
-        primary: true,
-        ...baseEntityKey,
-      }))
+      .with({ entityKey: { primary: true } }, () => {
+        return {
+          primary: parentEntity?.fullName || '',
+          ...baseEntityKey,
+        };
+      })
       .with({ schema: { key: { ext: { foreign: P.not(P.nullish) } } } }, (s) => ({
-        foreign: {
-          package: s.schema.key.ext.foreign.package,
-          entity: snakeCase(s.schema.key.ext.foreign.entity),
-        },
+        foreign: `${s.schema.key.ext.foreign.package}/${snakeCase(s.schema.key.ext.foreign.entity)}`,
         ...baseEntityKey,
       }))
       .otherwise(() => undefined),
@@ -141,7 +141,9 @@ export function apiSchemaToSource(
 ): ParsedSchemaWithRef | undefined {
   function mapObjectProperties(properties: APIObjectProperty[] | undefined) {
     return (properties || []).reduce<Map<string, ParsedObjectProperty>>((acc, curr) => {
-      const mappedValue = apiObjectPropertyToSource(curr, stateEntities, schemas);
+      const matchingEntity = stateEntities.find((entity) => entity.schemaName === fullGrpcName);
+
+      const mappedValue = apiObjectPropertyToSource(matchingEntity, curr, stateEntities, schemas);
 
       if (mappedValue) {
         acc.set(mappedValue.name, mappedValue);
@@ -406,6 +408,7 @@ function getApiMethodRequestResponseFullGrpcName(method: APIMethod, requestOrRes
 }
 
 function mapApiParameters(
+  relatedEntity: APIStateEntity | undefined,
   parameters: APIObjectProperty[] | undefined,
   stateEntities: APIStateEntity[],
   schemas: Map<string, APISchema>,
@@ -416,8 +419,7 @@ function mapApiParameters(
   }
 
   return parameters.reduce<Map<string, ParsedObjectProperty>>((acc, parameter) => {
-    const converted = apiObjectPropertyToSource(parameter, stateEntities, schemas);
-
+    const converted = apiObjectPropertyToSource(relatedEntity, parameter, stateEntities, schemas);
     if (!converted) {
       return acc;
     }
@@ -651,8 +653,19 @@ export function parseApiSource(source: APISource): ParsedSource {
         }
 
         const mappedRelatedEntity = relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined;
-        const mappedPathParameters = mapApiParameters(method.request?.pathParameters, stateEntities, schemas, true);
-        const mappedQueryParameters = mapApiParameters(method.request?.queryParameters, stateEntities, schemas);
+        const mappedPathParameters = mapApiParameters(
+          relatedEntity,
+          method.request?.pathParameters,
+          stateEntities,
+          schemas,
+          true,
+        );
+        const mappedQueryParameters = mapApiParameters(
+          relatedEntity,
+          method.request?.queryParameters,
+          stateEntities,
+          schemas,
+        );
 
         parsedService.methods.push({
           name: method.name,
