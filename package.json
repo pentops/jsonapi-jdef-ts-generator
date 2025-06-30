@@ -34,13 +34,13 @@
   "devDependencies": {
     "@pentops/jsonapi-request": "^0.0.7",
     "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-typescript": "^12.1.2",
-    "@types/node": "^22.15.24",
-    "prettier": "^3.5.3",
-    "rollup": "^4.41.1",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@types/node": "^24.0.7",
+    "prettier": "^3.6.2",
+    "rollup": "^4.44.1",
     "ts-pattern": "^5.7.1",
     "tslib": "^2.8.1",
-    "vitest": "^3.1.4"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "@pentops/jsonapi-request": ">=0.0.4"
