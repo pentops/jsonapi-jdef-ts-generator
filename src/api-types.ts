@@ -1,4 +1,4 @@
-import type {
+import {
   AnyListRules,
   ArrayRules,
   BoolListRules,
@@ -9,6 +9,7 @@ import type {
   DecimalListRules,
   DecimalRules,
   EntityObjectSchema,
+  EntityRef,
   EnumDocs,
   EnumListRules,
   EnumRules,
@@ -71,6 +72,12 @@ export interface APIBoolSchema {
   'bool': APIBoolValue;
 }
 
+export interface APIEntityKey {
+  primary?: boolean;
+  shardKey?: boolean;
+  tenant?: string;
+}
+
 export interface APIObjectProperty {
   description?: string;
   name: string;
@@ -80,6 +87,7 @@ export interface APIObjectProperty {
   protoField: number[];
   readOnly?: boolean;
   writeOnly?: boolean;
+  entityKey?: APIEntityKey;
 }
 
 export interface APIOneOfValue {
@@ -209,17 +217,11 @@ export interface APIArraySchema<TSchema extends APISchema = APISchema> {
   'array': APIArrayValue<TSchema>;
 }
 
-export interface APIKeyExtensions {}
-
-export interface APIEntityRef {
-  package: string;
-  entity: string;
+export interface APIKeyExtensions {
+  foreign?: EntityRef;
 }
 
-export type APIEntityKey = { primaryKey: boolean } | { foreignKey: APIEntityRef };
-
 export interface APIKeyValue {
-  entity?: APIEntityKey;
   rules?: {};
   listRules?: KeyListRules;
   format: KeyFormat;

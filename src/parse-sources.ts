@@ -1,4 +1,5 @@
 import { match, P } from 'ts-pattern';
+import { snakeCase } from 'change-case';
 import {
   BANG_TYPE_FIELD_NAME,
   type ParsedAny,
@@ -17,6 +18,7 @@ import {
   type ParsedMethodListOptions,
   type ParsedObject,
   type ParsedObjectProperty,
+  ParsedObjectPropertyEntityKeyBase,
   type ParsedOneOf,
   type ParsedPackage,
   ParsedPolymorph,
@@ -47,7 +49,7 @@ import type {
   APIStateEntity,
 } from './api-types';
 import { EntityPart, type HTTPMethod, QueryPart, type SortingConstraintValue } from './shared-types';
-import { getObjectProperties, JSON_SCHEMA_REFERENCE_PREFIX } from './helpers';
+import { JSON_SCHEMA_REFERENCE_PREFIX } from './helpers';
 import type { PackageSummary } from './generated-types';
 
 export function apiObjectPropertyToSource(
@@ -56,15 +58,32 @@ export function apiObjectPropertyToSource(
   schemas: Map<string, APISchema>,
 ): ParsedObjectProperty | undefined {
   const converted = apiSchemaToSource(property.schema, stateEntities, schemas);
-
   if (!converted) {
     return undefined;
   }
 
+  const baseEntityKey = {
+    shardKey: property.entityKey?.shardKey,
+    tenant: property.entityKey?.tenant,
+  } as const satisfies ParsedObjectPropertyEntityKeyBase;
+
   return {
     ...property,
     schema: converted,
-  };
+    entityKey: match(property)
+      .with({ entityKey: { primary: true } }, () => ({
+        primary: true,
+        ...baseEntityKey,
+      }))
+      .with({ schema: { key: { ext: { foreign: P.not(P.nullish) } } } }, (s) => ({
+        foreign: {
+          package: s.schema.key.ext.foreign.package,
+          entity: snakeCase(s.schema.key.ext.foreign.entity),
+        },
+        ...baseEntityKey,
+      }))
+      .otherwise(() => undefined),
+  } as const satisfies ParsedObjectProperty;
 }
 
 function mapApiStateEntity(entity: APIStateEntity | undefined, part?: EntityPart): ParsedEntity | undefined {
@@ -96,52 +115,6 @@ function getRefPathForApiSchemaRef(ref: APIRefValue): string {
 
 function buildApiSchemaRef(ref: APIRefValue): ParsedRef {
   return { $ref: getRefPathForApiSchemaRef(ref) };
-}
-
-function addEntityDataToApiPrimaryKeys(
-  entity: ParsedEntity | undefined,
-  mappedProperties: Map<string, ParsedObjectProperty>,
-): Map<string, ParsedObjectProperty> {
-  if (entity && entity.primaryKeys?.length) {
-    const getPrimaryKeyProperty = (primaryKey: string) => {
-      const keyParts = primaryKey.split('.');
-      let properties = mappedProperties;
-
-      for (let i = 0; i <= keyParts.length; i += 1) {
-        const prospect = properties.get(keyParts[i]);
-
-        if (prospect) {
-          const keySchemaMatch = match(prospect)
-            .returnType<ParsedKey | undefined>()
-            .with({ schema: { key: P.not(P.nullish) } }, (k) => k.schema)
-            .otherwise(() => undefined);
-
-          if (keySchemaMatch) {
-            return keySchemaMatch;
-          }
-
-          const subProperties = getObjectProperties(prospect.schema);
-
-          if (!subProperties?.size) {
-            return;
-          }
-
-          properties = subProperties;
-        }
-      }
-    };
-
-    for (const primaryKey of entity.primaryKeys) {
-      const primaryKeyProperty = getPrimaryKeyProperty(primaryKey);
-
-      if (primaryKeyProperty) {
-        primaryKeyProperty.key.primary = primaryKeyProperty.key.primary ?? true;
-        primaryKeyProperty.key.entity = primaryKeyProperty.key.entity ?? entity.stateEntityFullName;
-      }
-    }
-  }
-
-  return mappedProperties;
 }
 
 export function apiPackageToSummary(pkg?: APIPackage): PackageSummary | undefined {
@@ -305,15 +278,13 @@ export function apiSchemaToSource(
                 } as ParsedEntity)
               : undefined;
 
-          const mappedProperties = mapObjectProperties(obj.properties);
-
           return {
             object: {
               fullGrpcName: fullGrpcName!,
               name: obj.name,
               description: obj.description,
               additionalProperties: obj.additionalProperties,
-              properties: addEntityDataToApiPrimaryKeys(entity, mappedProperties),
+              properties: mapObjectProperties(obj.properties),
               rules: obj.rules || {},
               entity,
               polymorphMember: obj.polymorphMember,
@@ -412,18 +383,9 @@ export function apiSchemaToSource(
       (k): ParsedKey => ({
         key: {
           format: k.key.format,
-          primary: match(k.key.entity)
-            .with({ primaryKey: true }, () => true)
-            .otherwise(() => false),
-          foreign: match(k.key.entity)
-            .with({ foreignKey: P.not(P.nullish) }, () => true)
-            .otherwise(() => false),
-          entity: match(k.key.entity)
-            .with({ primaryKey: true }, () => undefined) // added by `addEntityDataToApiPrimaryKeys` because there's no ref upwards here
-            .with({ foreignKey: P.not(P.nullish) }, (f) => `${f.foreignKey.package}/${f.foreignKey.entity}`)
-            .otherwise(() => undefined),
           rules: k.key.rules,
           listRules: k.key.listRules || {},
+          foreign: k.key.ext?.foreign,
         },
       }),
     )
@@ -490,7 +452,7 @@ export function findMethodResponseRootSchema(
     }
   }
 
-  // Check for array first (there should be exactly one in a list method, as per j5client handling)
+  // Check for an array first (there should be exactly one in a list method, as per j5client handling)
   let foundArray: APIArraySchema<APIObjectSchema> | undefined;
   for (const property of response.properties || []) {
     const found = match(property)
@@ -716,12 +678,8 @@ export function parseApiSource(source: APISource): ParsedSource {
                 pkg,
               )
             : undefined,
-          pathParameters: mappedPathParameters
-            ? addEntityDataToApiPrimaryKeys(mappedRelatedEntity, mappedPathParameters)
-            : undefined,
-          queryParameters: mappedQueryParameters
-            ? addEntityDataToApiPrimaryKeys(mappedRelatedEntity, mappedQueryParameters)
-            : undefined,
+          pathParameters: mappedPathParameters,
+          queryParameters: mappedQueryParameters,
           listOptions: mapListOptions(method.request?.list),
           relatedEntity: mappedRelatedEntity,
           parentService: parsedService,

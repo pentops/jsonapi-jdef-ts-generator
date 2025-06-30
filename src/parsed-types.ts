@@ -1,4 +1,4 @@
-import type {
+import {
   AnyListRules,
   ArrayRules,
   BoolListRules,
@@ -9,6 +9,7 @@ import type {
   DecimalListRules,
   DecimalRules,
   EntityObjectSchema,
+  EntityRef,
   EnumListRules,
   EnumRules,
   EnumValueDescription,
@@ -167,6 +168,22 @@ export interface ParsedMap<TSchema extends ParsedSchemaWithRef = ParsedSchemaWit
   };
 }
 
+export interface ParsedObjectPropertyEntityKeyBase {
+  shardKey?: boolean;
+  tenant?: string;
+  entity?: string;
+}
+
+export interface ParsedObjectPropertyEntityKeyPrimary extends ParsedObjectPropertyEntityKeyBase {
+  primary: boolean;
+}
+
+export interface ParsedObjectPropertyEntityKeyForeign extends ParsedObjectPropertyEntityKeyBase {
+  foreign: EntityRef;
+}
+
+export type ParsedObjectPropertyEntityKey = ParsedObjectPropertyEntityKeyPrimary | ParsedObjectPropertyEntityKeyForeign;
+
 export interface ParsedObjectProperty<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   description?: string;
   example?: any;
@@ -175,6 +192,7 @@ export interface ParsedObjectProperty<TSchema extends ParsedSchemaWithRef = Pars
   required?: boolean;
   schema: TSchema;
   writeOnly?: boolean;
+  entityKey?: ParsedObjectPropertyEntityKey;
 }
 
 export interface ParsedEntity extends EntityObjectSchema {
@@ -233,9 +251,7 @@ export interface ParsedBytes {
 export interface ParsedKey {
   key: {
     format: KeyFormat;
-    primary: boolean;
-    foreign: boolean;
-    entity?: string;
+    foreign?: EntityRef;
     rules?: {};
     listRules?: KeyListRules;
     example?: any;

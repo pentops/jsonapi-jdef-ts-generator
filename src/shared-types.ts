@@ -99,6 +99,11 @@ export interface EnumValueDescription {
   number?: number;
 }
 
+export interface EntityRef {
+  package: string;
+  entity: string;
+}
+
 export enum EntityPart {
   Unspecified = 'UNSPECIFIED',
   Keys = 'KEYS',

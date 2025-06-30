@@ -385,7 +385,7 @@ export class Generator {
           node: factory.createKeywordTypeNode(SCALAR_TYPE_TO_SYNTAX_KIND[getScalarTypeForSchema(s) || 'string']),
           comment: 'bytes (base64-encoded)',
         }))
-        .with({ any: P.not(P.nullish) }, (s) => ({ node: factory.createKeywordTypeNode(SyntaxKind.AnyKeyword) }))
+        .with({ any: P.not(P.nullish) }, () => ({ node: factory.createKeywordTypeNode(SyntaxKind.AnyKeyword) }))
         .with({ polymorph: P.not(P.nullish) }, (s) => ({ node: this.buildPolymorphType(s, genericValues) }))
         .otherwise(() => {
           console.log('Unknown schema type', schema);
