@@ -1,6 +1,6 @@
 {
   "name": "@pentops/jsonapi-jdef-ts-generator",
-  "version": "0.0.130",
+  "version": "0.0.131",
   "description": "Generate types from an api.json file served by your pentops j5 registry.",
   "main": "dist/index.js",
   "bin": {
@@ -35,7 +35,7 @@
     "@pentops/jsonapi-request": "^0.0.7",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.4",
-    "@types/node": "^24.0.7",
+    "@types/node": "^24.0.10",
     "prettier": "^3.6.2",
     "rollup": "^4.44.1",
     "ts-pattern": "^5.7.1",

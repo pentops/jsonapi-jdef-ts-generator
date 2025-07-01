@@ -273,7 +273,9 @@ export function apiSchemaToSource(
           const entity: ParsedEntity | undefined =
             obj.entity || matchingStateEntity
               ? ({
-                  stateEntityFullName: matchingStateEntity?.fullName,
+                  stateEntityFullName:
+                    matchingStateEntity?.fullName ||
+                    (obj.entity?.entity && pkg?.name ? `${pkg.name}/${obj.entity}` : undefined),
                   name: matchingStateEntity?.name || obj.entity?.entity || '',
                   schemaFullGrpcName: fullGrpcName,
                   part: obj.entity?.part,
