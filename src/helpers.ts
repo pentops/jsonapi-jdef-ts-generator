@@ -2,6 +2,7 @@ import { match, P } from 'ts-pattern';
 import type { GenericOverride, GenericOverrideMap } from './config-types';
 import type { ParsedObject, ParsedObjectProperty, ParsedRef, ParsedSchema, ParsedSchemaWithRef } from './parsed-types';
 import type { GeneratedSchema, GeneratedSchemaWithNode, PackageSummary } from './generated-types';
+import { EntityPart } from './shared-types';
 
 export const JSON_SCHEMA_REFERENCE_PREFIX = '#/schemas/';
 
@@ -28,9 +29,14 @@ export function cleanRefName(ref: ParsedRef) {
 export function findSchemaForEntityName(
   entityName: string,
   schemas: Map<string, ParsedSchema>,
+  entityPart: EntityPart = EntityPart.State,
 ): ParsedObject | undefined {
   return Array.from(schemas.values()).find((schema) => {
-    if ('object' in schema && schema.object.entity?.stateEntityFullName === entityName) {
+    if (
+      'object' in schema &&
+      schema.object.entity?.stateEntityFullName === entityName &&
+      schema.object.entity.part === entityPart
+    ) {
       return true;
     }
   }) as ParsedObject | undefined;
