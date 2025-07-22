@@ -2,13 +2,14 @@ import { match, P } from 'ts-pattern';
 import { snakeCase } from 'change-case';
 import {
   BANG_TYPE_FIELD_NAME,
+  type MethodTypeStateCommand,
   type ParsedAny,
   type ParsedArray,
   type ParsedAuthType,
   type ParsedBool,
   type ParsedBytes,
-  ParsedDate,
-  ParsedDecimal,
+  type ParsedDate,
+  type ParsedDecimal,
   type ParsedEntity,
   type ParsedEnum,
   type ParsedFloat,
@@ -18,18 +19,18 @@ import {
   type ParsedMethodListOptions,
   type ParsedObject,
   type ParsedObjectProperty,
-  ParsedObjectPropertyEntityKey,
+  type ParsedObjectPropertyEntityKey,
   type ParsedOneOf,
   type ParsedPackage,
-  ParsedPolymorph,
-  ParsedPolymorphProperties,
+  type ParsedPolymorph,
+  type ParsedPolymorphProperties,
   type ParsedRef,
   type ParsedSchema,
   type ParsedSchemaWithRef,
   type ParsedService,
   type ParsedSource,
   type ParsedString,
-  ParsedTimestamp,
+  type ParsedTimestamp,
   type SortDirection,
 } from './parsed-types';
 import type {
@@ -457,7 +458,7 @@ export function findMethodResponseRootSchema(
     }
   }
 
-  // Check for an array first (there should be exactly one in a list method, as per j5client handling)
+  // Check for an array first (there should be exactly one in a list method, as per j5 client handling)
   let foundArray: APIArraySchema<APIObjectSchema> | undefined;
   for (const property of response.properties || []) {
     const found = match(property)
@@ -603,7 +604,12 @@ export function parseApiSource(source: APISource): ParsedSource {
       return options;
     }
 
-    function mapService(service: APIService, schemas: Map<string, APISchema>, relatedEntity?: APIStateEntity) {
+    function mapService(
+      service: APIService,
+      schemas: Map<string, APISchema>,
+      relatedEntity?: APIStateEntity,
+      serviceType: 'query' | 'command' | 'service' = 'service',
+    ) {
       const parsedService: ParsedService = {
         name: service.name,
         methods: [],
@@ -652,7 +658,6 @@ export function parseApiSource(source: APISource): ParsedSource {
               }
             }
           }
-        } else {
         }
 
         const mappedRelatedEntity = relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined;
@@ -669,6 +674,22 @@ export function parseApiSource(source: APISource): ParsedSource {
           stateEntities,
           schemas,
         );
+
+        const methodType = match({ method, serviceType })
+          .with({ method: { methodType: P.not(P.nullish) } }, (m) => m.method.methodType)
+          .with({ serviceType: 'command' }, () => {
+            if (!mappedRelatedEntity) {
+              return undefined;
+            }
+
+            return {
+              '!type': 'stateCommand',
+              'stateCommand': {
+                entityName: mappedRelatedEntity.entity,
+              },
+            } as MethodTypeStateCommand;
+          })
+          .otherwise(() => undefined);
 
         parsedService.methods.push({
           name: method.name,
@@ -700,7 +721,7 @@ export function parseApiSource(source: APISource): ParsedSource {
           relatedEntity: mappedRelatedEntity,
           parentService: parsedService,
           auth: mapApiAuth(method.auth),
-          methodType: method.methodType,
+          methodType,
         });
       }
 
@@ -711,13 +732,13 @@ export function parseApiSource(source: APISource): ParsedSource {
 
     pkg.stateEntities?.forEach((entity) => {
       if (entity.queryService) {
-        mapService(entity.queryService, schemas, entity);
+        mapService(entity.queryService, schemas, entity, 'query');
       }
 
-      entity.commandServices?.forEach((service) => mapService(service, schemas, entity));
+      entity.commandServices?.forEach((service) => mapService(service, schemas, entity, 'command'));
     });
 
-    pkg.services?.forEach((service) => mapService(service, schemas));
+    pkg.services?.forEach((service) => mapService(service, schemas, undefined, 'service'));
 
     if (parsedPackage.services.length) {
       parsed.packages.push(parsedPackage);

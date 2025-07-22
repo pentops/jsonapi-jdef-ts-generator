@@ -328,6 +328,15 @@ export interface ParsedAuthTypeCookie {
 
 export type ParsedAuthType = ParsedAuthTypeCustom | ParsedAuthTypeJWTBearer | ParsedAuthTypeCookie | ParsedAuthTypeNone;
 
+export interface MethodTypeStateCommand {
+  '!type': 'stateCommand';
+  'stateCommand': {
+    entityName: string;
+  };
+}
+
+export type ParsedMethodType = MethodType | MethodTypeStateCommand;
+
 export interface ParsedMethod<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
   name: string;
   fullGrpcName: string;
@@ -342,7 +351,7 @@ export interface ParsedMethod<TSchema extends ParsedSchemaWithRef = ParsedSchema
   rootEntitySchema?: TSchema;
   parentService: ParsedService<TSchema>;
   auth: ParsedAuthType | undefined;
-  methodType: MethodType | undefined;
+  methodType: ParsedMethodType | undefined;
 }
 
 export interface ParsedService<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {
