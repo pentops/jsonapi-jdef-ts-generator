@@ -508,7 +508,7 @@ export function mapApiAuth(auth: APIMethodAuthType | undefined): ParsedAuthType 
 export function parseApiSource(source: APISource): ParsedSource {
   const parsed: ParsedSource = {
     metadata: {
-      builtAt: new Date(source.api.metadata.builtAt),
+      builtAt: source.api.metadata.builtAt,
       version: source.version,
     },
     packages: [],

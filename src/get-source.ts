@@ -134,7 +134,10 @@ function mergeSources(sources: ParsedSource[]): ParsedSource {
       return acc;
     },
     {
-      metadata: { builtAt: sources[0]?.metadata?.builtAt, version: sources[0]?.metadata?.version },
+      metadata: {
+        builtAt: sources[0]?.metadata?.builtAt || new Date().toISOString(),
+        version: sources[0]?.metadata?.version || '',
+      },
       schemas: new Map(),
       packages: [],
     },

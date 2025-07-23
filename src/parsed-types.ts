@@ -36,8 +36,8 @@ import type { PackageSummary } from './generated-types';
 export const BANG_TYPE_FIELD_NAME = '!type';
 
 export interface ParsedMetadata {
-  builtAt: Date | null;
-  version: string | undefined;
+  builtAt: string;
+  version: string;
 }
 
 export interface ParsedEnumValueDescription<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef>
