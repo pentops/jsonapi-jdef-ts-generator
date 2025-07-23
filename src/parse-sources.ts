@@ -505,11 +505,12 @@ export function mapApiAuth(auth: APIMethodAuthType | undefined): ParsedAuthType 
     .otherwise(() => undefined);
 }
 
-export function parseApiSource(source: APISource): ParsedSource {
+export function parseApiSource(source: APISource, registryVersion?: string): ParsedSource {
   const parsed: ParsedSource = {
     metadata: {
       builtAt: source.api.metadata.builtAt,
       version: source.version,
+      registryVersion,
     },
     packages: [],
     schemas: new Map(),

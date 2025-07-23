@@ -38,6 +38,7 @@ export const BANG_TYPE_FIELD_NAME = '!type';
 export interface ParsedMetadata {
   builtAt: string;
   version: string;
+  registryVersion: string | undefined;
 }
 
 export interface ParsedEnumValueDescription<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef>

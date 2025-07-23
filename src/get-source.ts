@@ -137,6 +137,7 @@ function mergeSources(sources: ParsedSource[]): ParsedSource {
       metadata: {
         builtAt: sources[0]?.metadata?.builtAt || new Date().toISOString(),
         version: sources[0]?.metadata?.version || '',
+        registryVersion: sources[0]?.metadata?.registryVersion || '',
       },
       schemas: new Map(),
       packages: [],
