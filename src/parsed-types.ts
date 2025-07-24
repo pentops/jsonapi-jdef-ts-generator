@@ -192,9 +192,11 @@ export interface ParsedEntity extends EntityObjectSchema {
   schemaFullGrpcName?: string;
   stateEntityFullName?: string;
   primaryKeys?: string[];
-  events?: StateEntityEvent[];
+  events: StateEntityEvent[];
   queryMethods?: string[];
   commandMethods?: string[];
+  statuses?: EnumValueDescription[];
+  overview?: string;
 }
 
 export interface ParsedObject<TSchema extends ParsedSchemaWithRef = ParsedSchemaWithRef> {

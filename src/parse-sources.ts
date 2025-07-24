@@ -35,6 +35,8 @@ import {
 } from './parsed-types';
 import type {
   APIArraySchema,
+  APIEnumSchema,
+  APIEnumValue,
   APIMethod,
   APIMethodAuthType,
   APIObjectProperty,
@@ -87,7 +89,39 @@ export function apiObjectPropertyToSource(
   } as const satisfies ParsedObjectProperty;
 }
 
-function mapApiStateEntity(entity: APIStateEntity | undefined, part?: EntityPart): ParsedEntity | undefined {
+function findStatusEnumValues(fullGrpcName: string, schemas: Map<string, APISchema>) {
+  const schema = schemas.get(fullGrpcName);
+  if (!schema || !('object' in schema) || !('properties' in schema.object)) {
+    return [];
+  }
+
+  const properties = schema.object.properties.values();
+  for (const property of properties) {
+    if (property.name === 'status' && 'enum' in property.schema) {
+      const enumSchema = match(property.schema)
+        .with({ enum: { ref: P.not(P.nullish) } }, (s) => {
+          const path = getFullGrpcPathForSchemaRef(s.enum.ref);
+          return schemas.get(path) as APIEnumSchema<APIEnumValue> | undefined;
+        })
+        .with({ enum: P.not(P.nullish) }, (s) => s as APIEnumSchema<APIEnumValue> | undefined)
+        .otherwise(() => undefined);
+
+      if (!enumSchema) {
+        return [];
+      }
+
+      return enumSchema.enum.options;
+    }
+  }
+
+  return [];
+}
+
+function mapApiStateEntity(
+  entity: APIStateEntity | undefined,
+  schemas: Map<string, APISchema>,
+  part?: EntityPart,
+): ParsedEntity | undefined {
   if (!entity) {
     return undefined;
   }
@@ -97,12 +131,14 @@ function mapApiStateEntity(entity: APIStateEntity | undefined, part?: EntityPart
     schemaFullGrpcName: entity.schemaName,
     entity: entity.name,
     part: part || EntityPart.Unspecified,
+    overview: entity.overview,
     primaryKeys: entity.primaryKey,
-    events: entity.events,
+    events: entity.events || [],
     queryMethods: entity.queryService?.methods?.map((method) => method.fullGrpcName),
     commandMethods: entity.commandServices?.flatMap(
       (service) => service.methods?.map((method) => method.fullGrpcName) || [],
     ),
+    statuses: findStatusEnumValues(entity.schemaName, schemas),
   };
 }
 
@@ -280,7 +316,7 @@ export function apiSchemaToSource(
                   name: matchingStateEntity?.name || obj.entity?.entity || '',
                   schemaFullGrpcName: fullGrpcName,
                   part: obj.entity?.part,
-                  ...mapApiStateEntity(matchingStateEntity, obj.entity?.part || EntityPart.Unspecified),
+                  ...mapApiStateEntity(matchingStateEntity, schemas, obj.entity?.part || EntityPart.Unspecified),
                 } as ParsedEntity)
               : undefined;
 
@@ -661,7 +697,9 @@ export function parseApiSource(source: APISource, registryVersion?: string): Par
           }
         }
 
-        const mappedRelatedEntity = relatedEntity ? mapApiStateEntity(relatedEntity, EntityPart.State) : undefined;
+        const mappedRelatedEntity = relatedEntity
+          ? mapApiStateEntity(relatedEntity, schemas, EntityPart.State)
+          : undefined;
         const mappedPathParameters = mapApiParameters(
           relatedEntity,
           method.request?.pathParameters,
